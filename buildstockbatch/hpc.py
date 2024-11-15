@@ -268,6 +268,22 @@ class SlurmBatch(BuildStockBatchBase):
         tick = time.time() - tick
         logger.info("Simulation time: {:.2f} minutes".format(tick / 60.0))
 
+        # Send pkill to any lingering EnergyPlus processes
+        logger.info("Running pkill -9 -f energyplus to force lingering EnergyPlus processes to exit")
+        subprocess.run(['pkill', '-9', '-f', 'energyplus'])
+
+        # Wait 60s
+        logger.info("Waiting 60s to allow pkill to finish and release all files")
+        time.sleep(60)
+
+        # Send pkill to any lingering OpenStudio processes
+        logger.info("Running pkill -9 -f openstudio to force lingering EnergyPlus processes to exit")
+        subprocess.run(['pkill', '-9', '-f', 'openstudio'])
+
+        # Wait 60s
+        logger.info("Waiting 60s to allow pkill to finish and release all files")
+        time.sleep(60)
+
         # Save the aggregated dpouts as a json file
         lustre_sim_out_dir = pathlib.Path(self.results_dir) / "simulation_output"
         results_json = lustre_sim_out_dir / f"results_job{job_array_number}.json.gz"
