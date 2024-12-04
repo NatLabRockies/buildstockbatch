@@ -1,0 +1,29 @@
+[openstudio.measure.OSRunner] <Error> Cannot find current Workflow Step
+[openstudio.measure.OSRunner] <Error> Measure Failed with Error: Building ID is 3
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run'
+[openstudio.workflow.OSWorkflow] <Error> Found error in state 'OpenStudioMeasures' with message: 'Measure 'BuildExistingModel' reported an error with [Measure Failed with Error: Building ID is 3
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run']'
+Failed to run workflow. Last Error:
+  Found error in state 'OpenStudioMeasures' with message: 'Measure 'BuildExistingModel' reported an error with [Measure Failed with Error: Building ID is 3
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run']'

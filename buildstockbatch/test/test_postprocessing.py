@@ -19,27 +19,31 @@ postprocessing.performance_report = MagicMock()
 
 def test_report_additional_results_csv_columns(basic_residential_project_file):
     reporting_measures = ["ReportingMeasure1", "ReportingMeasure2"]
-    project_filename, results_dir = basic_residential_project_file({"reporting_measures": reporting_measures})
+    project_filename, results_dir = basic_residential_project_file(
+        raw=True, update_args={"reporting_measures": reporting_measures}
+    )
 
     fs = LocalFileSystem()
 
     results_dir = pathlib.Path(results_dir)
     sim_out_dir = results_dir / "simulation_output"
-    with tarfile.open(sim_out_dir / "simulations_job0.tar.gz", "r") as tarf:
-        tarf.extractall(sim_out_dir)
 
     dpouts2 = []
     for filename in sim_out_dir.rglob("data_point_out.json"):
         with filename.open("rt", encoding="utf-8") as f:
             dpout = json.load(f)
-        dpout["ReportingMeasure1"] = {"column_1": 1, "column_2": 2}
-        dpout["ReportingMeasure2"] = {"column_3": 3, "column_4": 4}
-        with filename.open("wt", encoding="utf-8") as f:
-            json.dump(dpout, f)
 
         sim_dir = str(filename.parent.parent)
         upgrade_id = int(re.search(r"up(\d+)", sim_dir).group(1))
         building_id = int(re.search(r"bldg(\d+)", sim_dir).group(1))
+
+        if dpout:  # Only for successful sims
+            dpout["ReportingMeasure1"] = {"column_1": 1, "column_2": 2}
+            dpout["ReportingMeasure2"] = {"column_3": 3, "column_4": 4}
+
+        with filename.open("wt", encoding="utf-8") as f:
+            json.dump(dpout, f)
+
         dpouts2.append(postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, building_id))
 
     with gzip.open(sim_out_dir / "results_job0.json.gz", "wt", encoding="utf-8") as f:
@@ -51,6 +55,8 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
 
     for upgrade_id in (0, 1):
         df = read_csv(str(results_dir / "results_csvs" / f"results_up{upgrade_id:02d}.csv.gz"))
+        assert "Measure Failed" in df[df["building_id"] == 3]["step_failures"].iloc[0]
+        df = df[df["building_id"] != 3]
         assert (df["reporting_measure1.column_1"] == 1).all()
         assert (df["reporting_measure1.column_2"] == 2).all()
         assert (df["reporting_measure2.column_3"] == 3).all()

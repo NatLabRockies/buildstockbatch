@@ -1,0 +1,3290 @@
+{
+   "completed_at" : "20241108T185514Z",
+   "completed_status" : "Success",
+   "created_at" : "2024-11-08T12:55:07.098678",
+   "current_step" : 7,
+   "eplusout_err" : "Program Version,EnergyPlus, Version 24.1.0-9d7789a3ac, YMD=2024.11.08 12:55,\n   ** Warning ** Timestep: Requested number (1) is less than the suggested minimum of 4.\n   **   ~~~   ** Please see entry for Timestep in Input/Output Reference for discussion of considerations.\n   ** Warning ** PerformancePrecisionTradeoffs: Carroll MRT radiant exchange method is selected.\n   ** Warning ** CalculateZoneVolume: 1 zone is not fully enclosed. For more details use:  Output:Diagnostics,DisplayExtrawarnings; \n   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=PUMP VARIABLE SPEED 1\n   ** Warning ** Output:Meter: invalid Key Name=\"NATURALGAS:FACILITY\" - not found.\n   ** Warning ** Output:Meter:MeterFileOnly: invalid Key Name=\"NATURALGAS:FACILITY\" - not found.\n   ** Warning ** Output:Meter:MeterFileOnly requested for \"Electricity:Facility\" (TimeStep), already on \"Output:Meter\". Will report to both eplusout.eso and eplusout.mtr\n   ************* Testing Individual Branch Integrity\n   ************* All Branches passed integrity testing\n   ************* Testing Individual Supply Air Path Integrity\n   ************* All Supply Air Paths passed integrity testing\n   ************* Testing Individual Return Air Path Integrity\n   ************* All Return Air Paths passed integrity testing\n   ************* No node connection errors were found.\n   ************* Beginning Simulation\n   ** Warning ** Processing Monthly Tabular Reports: Variable names not valid for this simulation\n   **   ~~~   ** ...use Output:Diagnostics,DisplayExtraWarnings; to show more details on individual variables.\n   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= \"U.S. AVG  COMMERCIAL-ELECTRICITY\" has no energy cost. \n   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.\n   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= \"U.S. AVG  COMMERCIAL-DISTILLATE OIL\" has no energy cost. \n   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.\n   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= \"U.S. AVG  COMMERCIAL-RESIDUAL OIL\" has no energy cost. \n   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.\n   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= \"U.S. AVG  COMMERCIAL-NATURAL GAS\" has no energy cost. \n   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.\n   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= \"U.S. AVG  COMMERCIAL-COAL\" has no energy cost. \n   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.\n   ************* Simulation Error Summary *************\n   ************* There are 1 unused objects in input.\n   ************* Use Output:Diagnostics,DisplayUnusedObjects; to see them.\n   ************* There are 2 unused schedules in input.\n   ************* There are 2 unused week schedules in input.\n   ************* There are 2 unused day schedules in input.\n   ************* Use Output:Diagnostics,DisplayUnusedSchedules; to see them.\n   ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.\n   ************* EnergyPlus Sizing Error Summary. During Sizing: 0 Warning; 0 Severe Errors.\n   ************* EnergyPlus Completed Successfully-- 13 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  0.86sec\n",
+   "file_paths" : 
+   [
+      "/Users/radhikar/Documents/buildstock2025/resstock2025/project_national/national_upgrades/simulation_output/up00/bldg0000004/generated_files",
+      "./files",
+      "./weather",
+      "../../files",
+      "../../weather",
+      "./"
+   ],
+   "hash" : "5B083D62",
+   "id" : "bldg0000004up00",
+   "measure_paths" : 
+   [
+      "measures",
+      "resources/hpxml-measures"
+   ],
+   "run_options" : 
+   {
+      "skip_zip_results" : true
+   },
+   "started_at" : "20241108T185507Z",
+   "steps" : 
+   [
+      {
+         "arguments" : 
+         {
+            "building_id" : 4,
+            "emissions_electricity_folders" : "data/emissions/cambium/2022/LRMER_MidCase_15",
+            "emissions_fuel_oil_values" : "",
+            "emissions_natural_gas_values" : "",
+            "emissions_propane_values" : "",
+            "emissions_scenario_names" : "LRMER_MidCase_15",
+            "emissions_types" : "CO2e",
+            "emissions_wood_values" : "",
+            "sample_weight" : 34911755,
+            "simulation_control_run_period_begin_day_of_month" : 1,
+            "simulation_control_run_period_begin_month" : 1,
+            "simulation_control_run_period_calendar_year" : 2007,
+            "simulation_control_run_period_end_day_of_month" : 31,
+            "simulation_control_run_period_end_month" : 12,
+            "simulation_control_timestep" : 60,
+            "utility_bill_detailed_filepaths" : "",
+            "utility_bill_electricity_fixed_charges" : "",
+            "utility_bill_electricity_marginal_rates" : "",
+            "utility_bill_fuel_oil_fixed_charges" : "",
+            "utility_bill_fuel_oil_marginal_rates" : "",
+            "utility_bill_natural_gas_fixed_charges" : "",
+            "utility_bill_natural_gas_marginal_rates" : "",
+            "utility_bill_propane_fixed_charges" : "",
+            "utility_bill_propane_marginal_rates" : "",
+            "utility_bill_pv_compensation_types" : "",
+            "utility_bill_pv_feed_in_tariff_rates" : "",
+            "utility_bill_pv_monthly_grid_connection_fee_units" : "",
+            "utility_bill_pv_monthly_grid_connection_fees" : "",
+            "utility_bill_pv_net_metering_annual_excess_sellback_rate_types" : "",
+            "utility_bill_pv_net_metering_annual_excess_sellback_rates" : "",
+            "utility_bill_scenario_names" : "Bills",
+            "utility_bill_simple_filepaths" : "",
+            "utility_bill_wood_fixed_charges" : "",
+            "utility_bill_wood_marginal_rates" : ""
+         },
+         "measure_dir_name" : "BuildExistingModel",
+         "result" : 
+         {
+            "completed_at" : "20241108T185511Z",
+            "measure_class_name" : "BuildExistingModel",
+            "measure_display_name" : "Build Existing Model",
+            "measure_name" : "build_existing_model",
+            "measure_taxonomy" : "Whole Building.Space Types",
+            "measure_type" : "ModelMeasure",
+            "measure_uid" : "dedf59bb-3b88-4f16-8755-2c1ff5519cbf",
+            "measure_version_id" : "be99be23-ddd9-49c4-804a-cb9853764e3e",
+            "measure_version_modified" : "20240904T210110Z",
+            "measure_xml_checksum" : "2C38F48B",
+            "started_at" : "20241108T185508Z",
+            "stderr" : "",
+            "stdout" : "[openstudio.measure.OSRunner] <Error> Cannot find current Workflow Step\n[openstudio.measure.OSRunner] <Error> Cannot find current Workflow Step\n[openstudio.measure.OSRunner] <Error> Cannot find current Workflow Step\n",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Assigning option 'CBSA Chicago-Naperville-Elgin, IL-IN-WI' for parameter 'AHS Region'.",
+               "Assigning option 'No' for parameter 'AIANNH Area'.",
+               "Assigning option '5A' for parameter 'ASHRAE IECC Climate Zone 2004'.",
+               "Assigning option '5A' for parameter 'ASHRAE IECC Climate Zone 2004 - 2A Split'.",
+               "Assigning option '150%+' for parameter 'Area Median Income'.",
+               "Assigning option 'Hour23' for parameter 'Bathroom Spot Vent Hour'.",
+               "Assigning option 'None' for parameter 'Battery'.",
+               "Assigning option '2' for parameter 'Bedrooms'.",
+               "Assigning option 'Cold' for parameter 'Building America Climate Zone'.",
+               "Assigning option 'None' for parameter 'CEC Climate Zone'.",
+               "Assigning option 'Standard Efficiency' for parameter 'Ceiling Fan'.",
+               "Assigning option 'East North Central' for parameter 'Census Division'.",
+               "Assigning option 'East North Central' for parameter 'Census Division RECS'.",
+               "Assigning option 'Midwest' for parameter 'Census Region'.",
+               "Assigning option 'IL, Chicago' for parameter 'City'.",
+               "Assigning option 'Electric' for parameter 'Clothes Dryer'.",
+               "Assigning option '100% Usage' for parameter 'Clothes Dryer Usage Level'.",
+               "Assigning option 'Standard' for parameter 'Clothes Washer'.",
+               "Assigning option 'Yes' for parameter 'Clothes Washer Presence'.",
+               "Assigning option '100% Usage' for parameter 'Clothes Washer Usage Level'.",
+               "Assigning option 'Electric Resistance' for parameter 'Cooking Range'.",
+               "Assigning option '100% Usage' for parameter 'Cooking Range Usage Level'.",
+               "Assigning option '70F' for parameter 'Cooling Setpoint'.",
+               "Assigning option 'No' for parameter 'Cooling Setpoint Has Offset'.",
+               "Assigning option '0F' for parameter 'Cooling Setpoint Offset Magnitude'.",
+               "Assigning option 'None' for parameter 'Cooling Setpoint Offset Period'.",
+               "Assigning option 'Never' for parameter 'Cooling Unavailable Days'.",
+               "Assigning option 'Double-Loaded Interior' for parameter 'Corridor'.",
+               "Assigning option 'IL, Cook County' for parameter 'County'.",
+               "Assigning option 'Metropolitan' for parameter 'County Metro Status'.",
+               "Assigning option 'G1700310, G17003525' for parameter 'County and PUMA'.",
+               "Assigning option 'Others' for parameter 'Custom State'.",
+               "Assigning option 'None' for parameter 'Dehumidifier'.",
+               "Assigning option '318 Rated kWh' for parameter 'Dishwasher'.",
+               "Assigning option '100% Usage' for parameter 'Dishwasher Usage Level'.",
+               "Assigning option '20 ft^2' for parameter 'Door Area'.",
+               "Assigning option 'Fiberglass' for parameter 'Doors'.",
+               "Assigning option 'None' for parameter 'Duct Leakage and Insulation'.",
+               "Assigning option 'None' for parameter 'Duct Location'.",
+               "Assigning option '2 ft' for parameter 'Eaves'.",
+               "Assigning option 'None' for parameter 'Electric Vehicle'.",
+               "Assigning option 'Northern' for parameter 'Energystar Climate Zone 2023'.",
+               "Assigning option '400%+' for parameter 'Federal Poverty Level'.",
+               "Assigning option 'RFCWc' for parameter 'Generation And Emissions Assessment Region'.",
+               "Assigning option 'None' for parameter 'Geometry Attic Type'.",
+               "Assigning option 'Middle' for parameter 'Geometry Building Horizontal Location MF'.",
+               "Assigning option 'None' for parameter 'Geometry Building Horizontal Location SFA'.",
+               "Assigning option 'Middle' for parameter 'Geometry Building Level MF'.",
+               "Assigning option '67' for parameter 'Geometry Building Number Units MF'.",
+               "Assigning option 'None' for parameter 'Geometry Building Number Units SFA'.",
+               "Assigning option '50 or more Unit' for parameter 'Geometry Building Type ACS'.",
+               "Assigning option 'Multifamily with 5+ units, 4-7 stories' for parameter 'Geometry Building Type Height'.",
+               "Assigning option 'Multi-Family with 5+ Units' for parameter 'Geometry Building Type RECS'.",
+               "Assigning option '1000-1499' for parameter 'Geometry Floor Area'.",
+               "Assigning option '0-1499' for parameter 'Geometry Floor Area Bin'.",
+               "Assigning option 'Slab' for parameter 'Geometry Foundation Type'.",
+               "Assigning option 'None' for parameter 'Geometry Garage'.",
+               "Assigning option 'Multi-Family with 5+ Units Middle Unit, Slab, No Attic, No Garage' for parameter 'Geometry Space Combination'.",
+               "Assigning option '4' for parameter 'Geometry Stories'.",
+               "Assigning option '4+' for parameter 'Geometry Stories Low Rise'.",
+               "Assigning option '<8' for parameter 'Geometry Story Bin'.",
+               "Assigning option 'Brick, Medium/Dark' for parameter 'Geometry Wall Exterior Finish'.",
+               "Assigning option 'Wood Frame' for parameter 'Geometry Wall Type'.",
+               "Assigning option '1.4' for parameter 'Ground Thermal Conductivity'.",
+               "Assigning option 'None' for parameter 'HVAC Cooling Autosizing Factor'.",
+               "Assigning option 'Room AC, EER 10.7' for parameter 'HVAC Cooling Efficiency'.",
+               "Assigning option '40% Conditioned' for parameter 'HVAC Cooling Partial Space Conditioning'.",
+               "Assigning option 'Room AC' for parameter 'HVAC Cooling Type'.",
+               "Assigning option 'No' for parameter 'HVAC Has Ducts'.",
+               "Assigning option 'None' for parameter 'HVAC Has Shared System'.",
+               "Assigning option 'Yes' for parameter 'HVAC Has Zonal Electric Heating'.",
+               "Assigning option 'None' for parameter 'HVAC Heating Autosizing Factor'.",
+               "Assigning option 'Electric Baseboard, 100% Efficiency' for parameter 'HVAC Heating Efficiency'.",
+               "Assigning option 'Non-Ducted Heating' for parameter 'HVAC Heating Type'.",
+               "Assigning option 'Electricity Baseboard' for parameter 'HVAC Heating Type And Fuel'.",
+               "Assigning option 'None' for parameter 'HVAC Secondary Heating Efficiency'.",
+               "Assigning option 'None' for parameter 'HVAC Secondary Heating Fuel'.",
+               "Assigning option '0%' for parameter 'HVAC Secondary Heating Partial Space Conditioning'.",
+               "Assigning option 'None' for parameter 'HVAC Secondary Heating Type'.",
+               "Assigning option 'None' for parameter 'HVAC Shared Efficiencies'.",
+               "Assigning option 'No' for parameter 'HVAC System Is Faulted'.",
+               "Assigning option 'No' for parameter 'HVAC System Is Scaled'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed AC Airflow'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed AC Charge'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed ASHP Airflow'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed ASHP Charge'.",
+               "Assigning option 'No' for parameter 'Has PV'.",
+               "Assigning option 'Electricity' for parameter 'Heating Fuel'.",
+               "Assigning option '70F' for parameter 'Heating Setpoint'.",
+               "Assigning option 'No' for parameter 'Heating Setpoint Has Offset'.",
+               "Assigning option '0F' for parameter 'Heating Setpoint Offset Magnitude'.",
+               "Assigning option 'None' for parameter 'Heating Setpoint Offset Period'.",
+               "Assigning option 'Never' for parameter 'Heating Unavailable Days'.",
+               "Assigning option 'No Exterior Use' for parameter 'Holiday Lighting'.",
+               "Assigning option 'Uninsulated' for parameter 'Hot Water Distribution'.",
+               "Assigning option '90% Usage' for parameter 'Hot Water Fixtures'.",
+               "Assigning option 'No' for parameter 'Household Has Tribal Persons'.",
+               "Assigning option 'PJM' for parameter 'ISO RTO Region'.",
+               "Assigning option '200000+' for parameter 'Income'.",
+               "Assigning option '140000+' for parameter 'Income RECS2015'.",
+               "Assigning option '150000+' for parameter 'Income RECS2020'.",
+               "Assigning option '15 ACH50' for parameter 'Infiltration'.",
+               "Assigning option 'None' for parameter 'Insulation Ceiling'.",
+               "Assigning option 'None' for parameter 'Insulation Floor'.",
+               "Assigning option 'None' for parameter 'Insulation Foundation Wall'.",
+               "Assigning option 'None' for parameter 'Insulation Rim Joist'.",
+               "Assigning option 'Finished, R-30' for parameter 'Insulation Roof'.",
+               "Assigning option '2ft R10 Perimeter, Vertical' for parameter 'Insulation Slab'.",
+               "Assigning option 'Wood Stud, R-11' for parameter 'Insulation Wall'.",
+               "Assigning option 'Summer = 0.7, Winter = 0.85' for parameter 'Interior Shading'.",
+               "Assigning option '100% Incandescent' for parameter 'Lighting'.",
+               "Assigning option '100% Usage' for parameter 'Lighting Interior Use'.",
+               "Assigning option '100% Usage' for parameter 'Lighting Other Use'.",
+               "Assigning option 'CR04' for parameter 'Location Region'.",
+               "Assigning option 'None' for parameter 'Mechanical Ventilation'.",
+               "Assigning option 'Chicago-Naperville-Elgin, IL-IN-WI MSA' for parameter 'Metropolitan and Micropolitan Statistical Area'.",
+               "Assigning option 'None' for parameter 'Misc Extra Refrigerator'.",
+               "Assigning option 'None' for parameter 'Misc Freezer'.",
+               "Assigning option 'None' for parameter 'Misc Gas Fireplace'.",
+               "Assigning option 'None' for parameter 'Misc Gas Grill'.",
+               "Assigning option 'None' for parameter 'Misc Gas Lighting'.",
+               "Assigning option 'None' for parameter 'Misc Hot Tub Spa'.",
+               "Assigning option 'None' for parameter 'Misc Pool'.",
+               "Assigning option 'None' for parameter 'Misc Pool Heater'.",
+               "Assigning option 'None' for parameter 'Misc Pool Pump'.",
+               "Assigning option 'Typical Efficiency' for parameter 'Misc Well Pump'.",
+               "Assigning option 'Cooling Season, 7 days/wk' for parameter 'Natural Ventilation'.",
+               "Assigning option '27' for parameter 'Neighbors'.",
+               "Assigning option '2' for parameter 'Occupants'.",
+               "Assigning option 'South' for parameter 'Orientation'.",
+               "Assigning option 'None' for parameter 'Overhangs'.",
+               "Assigning option 'IL, 03525' for parameter 'PUMA'.",
+               "Assigning option 'In metro area, principal city' for parameter 'PUMA Metro Status'.",
+               "Assigning option 'None' for parameter 'PV Orientation'.",
+               "Assigning option 'None' for parameter 'PV System Size'.",
+               "Assigning option '100%' for parameter 'Plug Load Diversity'.",
+               "Assigning option '89%' for parameter 'Plug Loads'.",
+               "Assigning option '80' for parameter 'REEDS Balancing Area'.",
+               "Assigning option 'None' for parameter 'Radiant Barrier'.",
+               "Assigning option 'Hour18' for parameter 'Range Spot Vent Hour'.",
+               "Assigning option 'EF 17.6' for parameter 'Refrigerator'.",
+               "Assigning option '100% Usage' for parameter 'Refrigerator Usage Level'.",
+               "Assigning option 'Asphalt Shingles, Medium' for parameter 'Roof Material'.",
+               "Assigning option 'None' for parameter 'Solar Hot Water'.",
+               "Assigning option 'IL' for parameter 'State'.",
+               "Assigning option '150%+' for parameter 'State Metro Median Income'.",
+               "Assigning option 'Renter' for parameter 'Tenure'.",
+               "Assigning option 'Medium' for parameter 'Usage Level'.",
+               "Assigning option 'Occupied' for parameter 'Vacancy Status'.",
+               "Assigning option '2000s' for parameter 'Vintage'.",
+               "Assigning option '2000-09' for parameter 'Vintage ACS'.",
+               "Assigning option 'Electric Standard' for parameter 'Water Heater Efficiency'.",
+               "Assigning option 'Electricity' for parameter 'Water Heater Fuel'.",
+               "Assigning option 'No' for parameter 'Water Heater In Unit'.",
+               "Assigning option 'Conditioned Mechanical Room' for parameter 'Water Heater Location'.",
+               "Assigning option 'F30 B30 L30 R30' for parameter 'Window Areas'.",
+               "Assigning option 'Double, Clear, Metal, Air' for parameter 'Windows'.",
+               "Calling ResStockArguments measure with arguments:\nsite_iecc_zone -> 5A \nsite_type -> auto \nbathroom_fans_quantity -> auto \nbathroom_fans_start_hour -> 23 \nbathroom_fans_flow_rate -> auto \nbathroom_fans_hours_in_operation -> auto \nbathroom_fans_power -> auto \nbattery_present -> false \nbattery_location -> auto \nbattery_power -> auto \nbattery_capacity -> auto \nbattery_usable_capacity -> auto \nbattery_round_trip_efficiency -> auto \ngeometry_unit_num_bedrooms -> 2 \ngeometry_unit_num_bathrooms -> auto \nceiling_fan_present -> true \nceiling_fan_label_energy_use -> auto \nceiling_fan_efficiency -> 70.4 \nceiling_fan_quantity -> 1 \nceiling_fan_cooling_setpoint_temp_offset -> 0 \nsite_city -> auto \nclothes_dryer_present -> true \nclothes_dryer_location -> auto \nclothes_dryer_fuel_type -> electricity \nclothes_dryer_efficiency_type -> CombinedEnergyFactor \nclothes_dryer_efficiency -> 2.70 \nclothes_dryer_vented_flow_rate -> auto \nclothes_dryer_usage_multiplier -> 1.0 \nclothes_washer_location -> auto \nclothes_washer_efficiency_type -> IntegratedModifiedEnergyFactor \nclothes_washer_efficiency -> 0.95 \nclothes_washer_rated_annual_kwh -> 387 \nclothes_washer_label_electric_rate -> 0.1065 \nclothes_washer_label_gas_rate -> 1.218 \nclothes_washer_label_annual_gas_cost -> 24 \nclothes_washer_label_usage -> 7.538462 \nclothes_washer_capacity -> 3.5 \nclothes_washer_present -> true \nclothes_washer_usage_multiplier -> 1.0 \ncooking_range_oven_present -> true \ncooking_range_oven_location -> auto \ncooking_range_oven_fuel_type -> electricity \ncooking_range_oven_is_induction -> false \ncooking_range_oven_is_convection -> auto \ncooking_range_oven_usage_multiplier -> 1.0 \nhvac_control_cooling_weekday_setpoint_temp -> 70 \nhvac_control_cooling_weekend_setpoint_temp -> 70 \nuse_auto_cooling_season -> false \nhvac_control_cooling_season_period -> auto \nhvac_control_cooling_weekday_setpoint_offset_magnitude -> 0 \nhvac_control_cooling_weekend_setpoint_offset_magnitude -> 0 \nhvac_control_cooling_weekday_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nhvac_control_cooling_weekend_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nschedules_space_cooling_unavailable_days -> 0 \ngeometry_corridor_position -> Double-Loaded Interior \ngeometry_corridor_width -> 10 \nsimulation_control_daylight_saving_enabled -> true \nweather_station_epw_filepath -> ../../../weather/G1700310.epw \nsite_zip_code -> 60657 \nsite_time_zone_utc_offset -> -6 \ndehumidifier_type -> none \ndehumidifier_efficiency_type -> EnergyFactor \ndehumidifier_efficiency -> 0 \ndehumidifier_capacity -> 40 \ndehumidifier_rh_setpoint -> 0.5 \ndehumidifier_fraction_dehumidification_load_served -> 1 \ndishwasher_present -> true \ndishwasher_location -> auto \ndishwasher_efficiency_type -> RatedAnnualkWh \ndishwasher_efficiency -> 318 \ndishwasher_label_electric_rate -> 0.12 \ndishwasher_label_gas_rate -> 1.09 \ndishwasher_label_annual_gas_cost -> 25 \ndishwasher_label_usage -> 4 \ndishwasher_place_setting_capacity -> 12 \ndishwasher_usage_multiplier -> 1.0 \ndoor_area -> 20 \ndoor_rvalue -> 5 \nducts_leakage_units -> Percent \nducts_supply_leakage_to_outside_value -> 0 \nducts_return_leakage_to_outside_value -> 0 \nducts_supply_insulation_r -> 0 \nducts_return_insulation_r -> 0 \nducts_supply_buried_insulation_level -> auto \nducts_return_buried_insulation_level -> auto \nducts_supply_fraction_rectangular -> auto \nducts_return_fraction_rectangular -> auto \nducts_supply_location -> conditioned space \nducts_supply_surface_area -> auto \nducts_supply_surface_area_fraction -> auto \nducts_return_location -> conditioned space \nducts_return_surface_area -> auto \nducts_return_surface_area_fraction -> auto \nducts_number_of_return_registers -> 0 \ngeometry_eaves_depth -> 2 \nmisc_plug_loads_vehicle_present -> false \nmisc_plug_loads_vehicle_annual_kwh -> 0 \nmisc_plug_loads_vehicle_usage_multiplier -> 0 \nmisc_plug_loads_vehicle_2_usage_multiplier -> 0 \ngeometry_attic_type -> FlatRoof \ngeometry_roof_type -> gable \ngeometry_roof_pitch -> 6:12 \ngeometry_unit_horizontal_location -> Middle \ngeometry_unit_level -> Middle \ngeometry_building_num_units -> 67 \ngeometry_unit_type -> apartment unit \ngeometry_average_ceiling_height -> 8 \ngeometry_unit_aspect_ratio -> 0.5556 \ngeometry_unit_height_above_grade -> auto \ngeometry_unit_cfa_bin -> 1000-1499 \ngeometry_unit_cfa -> auto \ngeometry_garage_protrusion -> 0.5 \ngeometry_foundation_type -> SlabOnGrade \ngeometry_foundation_height -> 0 \ngeometry_foundation_height_above_grade -> 0 \ngeometry_rim_joist_height -> 0 \ngeometry_garage_width -> 0 \ngeometry_garage_depth -> 24 \ngeometry_garage_position -> Right \ngeometry_num_floors_above_grade -> 4 \nwall_siding_type -> brick veneer \nwall_color -> medium dark \nexterior_finish_r -> 0.7 \nsite_ground_conductivity -> 1.4 \nsite_ground_diffusivity -> auto \nsite_soil_and_moisture_type -> auto \ncooling_system_type -> room air conditioner \ncooling_system_cooling_efficiency_type -> EER \ncooling_system_cooling_efficiency -> 10.7 \ncooling_system_cooling_capacity -> auto \ncooling_system_cooling_autosizing_limit -> auto \ncooling_system_is_ducted -> false \ncooling_system_cooling_compressor_type -> auto \ncooling_system_cooling_sensible_heat_fraction -> auto \ncooling_system_crankcase_heater_watts -> auto \ncooling_system_integrated_heating_system_capacity -> auto \ncooling_system_integrated_heating_system_efficiency_percent -> auto \ncooling_system_integrated_heating_system_fraction_heat_load_served -> auto \ncooling_system_integrated_heating_system_fuel -> auto \ncooling_system_fraction_cool_load_served -> .4 \nhvac_blower_fan_watts_per_cfm -> auto \nheating_system_type -> ElectricResistance \nheating_system_heating_efficiency -> 1 \nheating_system_heating_capacity -> auto \nheating_system_heating_autosizing_limit -> auto \nheating_system_fraction_heat_load_served -> 1 \nheating_system_has_flue_or_chimney -> auto \nheat_pump_type -> none \nheat_pump_heating_efficiency_type -> HSPF \nheat_pump_heating_efficiency -> 0 \nheat_pump_cooling_efficiency_type -> SEER \nheat_pump_cooling_efficiency -> 0 \nheat_pump_sizing_methodology -> ACCA \nheat_pump_backup_sizing_methodology -> auto \nheat_pump_heating_capacity -> auto \nheat_pump_heating_autosizing_limit -> auto \nheat_pump_fraction_heat_load_served -> 1 \nheat_pump_cooling_capacity -> auto \nheat_pump_cooling_autosizing_limit -> auto \nheat_pump_fraction_cool_load_served -> 1 \nheat_pump_backup_type -> none \nheat_pump_backup_fuel -> electricity \nheat_pump_backup_heating_efficiency -> 1 \nheat_pump_backup_heating_capacity -> auto \nheat_pump_backup_heating_autosizing_limit -> auto \ngeothermal_loop_configuration -> none \ngeothermal_loop_borefield_configuration -> auto \ngeothermal_loop_loop_flow -> auto \ngeothermal_loop_boreholes_count -> auto \ngeothermal_loop_boreholes_length -> auto \ngeothermal_loop_boreholes_spacing -> auto \ngeothermal_loop_boreholes_diameter -> auto \ngeothermal_loop_grout_type -> auto \ngeothermal_loop_pipe_type -> auto \ngeothermal_loop_pipe_diameter -> auto \nheating_system_2_type -> none \nheating_system_2_heating_efficiency -> 0 \nheating_system_2_heating_capacity -> auto \nheating_system_2_heating_autosizing_limit -> auto \nheating_system_2_has_flue_or_chimney -> auto \nheating_system_2_fuel -> electricity \nheating_system_2_fraction_heat_load_served -> 0 \nheating_system_fuel -> electricity \nhvac_control_heating_weekday_setpoint_temp -> 70 \nhvac_control_heating_weekend_setpoint_temp -> 70 \nuse_auto_heating_season -> false \nhvac_control_heating_season_period -> auto \nhvac_control_heating_weekday_setpoint_offset_magnitude -> 0 \nhvac_control_heating_weekend_setpoint_offset_magnitude -> 0 \nhvac_control_heating_weekday_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nhvac_control_heating_weekend_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nschedules_space_heating_unavailable_days -> 0 \nholiday_lighting_present -> false \nholiday_lighting_daily_kwh -> 0 \nholiday_lighting_period -> auto \nhot_water_distribution_system_type -> Standard \nhot_water_distribution_standard_piping_length -> auto \nhot_water_distribution_recirc_control_type -> no control \nhot_water_distribution_recirc_piping_length -> 0 \nhot_water_distribution_recirc_branch_piping_length -> 0 \nhot_water_distribution_recirc_pump_power -> 0 \nhot_water_distribution_pipe_r -> 0 \ndwhr_facilities_connected -> none \ndwhr_equal_flow -> true \ndwhr_efficiency -> 0.0 \nwater_fixtures_shower_low_flow -> false \nwater_fixtures_sink_low_flow -> false \nwater_fixtures_usage_multiplier -> 0.9 \nair_leakage_leakiness_description -> auto \nair_leakage_units -> ACH \nair_leakage_house_pressure -> 50 \nair_leakage_value -> 15 \nair_leakage_type -> unit total \nsite_shielding_of_home -> normal \nceiling_assembly_r -> 0 \nceiling_insulation_r -> 0 \nfloor_type -> WoodFrame \nfloor_over_foundation_assembly_r -> 0 \nfloor_over_garage_assembly_r -> 5.3 \nfoundation_wall_type -> solid concrete \nfoundation_wall_thickness -> auto \nfoundation_wall_insulation_r -> 0 \nfoundation_wall_insulation_location -> exterior \nfoundation_wall_insulation_distance_to_top -> 0 \nfoundation_wall_insulation_distance_to_bottom -> 0 \nfoundation_wall_assembly_r -> auto \nrim_joist_continuous_exterior_r -> 0 \nrim_joist_continuous_interior_r -> 0 \nrim_joist_assembly_interior_r -> 0 \nrim_joist_assembly_r -> auto \nroof_assembly_r -> 29.7 \nslab_perimeter_insulation_r -> 10 \nslab_perimeter_insulation_depth -> 2 \nslab_exterior_horizontal_insulation_r -> 0 \nslab_exterior_horizontal_insulation_width -> 0 \nslab_exterior_horizontal_insulation_depth_below_grade -> 0 \nslab_under_insulation_r -> 0 \nslab_under_insulation_width -> 0 \nslab_thickness -> auto \nslab_carpet_fraction -> auto \nslab_carpet_r -> auto \nwall_type -> WoodStud \nwall_assembly_r -> 10.3 \nwindow_interior_shading_type -> auto \nwindow_interior_shading_summer -> 0.7 \nwindow_interior_shading_winter -> 0.85 \nlighting_present -> true \nlighting_interior_fraction_cfl -> 0 \nlighting_interior_fraction_lfl -> 0 \nlighting_interior_fraction_led -> 0 \nlighting_exterior_fraction_cfl -> 0 \nlighting_exterior_fraction_lfl -> 0 \nlighting_exterior_fraction_led -> 0 \nlighting_garage_fraction_cfl -> 0 \nlighting_garage_fraction_lfl -> 0 \nlighting_garage_fraction_led -> 0 \nlighting_interior_usage_multiplier -> 1.0 \nlighting_exterior_usage_multiplier -> 1.0 \nlighting_garage_usage_multiplier -> 1.0 \nmech_vent_fan_type -> none \nmech_vent_flow_rate -> 0 \nmech_vent_hours_in_operation -> 0 \nmech_vent_recovery_efficiency_type -> Unadjusted \nmech_vent_total_recovery_efficiency -> 0 \nmech_vent_sensible_recovery_efficiency -> 0 \nmech_vent_fan_power -> 0 \nmech_vent_num_units_served -> 0 \nmech_vent_2_fan_type -> none \nmech_vent_2_flow_rate -> 0 \nmech_vent_2_hours_in_operation -> 0 \nmech_vent_2_recovery_efficiency_type -> Unadjusted \nmech_vent_2_total_recovery_efficiency -> 0 \nmech_vent_2_sensible_recovery_efficiency -> 0 \nmech_vent_2_fan_power -> 0 \nwhole_house_fan_present -> false \nwhole_house_fan_flow_rate -> 0 \nwhole_house_fan_power -> 0 \nmech_vent_shared_frac_recirculation -> auto \nmech_vent_shared_precooling_efficiency -> auto \nmech_vent_shared_precooling_fraction_cool_load_served -> auto \nmech_vent_shared_precooling_fuel -> auto \nmech_vent_shared_preheating_efficiency -> auto \nmech_vent_shared_preheating_fraction_heat_load_served -> auto \nmech_vent_shared_preheating_fuel -> auto \nextra_refrigerator_present -> false \nextra_refrigerator_location -> auto \nextra_refrigerator_rated_annual_kwh -> 0 \nextra_refrigerator_usage_multiplier -> 0 \nfreezer_present -> false \nfreezer_location -> auto \nfreezer_rated_annual_kwh -> 0 \nfreezer_usage_multiplier -> 0 \nmisc_fuel_loads_fireplace_present -> false \nmisc_fuel_loads_fireplace_fuel_type -> natural gas \nmisc_fuel_loads_fireplace_annual_therm -> 0 \nmisc_fuel_loads_fireplace_frac_sensible -> auto \nmisc_fuel_loads_fireplace_frac_latent -> auto \nmisc_fuel_loads_fireplace_usage_multiplier -> 0 \nmisc_fuel_loads_grill_present -> false \nmisc_fuel_loads_grill_fuel_type -> natural gas \nmisc_fuel_loads_grill_annual_therm -> 0 \nmisc_fuel_loads_grill_usage_multiplier -> 0 \nmisc_fuel_loads_lighting_present -> false \nmisc_fuel_loads_lighting_fuel_type -> natural gas \nmisc_fuel_loads_lighting_annual_therm -> 0 \nmisc_fuel_loads_lighting_usage_multiplier -> 0 \npermanent_spa_present -> false \npermanent_spa_pump_annual_kwh -> 0 \npermanent_spa_pump_usage_multiplier -> 0 \npermanent_spa_heater_type -> none \npermanent_spa_heater_annual_kwh -> 0 \npermanent_spa_heater_annual_therm -> 0 \npermanent_spa_heater_usage_multiplier -> 0 \npool_present -> false \npool_heater_type -> none \npool_heater_annual_kwh -> 0 \npool_heater_annual_therm -> 0 \npool_heater_usage_multiplier -> 0 \npool_pump_annual_kwh -> 0 \npool_pump_usage_multiplier -> 0 \nmisc_plug_loads_well_pump_present -> true \nmisc_plug_loads_well_pump_annual_kwh -> auto \nmisc_plug_loads_well_pump_usage_multiplier -> 1.0 \nmisc_plug_loads_well_pump_2_usage_multiplier -> 1.0 \nwindow_fraction_operable -> 0.67 \nneighbor_front_distance -> 0 \nneighbor_back_distance -> 0 \nneighbor_left_distance -> 27 \nneighbor_right_distance -> 27 \nneighbor_front_height -> auto \nneighbor_back_height -> auto \nneighbor_left_height -> auto \nneighbor_right_height -> auto \ngeometry_unit_num_occupants -> 2 \ngeneral_water_use_usage_multiplier -> auto \ngeometry_unit_orientation -> 180 \noverhangs_front_depth -> 0 \noverhangs_front_distance_to_top_of_window -> 0 \noverhangs_front_distance_to_bottom_of_window -> 4 \noverhangs_back_depth -> 0 \noverhangs_back_distance_to_top_of_window -> 0 \noverhangs_back_distance_to_bottom_of_window -> 4 \noverhangs_left_depth -> 0 \noverhangs_left_distance_to_top_of_window -> 0 \noverhangs_left_distance_to_bottom_of_window -> 4 \noverhangs_right_depth -> 0 \noverhangs_right_distance_to_top_of_window -> 0 \noverhangs_right_distance_to_bottom_of_window -> 4 \nsite_elevation -> auto \nsite_latitude -> auto \nsite_longitude -> auto \npv_system_array_azimuth -> 180 \npv_system_2_array_azimuth -> 0 \npv_system_present -> false \npv_system_module_type -> auto \npv_system_max_power_output -> 0 \npv_system_location -> roof \npv_system_tracking -> auto \npv_system_array_tilt -> roofpitch \npv_system_inverter_efficiency -> auto \npv_system_system_losses_fraction -> auto \npv_system_2_present -> false \npv_system_2_module_type -> auto \npv_system_2_max_power_output -> 0 \npv_system_2_location -> auto \npv_system_2_tracking -> auto \npv_system_2_array_tilt -> roofpitch \nmisc_plug_loads_other_2_usage_multiplier -> 1.0 \nmisc_plug_loads_television_2_usage_multiplier -> 1.0 \nmisc_plug_loads_other_annual_kwh -> auto \nmisc_plug_loads_other_frac_sensible -> 0.93 \nmisc_plug_loads_other_frac_latent -> 0.021 \nmisc_plug_loads_other_usage_multiplier -> 0.89 \nmisc_plug_loads_television_present -> true \nmisc_plug_loads_television_annual_kwh -> auto \nmisc_plug_loads_television_usage_multiplier -> 0.89 \nradiant_barrier_attic_location -> none \nradiant_barrier_grade -> 1 \nkitchen_fans_quantity -> auto \nkitchen_fans_start_hour -> 18 \nkitchen_fans_flow_rate -> auto \nkitchen_fans_hours_in_operation -> auto \nkitchen_fans_power -> auto \nrefrigerator_present -> true \nrefrigerator_location -> auto \nrefrigerator_rated_annual_kwh -> 433 \nrefrigerator_usage_multiplier -> 1.0 \nroof_material_type -> asphalt or fiberglass shingles \nroof_color -> medium \nsolar_thermal_system_type -> none \nsolar_thermal_collector_area -> 40 \nsolar_thermal_collector_loop_type -> liquid indirect \nsolar_thermal_collector_type -> single glazing black \nsolar_thermal_collector_azimuth -> 180 \nsolar_thermal_collector_tilt -> roofpitch \nsolar_thermal_collector_rated_optical_efficiency -> 0.77 \nsolar_thermal_collector_rated_thermal_losses -> 0.793 \nsolar_thermal_storage_volume -> auto \nsolar_thermal_solar_fraction -> 0 \nsite_state_code -> IL \nvintage -> 2000s \nyear_built -> auto \nwater_heater_type -> storage water heater \nwater_heater_fuel_type -> electricity \nwater_heater_tank_volume -> auto \nwater_heater_efficiency_type -> EnergyFactor \nwater_heater_efficiency -> 0.92 \nwater_heater_recovery_efficiency -> 0 \nwater_heater_standby_loss -> 0 \nwater_heater_jacket_rvalue -> 0 \nwater_heater_setpoint_temperature -> 125 \nwater_heater_heating_capacity -> auto \nwater_heater_has_flue_or_chimney -> auto \nwater_heater_num_bedrooms_served -> auto \nwater_heater_operating_mode -> auto \nwater_heater_tank_model_type -> auto \nwater_heater_usage_bin -> auto \nwater_heater_uses_desuperheater -> auto \nwater_heater_location -> other heated space \nwindow_front_wwr -> 0.30 \nwindow_back_wwr -> 0.30 \nwindow_left_wwr -> 0.30 \nwindow_right_wwr -> 0.30 \nwindow_area_front -> 0 \nwindow_area_back -> 0 \nwindow_area_left -> 0 \nwindow_area_right -> 0 \nwindow_aspect_ratio -> 1.333 \nskylight_area_front -> 0 \nskylight_area_back -> 0 \nskylight_area_left -> 0 \nskylight_area_right -> 0 \nwindow_ufactor -> 0.76 \nwindow_shgc -> 0.67 \nskylight_ufactor -> 0.37 \nskylight_shgc -> 0.3 \nskylight_storm_type -> auto \nwindow_exterior_shading_type -> auto \nwindow_exterior_shading_summer -> auto \nwindow_exterior_shading_winter -> auto \nwindow_natvent_availability -> auto \nwindow_shading_summer_season -> auto \nwindow_insect_screens -> auto \nbuilding_id -> 4"
+            ],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "buildstock_csv_path",
+                  "value" : "buildstock.csv"
+               },
+               {
+                  "name" : "building_id",
+                  "value" : 4
+               },
+               {
+                  "name" : "sample_weight",
+                  "value" : 34911755.0
+               },
+               {
+                  "name" : "simulation_control_timestep",
+                  "value" : 60
+               },
+               {
+                  "name" : "simulation_control_run_period_begin_month",
+                  "value" : 1
+               },
+               {
+                  "name" : "simulation_control_run_period_begin_day_of_month",
+                  "value" : 1
+               },
+               {
+                  "name" : "simulation_control_run_period_end_month",
+                  "value" : 12
+               },
+               {
+                  "name" : "simulation_control_run_period_end_day_of_month",
+                  "value" : 31
+               },
+               {
+                  "name" : "simulation_control_run_period_calendar_year",
+                  "value" : 2007
+               },
+               {
+                  "name" : "emissions_scenario_names",
+                  "value" : "LRMER_MidCase_15"
+               },
+               {
+                  "name" : "emissions_types",
+                  "value" : "CO2e"
+               },
+               {
+                  "name" : "emissions_electricity_folders",
+                  "value" : "data/emissions/cambium/2022/LRMER_MidCase_15"
+               },
+               {
+                  "name" : "emissions_natural_gas_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "emissions_propane_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "emissions_fuel_oil_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "emissions_wood_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_scenario_names",
+                  "value" : "Bills"
+               },
+               {
+                  "name" : "utility_bill_simple_filepaths",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_detailed_filepaths",
+                  "value" : ""
+               },
+               {
+                  "name" : "ahs_region",
+                  "value" : "CBSA Chicago-Naperville-Elgin, IL-IN-WI"
+               },
+               {
+                  "name" : "aiannh_area",
+                  "value" : "No"
+               },
+               {
+                  "name" : "ashrae_iecc_climate_zone_2004",
+                  "value" : "5A"
+               },
+               {
+                  "name" : "ashrae_iecc_climate_zone_2004_2_a_split",
+                  "value" : "5A"
+               },
+               {
+                  "name" : "area_median_income",
+                  "value" : "150%+"
+               },
+               {
+                  "name" : "bathroom_spot_vent_hour",
+                  "value" : "Hour23"
+               },
+               {
+                  "name" : "battery",
+                  "value" : "None"
+               },
+               {
+                  "name" : "bedrooms",
+                  "value" : "2"
+               },
+               {
+                  "name" : "building_america_climate_zone",
+                  "value" : "Cold"
+               },
+               {
+                  "name" : "cec_climate_zone",
+                  "value" : "None"
+               },
+               {
+                  "name" : "ceiling_fan",
+                  "value" : "Standard Efficiency"
+               },
+               {
+                  "name" : "census_division",
+                  "value" : "East North Central"
+               },
+               {
+                  "name" : "census_division_recs",
+                  "value" : "East North Central"
+               },
+               {
+                  "name" : "census_region",
+                  "value" : "Midwest"
+               },
+               {
+                  "name" : "city",
+                  "value" : "IL, Chicago"
+               },
+               {
+                  "name" : "clothes_dryer",
+                  "value" : "Electric"
+               },
+               {
+                  "name" : "clothes_dryer_usage_level",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "clothes_washer",
+                  "value" : "Standard"
+               },
+               {
+                  "name" : "clothes_washer_presence",
+                  "value" : "Yes"
+               },
+               {
+                  "name" : "clothes_washer_usage_level",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "cooking_range",
+                  "value" : "Electric Resistance"
+               },
+               {
+                  "name" : "cooking_range_usage_level",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "cooling_setpoint",
+                  "value" : "70F"
+               },
+               {
+                  "name" : "cooling_setpoint_has_offset",
+                  "value" : "No"
+               },
+               {
+                  "name" : "cooling_setpoint_offset_magnitude",
+                  "value" : "0F"
+               },
+               {
+                  "name" : "cooling_setpoint_offset_period",
+                  "value" : "None"
+               },
+               {
+                  "name" : "cooling_unavailable_days",
+                  "value" : "Never"
+               },
+               {
+                  "name" : "corridor",
+                  "value" : "Double-Loaded Interior"
+               },
+               {
+                  "name" : "county",
+                  "value" : "IL, Cook County"
+               },
+               {
+                  "name" : "county_metro_status",
+                  "value" : "Metropolitan"
+               },
+               {
+                  "name" : "county_and_puma",
+                  "value" : "G1700310, G17003525"
+               },
+               {
+                  "name" : "custom_state",
+                  "value" : "Others"
+               },
+               {
+                  "name" : "dehumidifier",
+                  "value" : "None"
+               },
+               {
+                  "name" : "dishwasher",
+                  "value" : "318 Rated kWh"
+               },
+               {
+                  "name" : "dishwasher_usage_level",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "door_area",
+                  "value" : "20 ft^2"
+               },
+               {
+                  "name" : "doors",
+                  "value" : "Fiberglass"
+               },
+               {
+                  "name" : "duct_leakage_and_insulation",
+                  "value" : "None"
+               },
+               {
+                  "name" : "duct_location",
+                  "value" : "None"
+               },
+               {
+                  "name" : "eaves",
+                  "value" : "2 ft"
+               },
+               {
+                  "name" : "electric_vehicle",
+                  "value" : "None"
+               },
+               {
+                  "name" : "energystar_climate_zone_2023",
+                  "value" : "Northern"
+               },
+               {
+                  "name" : "federal_poverty_level",
+                  "value" : "400%+"
+               },
+               {
+                  "name" : "generation_and_emissions_assessment_region",
+                  "value" : "RFCWc"
+               },
+               {
+                  "name" : "geometry_attic_type",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_building_horizontal_location_mf",
+                  "value" : "Middle"
+               },
+               {
+                  "name" : "geometry_building_horizontal_location_sfa",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_building_level_mf",
+                  "value" : "Middle"
+               },
+               {
+                  "name" : "geometry_building_number_units_mf",
+                  "value" : "67"
+               },
+               {
+                  "name" : "geometry_building_number_units_sfa",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_building_type_acs",
+                  "value" : "50 or more Unit"
+               },
+               {
+                  "name" : "geometry_building_type_height",
+                  "value" : "Multifamily with 5+ units, 4-7 stories"
+               },
+               {
+                  "name" : "geometry_building_type_recs",
+                  "value" : "Multi-Family with 5+ Units"
+               },
+               {
+                  "name" : "geometry_floor_area",
+                  "value" : "1000-1499"
+               },
+               {
+                  "name" : "geometry_floor_area_bin",
+                  "value" : "0-1499"
+               },
+               {
+                  "name" : "geometry_foundation_type",
+                  "value" : "Slab"
+               },
+               {
+                  "name" : "geometry_garage",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_space_combination",
+                  "value" : "Multi-Family with 5+ Units Middle Unit, Slab, No Attic, No Garage"
+               },
+               {
+                  "name" : "geometry_stories",
+                  "value" : "4"
+               },
+               {
+                  "name" : "geometry_stories_low_rise",
+                  "value" : "4+"
+               },
+               {
+                  "name" : "geometry_story_bin",
+                  "value" : "<8"
+               },
+               {
+                  "name" : "geometry_wall_exterior_finish",
+                  "value" : "Brick, Medium/Dark"
+               },
+               {
+                  "name" : "geometry_wall_type",
+                  "value" : "Wood Frame"
+               },
+               {
+                  "name" : "ground_thermal_conductivity",
+                  "value" : "1.4"
+               },
+               {
+                  "name" : "hvac_cooling_autosizing_factor",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_cooling_efficiency",
+                  "value" : "Room AC, EER 10.7"
+               },
+               {
+                  "name" : "hvac_cooling_partial_space_conditioning",
+                  "value" : "40% Conditioned"
+               },
+               {
+                  "name" : "hvac_cooling_type",
+                  "value" : "Room AC"
+               },
+               {
+                  "name" : "hvac_has_ducts",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_has_shared_system",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_has_zonal_electric_heating",
+                  "value" : "Yes"
+               },
+               {
+                  "name" : "hvac_heating_autosizing_factor",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_heating_efficiency",
+                  "value" : "Electric Baseboard, 100% Efficiency"
+               },
+               {
+                  "name" : "hvac_heating_type",
+                  "value" : "Non-Ducted Heating"
+               },
+               {
+                  "name" : "hvac_heating_type_and_fuel",
+                  "value" : "Electricity Baseboard"
+               },
+               {
+                  "name" : "hvac_secondary_heating_efficiency",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_secondary_heating_fuel",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_secondary_heating_partial_space_conditioning",
+                  "value" : "0%"
+               },
+               {
+                  "name" : "hvac_secondary_heating_type",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_shared_efficiencies",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_is_faulted",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_system_is_scaled",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ac_airflow",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ac_charge",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ashp_airflow",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ashp_charge",
+                  "value" : "None"
+               },
+               {
+                  "name" : "has_pv",
+                  "value" : "No"
+               },
+               {
+                  "name" : "heating_fuel",
+                  "value" : "Electricity"
+               },
+               {
+                  "name" : "heating_setpoint",
+                  "value" : "70F"
+               },
+               {
+                  "name" : "heating_setpoint_has_offset",
+                  "value" : "No"
+               },
+               {
+                  "name" : "heating_setpoint_offset_magnitude",
+                  "value" : "0F"
+               },
+               {
+                  "name" : "heating_setpoint_offset_period",
+                  "value" : "None"
+               },
+               {
+                  "name" : "heating_unavailable_days",
+                  "value" : "Never"
+               },
+               {
+                  "name" : "holiday_lighting",
+                  "value" : "No Exterior Use"
+               },
+               {
+                  "name" : "hot_water_distribution",
+                  "value" : "Uninsulated"
+               },
+               {
+                  "name" : "hot_water_fixtures",
+                  "value" : "90% Usage"
+               },
+               {
+                  "name" : "household_has_tribal_persons",
+                  "value" : "No"
+               },
+               {
+                  "name" : "iso_rto_region",
+                  "value" : "PJM"
+               },
+               {
+                  "name" : "income",
+                  "value" : "200000+"
+               },
+               {
+                  "name" : "income_recs_2015",
+                  "value" : "140000+"
+               },
+               {
+                  "name" : "income_recs_2020",
+                  "value" : "150000+"
+               },
+               {
+                  "name" : "infiltration",
+                  "value" : "15 ACH50"
+               },
+               {
+                  "name" : "insulation_ceiling",
+                  "value" : "None"
+               },
+               {
+                  "name" : "insulation_floor",
+                  "value" : "None"
+               },
+               {
+                  "name" : "insulation_foundation_wall",
+                  "value" : "None"
+               },
+               {
+                  "name" : "insulation_rim_joist",
+                  "value" : "None"
+               },
+               {
+                  "name" : "insulation_roof",
+                  "value" : "Finished, R-30"
+               },
+               {
+                  "name" : "insulation_slab",
+                  "value" : "2ft R10 Perimeter, Vertical"
+               },
+               {
+                  "name" : "insulation_wall",
+                  "value" : "Wood Stud, R-11"
+               },
+               {
+                  "name" : "interior_shading",
+                  "value" : "Summer = 0.7, Winter = 0.85"
+               },
+               {
+                  "name" : "lighting",
+                  "value" : "100% Incandescent"
+               },
+               {
+                  "name" : "lighting_interior_use",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "lighting_other_use",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "location_region",
+                  "value" : "CR04"
+               },
+               {
+                  "name" : "mechanical_ventilation",
+                  "value" : "None"
+               },
+               {
+                  "name" : "metropolitan_and_micropolitan_statistical_area",
+                  "value" : "Chicago-Naperville-Elgin, IL-IN-WI MSA"
+               },
+               {
+                  "name" : "misc_extra_refrigerator",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_freezer",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_gas_fireplace",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_gas_grill",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_gas_lighting",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_hot_tub_spa",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_pool",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_pool_heater",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_pool_pump",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_well_pump",
+                  "value" : "Typical Efficiency"
+               },
+               {
+                  "name" : "natural_ventilation",
+                  "value" : "Cooling Season, 7 days/wk"
+               },
+               {
+                  "name" : "neighbors",
+                  "value" : "27"
+               },
+               {
+                  "name" : "occupants",
+                  "value" : "2"
+               },
+               {
+                  "name" : "orientation",
+                  "value" : "South"
+               },
+               {
+                  "name" : "overhangs",
+                  "value" : "None"
+               },
+               {
+                  "name" : "puma",
+                  "value" : "IL, 03525"
+               },
+               {
+                  "name" : "puma_metro_status",
+                  "value" : "In metro area, principal city"
+               },
+               {
+                  "name" : "pv_orientation",
+                  "value" : "None"
+               },
+               {
+                  "name" : "pv_system_size",
+                  "value" : "None"
+               },
+               {
+                  "name" : "plug_load_diversity",
+                  "value" : "100%"
+               },
+               {
+                  "name" : "plug_loads",
+                  "value" : "89%"
+               },
+               {
+                  "name" : "reeds_balancing_area",
+                  "value" : "80"
+               },
+               {
+                  "name" : "radiant_barrier",
+                  "value" : "None"
+               },
+               {
+                  "name" : "range_spot_vent_hour",
+                  "value" : "Hour18"
+               },
+               {
+                  "name" : "refrigerator",
+                  "value" : "EF 17.6"
+               },
+               {
+                  "name" : "refrigerator_usage_level",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "roof_material",
+                  "value" : "Asphalt Shingles, Medium"
+               },
+               {
+                  "name" : "solar_hot_water",
+                  "value" : "None"
+               },
+               {
+                  "name" : "state",
+                  "value" : "IL"
+               },
+               {
+                  "name" : "state_metro_median_income",
+                  "value" : "150%+"
+               },
+               {
+                  "name" : "tenure",
+                  "value" : "Renter"
+               },
+               {
+                  "name" : "usage_level",
+                  "value" : "Medium"
+               },
+               {
+                  "name" : "vacancy_status",
+                  "value" : "Occupied"
+               },
+               {
+                  "name" : "vintage",
+                  "value" : "2000s"
+               },
+               {
+                  "name" : "vintage_acs",
+                  "value" : "2000-09"
+               },
+               {
+                  "name" : "water_heater_efficiency",
+                  "value" : "Electric Standard"
+               },
+               {
+                  "name" : "water_heater_fuel",
+                  "value" : "Electricity"
+               },
+               {
+                  "name" : "water_heater_in_unit",
+                  "value" : "No"
+               },
+               {
+                  "name" : "water_heater_location",
+                  "value" : "Conditioned Mechanical Room"
+               },
+               {
+                  "name" : "window_areas",
+                  "value" : "F30 B30 L30 R30"
+               },
+               {
+                  "name" : "windows",
+                  "value" : "Double, Clear, Metal, Air"
+               },
+               {
+                  "name" : "heating_unavailable_period",
+                  "value" : "Never"
+               },
+               {
+                  "name" : "cooling_unavailable_period",
+                  "value" : "Never"
+               },
+               {
+                  "name" : "emissions_electricity_units",
+                  "value" : "kg/MWh"
+               },
+               {
+                  "name" : "emissions_electricity_values_or_filepaths",
+                  "value" : "/Users/radhikar/Documents/buildstock2025/resstock2025/lib/resources/data/emissions/cambium/2022/LRMER_MidCase_15/RFCWc.csv"
+               },
+               {
+                  "name" : "emissions_fossil_fuel_units",
+                  "value" : "lb/MBtu"
+               },
+               {
+                  "name" : "utility_bill_electricity_filepaths",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_electricity_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_electricity_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_natural_gas_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_natural_gas_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_propane_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_propane_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_fuel_oil_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_fuel_oil_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_wood_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_wood_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_compensation_types",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_net_metering_annual_excess_sellback_rate_types",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_net_metering_annual_excess_sellback_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_feed_in_tariff_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_monthly_grid_connection_fee_units",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_monthly_grid_connection_fees",
+                  "value" : ""
+               },
+               {
+                  "name" : "air_leakage_to_outside_ach_50",
+                  "value" : 0.88695000000000002
+               },
+               {
+                  "name" : "weather_file_city",
+                  "value" : "Chicago Midway Ap"
+               },
+               {
+                  "name" : "weather_file_latitude",
+                  "value" : 41.780000000000001
+               },
+               {
+                  "name" : "weather_file_longitude",
+                  "value" : -87.75
+               }
+            ],
+            "step_warnings" : []
+         }
+      },
+      {
+         "arguments" : 
+         {
+            "add_component_loads" : false,
+            "debug" : false,
+            "hpxml_path" : "../../run/home.xml",
+            "output_dir" : "../../run",
+            "skip_validation" : true
+         },
+         "measure_dir_name" : "HPXMLtoOpenStudio",
+         "result" : 
+         {
+            "completed_at" : "20241108T185512Z",
+            "measure_class_name" : "HPXMLtoOpenStudio",
+            "measure_display_name" : "HPXML to OpenStudio Translator",
+            "measure_name" : "hpxm_lto_openstudio",
+            "measure_taxonomy" : "Whole Building.Space Types",
+            "measure_type" : "ModelMeasure",
+            "measure_uid" : "b1543b30-9465-45ff-ba04-1d1f85e763bc",
+            "measure_version_id" : "871ee4d0-efe2-4846-80e1-cdc147901ebd",
+            "measure_version_modified" : "20240926T051834Z",
+            "measure_xml_checksum" : "D8922A73",
+            "started_at" : "20241108T185511Z",
+            "stderr" : "",
+            "stdout" : "",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : [],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "hpxml_path",
+                  "value" : "../../run/home.xml"
+               },
+               {
+                  "name" : "output_dir",
+                  "value" : "../../run"
+               },
+               {
+                  "name" : "output_format",
+                  "value" : "csv"
+               },
+               {
+                  "name" : "annual_output_file_name",
+                  "value" : "results_annual"
+               },
+               {
+                  "name" : "design_load_details_output_file_name",
+                  "value" : "results_design_load_details"
+               },
+               {
+                  "name" : "add_component_loads",
+                  "value" : false
+               },
+               {
+                  "name" : "skip_validation",
+                  "value" : true
+               },
+               {
+                  "name" : "debug",
+                  "value" : false
+               }
+            ],
+            "step_warnings" : 
+            [
+               "The model contains existing objects and is being reset.",
+               "It is not possible to eliminate all HVAC energy use (e.g. crankcase/defrost energy) in EnergyPlus outside of an HVAC season.",
+               "Both 'ceiling_fan' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'ceiling_fan' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'ceiling_fan' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'clothes_washer' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'clothes_washer' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'clothes_washer' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'clothes_dryer' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'clothes_dryer' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'clothes_dryer' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'dishwasher' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'dishwasher' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'dishwasher' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'cooking_range' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'cooking_range' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'cooking_range' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'hot_water_fixtures' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'hot_water_fixtures' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'hot_water_fixtures' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'lighting_interior' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'lighting_interior' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'lighting_interior' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'plug_loads_tv' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'plug_loads_tv' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'plug_loads_tv' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'plug_loads_other' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'plug_loads_other' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'plug_loads_other' schedule file and monthly multipliers provided; the latter will be ignored.",
+               "Both 'occupants' schedule file and weekday fractions provided; the latter will be ignored.",
+               "Both 'occupants' schedule file and weekend fractions provided; the latter will be ignored.",
+               "Both 'occupants' schedule file and monthly multipliers provided; the latter will be ignored."
+            ]
+         }
+      },
+      {
+         "arguments" : 
+         {
+            "debug" : false
+         },
+         "measure_dir_name" : "UpgradeCosts",
+         "result" : 
+         {
+            "completed_at" : "20241108T185512Z",
+            "measure_class_name" : "UpgradeCosts",
+            "measure_display_name" : "Upgrade Costs",
+            "measure_name" : "upgrade_costs",
+            "measure_taxonomy" : "Reporting.QAQC",
+            "measure_type" : "ModelMeasure",
+            "measure_uid" : "ef51212c-acc4-48d7-9b29-cf2a5c6c4449",
+            "measure_version_id" : "7204a97f-58e6-4b3f-a5cf-f09f70cc9833",
+            "measure_version_modified" : "20240822T145249Z",
+            "measure_xml_checksum" : "B1F14CB4",
+            "started_at" : "20241108T185512Z",
+            "stderr" : "",
+            "stdout" : "",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Registering 0.0 for upgrade_cost_usd."
+            ],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "debug",
+                  "value" : false
+               },
+               {
+                  "name" : "wall_area_above_grade_conditioned_ft_2",
+                  "value" : 201.19999999999999
+               },
+               {
+                  "name" : "wall_area_above_grade_exterior_ft_2",
+                  "value" : 201.19999999999999
+               },
+               {
+                  "name" : "wall_area_below_grade_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "floor_area_conditioned_ft_2",
+                  "value" : 1138.0
+               },
+               {
+                  "name" : "floor_area_conditioned_infiltration_reduction_ft_2_delta_ach_50",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "floor_area_lighting_ft_2",
+                  "value" : 1138.0
+               },
+               {
+                  "name" : "floor_area_foundation_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "floor_area_attic_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "floor_area_attic_insulation_increase_ft_2_delta_r_value",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "roof_area_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "window_area_ft_2",
+                  "value" : 60.299999999999997
+               },
+               {
+                  "name" : "door_area_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "duct_unconditioned_surface_area_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "rim_joist_area_above_grade_exterior_ft_2",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "slab_perimeter_exposed_conditioned_ft",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "size_heating_system_primary_k_btu_h",
+                  "value" : 4.5700000000000003
+               },
+               {
+                  "name" : "size_heating_system_secondary_k_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "size_cooling_system_primary_k_btu_h",
+                  "value" : 2.1299999999999999
+               },
+               {
+                  "name" : "size_heat_pump_backup_primary_k_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "size_water_heater_gal",
+                  "value" : 30.0
+               },
+               {
+                  "name" : "flow_rate_mechanical_ventilation_cfm",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "upgrade_cost_usd",
+                  "value" : 0.0
+               }
+            ],
+            "step_warnings" : []
+         }
+      },
+      {
+         "arguments" : 
+         {
+            "add_timeseries_dst_column" : true,
+            "add_timeseries_utc_column" : true,
+            "include_annual_component_loads" : true,
+            "include_annual_emission_end_uses" : true,
+            "include_annual_emission_fuels" : true,
+            "include_annual_emissions" : true,
+            "include_annual_end_use_consumptions" : true,
+            "include_annual_fuel_consumptions" : true,
+            "include_annual_hot_water_uses" : true,
+            "include_annual_hvac_summary" : true,
+            "include_annual_peak_fuels" : true,
+            "include_annual_peak_loads" : true,
+            "include_annual_resilience" : true,
+            "include_annual_system_use_consumptions" : false,
+            "include_annual_total_consumptions" : true,
+            "include_annual_total_loads" : true,
+            "include_annual_unmet_hours" : true,
+            "include_timeseries_airflows" : true,
+            "include_timeseries_component_loads" : true,
+            "include_timeseries_emission_end_uses" : true,
+            "include_timeseries_emission_fuels" : true,
+            "include_timeseries_emissions" : true,
+            "include_timeseries_end_use_consumptions" : true,
+            "include_timeseries_fuel_consumptions" : true,
+            "include_timeseries_hot_water_uses" : true,
+            "include_timeseries_resilience" : true,
+            "include_timeseries_system_use_consumptions" : false,
+            "include_timeseries_total_consumptions" : true,
+            "include_timeseries_total_loads" : true,
+            "include_timeseries_unmet_hours" : true,
+            "include_timeseries_weather" : true,
+            "include_timeseries_zone_temperatures" : true,
+            "timeseries_frequency" : "hourly",
+            "timeseries_num_decimal_places" : 3,
+            "timeseries_timestamp_convention" : "end",
+            "user_output_variables" : ""
+         },
+         "measure_dir_name" : "ReportSimulationOutput",
+         "result" : 
+         {
+            "completed_at" : "20241108T185514Z",
+            "measure_class_name" : "ReportSimulationOutput",
+            "measure_display_name" : "HPXML Simulation Output Report",
+            "measure_name" : "report_simulation_output",
+            "measure_taxonomy" : "Reporting.QAQC",
+            "measure_type" : "ReportingMeasure",
+            "measure_uid" : "df9d170c-c21a-4130-866d-0d46b06073fd",
+            "measure_version_id" : "29a26cd3-0ea4-4c33-9d29-e80f2f58b8f5",
+            "measure_version_modified" : "20240926T045904Z",
+            "measure_xml_checksum" : "9BF1E6AC",
+            "started_at" : "20241108T185513Z",
+            "stderr" : "",
+            "stdout" : "",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Wrote annual output results to /Users/radhikar/Documents/buildstock2025/resstock2025/project_national/national_upgrades/simulation_output/up00/bldg0000004/run/results_annual.csv.",
+               "Registering 28.701 for energy_use_total_m_btu.",
+               "Registering 28.701 for energy_use_net_m_btu.",
+               "Registering 28.701 for fuel_use_electricity_total_m_btu.",
+               "Registering 28.701 for fuel_use_electricity_net_m_btu.",
+               "Registering 0.0 for fuel_use_natural_gas_total_m_btu.",
+               "Registering 0.0 for fuel_use_fuel_oil_total_m_btu.",
+               "Registering 0.0 for fuel_use_propane_total_m_btu.",
+               "Registering 0.0 for fuel_use_wood_cord_total_m_btu.",
+               "Registering 0.0 for fuel_use_wood_pellets_total_m_btu.",
+               "Registering 0.0 for fuel_use_coal_total_m_btu.",
+               "Registering 2.26 for end_use_electricity_heating_m_btu.",
+               "Registering 0.0 for end_use_electricity_heating_fans_pumps_m_btu.",
+               "Registering 0.0 for end_use_electricity_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_electricity_heating_heat_pump_backup_fans_pumps_m_btu.",
+               "Registering 1.324 for end_use_electricity_cooling_m_btu.",
+               "Registering 0.0 for end_use_electricity_cooling_fans_pumps_m_btu.",
+               "Registering 7.756 for end_use_electricity_hot_water_m_btu.",
+               "Registering 0.0 for end_use_electricity_hot_water_recirc_pump_m_btu.",
+               "Registering 0.0 for end_use_electricity_hot_water_solar_thermal_pump_m_btu.",
+               "Registering 4.999 for end_use_electricity_lighting_interior_m_btu.",
+               "Registering 0.0 for end_use_electricity_lighting_garage_m_btu.",
+               "Registering 0.535 for end_use_electricity_lighting_exterior_m_btu.",
+               "Registering 0.056 for end_use_electricity_mech_vent_m_btu.",
+               "Registering 0.0 for end_use_electricity_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_electricity_mech_vent_precooling_m_btu.",
+               "Registering 0.0 for end_use_electricity_whole_house_fan_m_btu.",
+               "Registering 1.382 for end_use_electricity_refrigerator_m_btu.",
+               "Registering 0.0 for end_use_electricity_freezer_m_btu.",
+               "Registering 0.0 for end_use_electricity_dehumidifier_m_btu.",
+               "Registering 0.324 for end_use_electricity_dishwasher_m_btu.",
+               "Registering 0.094 for end_use_electricity_clothes_washer_m_btu.",
+               "Registering 2.522 for end_use_electricity_clothes_dryer_m_btu.",
+               "Registering 1.345 for end_use_electricity_range_oven_m_btu.",
+               "Registering 0.186 for end_use_electricity_ceiling_fan_m_btu.",
+               "Registering 1.45 for end_use_electricity_television_m_btu.",
+               "Registering 3.398 for end_use_electricity_plug_loads_m_btu.",
+               "Registering 0.0 for end_use_electricity_electric_vehicle_charging_m_btu.",
+               "Registering 1.069 for end_use_electricity_well_pump_m_btu.",
+               "Registering 0.0 for end_use_electricity_pool_heater_m_btu.",
+               "Registering 0.0 for end_use_electricity_pool_pump_m_btu.",
+               "Registering 0.0 for end_use_electricity_permanent_spa_heater_m_btu.",
+               "Registering 0.0 for end_use_electricity_permanent_spa_pump_m_btu.",
+               "Registering 0.0 for end_use_electricity_pv_m_btu.",
+               "Registering 0.0 for end_use_electricity_generator_m_btu.",
+               "Registering 0.0 for end_use_electricity_battery_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_heating_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_hot_water_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_clothes_dryer_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_range_oven_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_pool_heater_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_permanent_spa_heater_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_grill_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_lighting_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_fireplace_m_btu.",
+               "Registering 0.0 for end_use_natural_gas_generator_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_heating_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_hot_water_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_clothes_dryer_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_range_oven_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_grill_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_lighting_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_fireplace_m_btu.",
+               "Registering 0.0 for end_use_fuel_oil_generator_m_btu.",
+               "Registering 0.0 for end_use_propane_heating_m_btu.",
+               "Registering 0.0 for end_use_propane_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_propane_hot_water_m_btu.",
+               "Registering 0.0 for end_use_propane_clothes_dryer_m_btu.",
+               "Registering 0.0 for end_use_propane_range_oven_m_btu.",
+               "Registering 0.0 for end_use_propane_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_propane_grill_m_btu.",
+               "Registering 0.0 for end_use_propane_lighting_m_btu.",
+               "Registering 0.0 for end_use_propane_fireplace_m_btu.",
+               "Registering 0.0 for end_use_propane_generator_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_heating_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_hot_water_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_clothes_dryer_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_range_oven_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_grill_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_lighting_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_fireplace_m_btu.",
+               "Registering 0.0 for end_use_wood_cord_generator_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_heating_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_hot_water_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_clothes_dryer_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_range_oven_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_grill_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_lighting_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_fireplace_m_btu.",
+               "Registering 0.0 for end_use_wood_pellets_generator_m_btu.",
+               "Registering 0.0 for end_use_coal_heating_m_btu.",
+               "Registering 0.0 for end_use_coal_heating_heat_pump_backup_m_btu.",
+               "Registering 0.0 for end_use_coal_hot_water_m_btu.",
+               "Registering 0.0 for end_use_coal_clothes_dryer_m_btu.",
+               "Registering 0.0 for end_use_coal_range_oven_m_btu.",
+               "Registering 0.0 for end_use_coal_mech_vent_preheating_m_btu.",
+               "Registering 0.0 for end_use_coal_grill_m_btu.",
+               "Registering 0.0 for end_use_coal_lighting_m_btu.",
+               "Registering 0.0 for end_use_coal_fireplace_m_btu.",
+               "Registering 0.0 for end_use_coal_generator_m_btu.",
+               "Registering 7123.17 for emissions_co_2_e_lrmer_mid_case_15_total_lb.",
+               "Registering 7123.17 for emissions_co_2_e_lrmer_mid_case_15_net_lb.",
+               "Registering 7123.17 for emissions_co_2_e_lrmer_mid_case_15_electricity_total_lb.",
+               "Registering 7123.17 for emissions_co_2_e_lrmer_mid_case_15_electricity_net_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_total_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_total_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_total_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_total_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_total_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_total_lb.",
+               "Registering 683.88 for emissions_co_2_e_lrmer_mid_case_15_electricity_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_heating_fans_pumps_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_heating_heat_pump_backup_fans_pumps_lb.",
+               "Registering 299.03 for emissions_co_2_e_lrmer_mid_case_15_electricity_cooling_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_cooling_fans_pumps_lb.",
+               "Registering 1857.81 for emissions_co_2_e_lrmer_mid_case_15_electricity_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_hot_water_recirc_pump_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_hot_water_solar_thermal_pump_lb.",
+               "Registering 1263.47 for emissions_co_2_e_lrmer_mid_case_15_electricity_lighting_interior_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_lighting_garage_lb.",
+               "Registering 141.84 for emissions_co_2_e_lrmer_mid_case_15_electricity_lighting_exterior_lb.",
+               "Registering 15.77 for emissions_co_2_e_lrmer_mid_case_15_electricity_mech_vent_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_mech_vent_precooling_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_whole_house_fan_lb.",
+               "Registering 339.65 for emissions_co_2_e_lrmer_mid_case_15_electricity_refrigerator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_freezer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_dehumidifier_lb.",
+               "Registering 79.43 for emissions_co_2_e_lrmer_mid_case_15_electricity_dishwasher_lb.",
+               "Registering 20.78 for emissions_co_2_e_lrmer_mid_case_15_electricity_clothes_washer_lb.",
+               "Registering 574.41 for emissions_co_2_e_lrmer_mid_case_15_electricity_clothes_dryer_lb.",
+               "Registering 296.07 for emissions_co_2_e_lrmer_mid_case_15_electricity_range_oven_lb.",
+               "Registering 47.48 for emissions_co_2_e_lrmer_mid_case_15_electricity_ceiling_fan_lb.",
+               "Registering 385.11 for emissions_co_2_e_lrmer_mid_case_15_electricity_television_lb.",
+               "Registering 844.05 for emissions_co_2_e_lrmer_mid_case_15_electricity_plug_loads_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_electric_vehicle_charging_lb.",
+               "Registering 274.39 for emissions_co_2_e_lrmer_mid_case_15_electricity_well_pump_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_pool_heater_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_pool_pump_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_permanent_spa_heater_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_permanent_spa_pump_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_pv_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_generator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_electricity_battery_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_clothes_dryer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_range_oven_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_pool_heater_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_permanent_spa_heater_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_grill_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_lighting_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_fireplace_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_natural_gas_generator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_clothes_dryer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_range_oven_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_grill_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_lighting_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_fireplace_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_fuel_oil_generator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_clothes_dryer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_range_oven_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_grill_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_lighting_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_fireplace_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_propane_generator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_clothes_dryer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_range_oven_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_grill_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_lighting_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_fireplace_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_cord_generator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_clothes_dryer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_range_oven_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_grill_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_lighting_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_fireplace_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_wood_pellets_generator_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_heating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_heating_heat_pump_backup_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_hot_water_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_clothes_dryer_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_range_oven_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_mech_vent_preheating_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_grill_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_lighting_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_fireplace_lb.",
+               "Registering 0.0 for emissions_co_2_e_lrmer_mid_case_15_coal_generator_lb.",
+               "Registering 2.26 for load_heating_delivered_m_btu.",
+               "Registering 0.0 for load_heating_heat_pump_backup_m_btu.",
+               "Registering 3.468 for load_cooling_delivered_m_btu.",
+               "Registering 6.713 for load_hot_water_delivered_m_btu.",
+               "Registering 1.041 for load_hot_water_tank_losses_m_btu.",
+               "Registering 0.0 for load_hot_water_desuperheater_m_btu.",
+               "Registering 0.0 for load_hot_water_solar_thermal_m_btu.",
+               "Registering 133.0 for unmet_hours_heating_hr.",
+               "Registering 24.0 for unmet_hours_cooling_hr.",
+               "Registering 11103.6 for peak_electricity_winter_total_w.",
+               "Registering 7959.6 for peak_electricity_summer_total_w.",
+               "Registering 11103.6 for peak_electricity_annual_total_w.",
+               "Registering 4.566 for peak_load_heating_delivered_k_btu_hr.",
+               "Registering 9.023 for peak_load_cooling_delivered_k_btu_hr.",
+               "Registering 1296.7 for hot_water_clothes_washer_gal.",
+               "Registering 707.3 for hot_water_dishwasher_gal.",
+               "Registering 7373.8 for hot_water_fixtures_gal.",
+               "Registering 2650.4 for hot_water_distribution_waste_gal.",
+               "Registering 0.0 for resilience_battery_hr.",
+               "Registering 4566.0 for hvac_capacity_heating_btu_h.",
+               "Registering 2132.0 for hvac_capacity_cooling_btu_h.",
+               "Registering 0.0 for hvac_capacity_heat_pump_backup_btu_h.",
+               "Registering 4.28 for hvac_design_temperature_heating_f.",
+               "Registering 89.6 for hvac_design_temperature_cooling_f.",
+               "Registering 4566.0 for hvac_design_load_heating_total_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_ducts_btu_h.",
+               "Registering 3012.0 for hvac_design_load_heating_windows_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_skylights_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_doors_btu_h.",
+               "Registering 842.0 for hvac_design_load_heating_walls_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_roofs_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_floors_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_slabs_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_ceilings_btu_h.",
+               "Registering 712.0 for hvac_design_load_heating_infiltration_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_ventilation_btu_h.",
+               "Registering 0.0 for hvac_design_load_heating_piping_btu_h.",
+               "Registering 4408.0 for hvac_design_load_cooling_sensible_total_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_ducts_btu_h.",
+               "Registering 996.0 for hvac_design_load_cooling_sensible_windows_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_skylights_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_doors_btu_h.",
+               "Registering 245.0 for hvac_design_load_cooling_sensible_walls_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_roofs_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_floors_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_slabs_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_ceilings_btu_h.",
+               "Registering 77.0 for hvac_design_load_cooling_sensible_infiltration_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_ventilation_btu_h.",
+               "Registering 3090.0 for hvac_design_load_cooling_sensible_internal_gains_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_blower_heat_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_sensible_aed_excursion_btu_h.",
+               "Registering 709.0 for hvac_design_load_cooling_latent_total_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_latent_ducts_btu_h.",
+               "Registering 109.0 for hvac_design_load_cooling_latent_infiltration_btu_h.",
+               "Registering 0.0 for hvac_design_load_cooling_latent_ventilation_btu_h.",
+               "Registering 600.0 for hvac_design_load_cooling_latent_internal_gains_btu_h.",
+               "Registering 0 for hvac_geothermal_loop_borehole_trench_count.",
+               "Registering 0.0 for hvac_geothermal_loop_borehole_trench_length_ft.",
+               "Wrote timeseries output results to /Users/radhikar/Documents/buildstock2025/resstock2025/project_national/national_upgrades/simulation_output/up00/bldg0000004/run/results_timeseries.csv."
+            ],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "output_format",
+                  "value" : "csv"
+               },
+               {
+                  "name" : "include_annual_total_consumptions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_fuel_consumptions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_end_use_consumptions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_system_use_consumptions",
+                  "value" : false
+               },
+               {
+                  "name" : "include_annual_emissions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_emission_fuels",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_emission_end_uses",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_total_loads",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_unmet_hours",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_peak_fuels",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_peak_loads",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_component_loads",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_hot_water_uses",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_hvac_summary",
+                  "value" : true
+               },
+               {
+                  "name" : "include_annual_resilience",
+                  "value" : true
+               },
+               {
+                  "name" : "timeseries_frequency",
+                  "value" : "hourly"
+               },
+               {
+                  "name" : "include_timeseries_total_consumptions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_fuel_consumptions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_end_use_consumptions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_system_use_consumptions",
+                  "value" : false
+               },
+               {
+                  "name" : "include_timeseries_emissions",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_emission_fuels",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_emission_end_uses",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_hot_water_uses",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_total_loads",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_component_loads",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_unmet_hours",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_zone_temperatures",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_airflows",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_weather",
+                  "value" : true
+               },
+               {
+                  "name" : "include_timeseries_resilience",
+                  "value" : true
+               },
+               {
+                  "name" : "timeseries_timestamp_convention",
+                  "value" : "end"
+               },
+               {
+                  "name" : "timeseries_num_decimal_places",
+                  "value" : 3
+               },
+               {
+                  "name" : "add_timeseries_dst_column",
+                  "value" : true
+               },
+               {
+                  "name" : "add_timeseries_utc_column",
+                  "value" : true
+               },
+               {
+                  "name" : "user_output_variables",
+                  "value" : ""
+               },
+               {
+                  "name" : "energy_use_total_m_btu",
+                  "value" : 28.701000000000001
+               },
+               {
+                  "name" : "energy_use_net_m_btu",
+                  "value" : 28.701000000000001
+               },
+               {
+                  "name" : "fuel_use_electricity_total_m_btu",
+                  "value" : 28.701000000000001
+               },
+               {
+                  "name" : "fuel_use_electricity_net_m_btu",
+                  "value" : 28.701000000000001
+               },
+               {
+                  "name" : "fuel_use_natural_gas_total_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "fuel_use_fuel_oil_total_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "fuel_use_propane_total_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "fuel_use_wood_cord_total_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "fuel_use_wood_pellets_total_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "fuel_use_coal_total_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_heating_m_btu",
+                  "value" : 2.2599999999999998
+               },
+               {
+                  "name" : "end_use_electricity_heating_fans_pumps_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_heating_heat_pump_backup_fans_pumps_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_cooling_m_btu",
+                  "value" : 1.3240000000000001
+               },
+               {
+                  "name" : "end_use_electricity_cooling_fans_pumps_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_hot_water_m_btu",
+                  "value" : 7.7560000000000002
+               },
+               {
+                  "name" : "end_use_electricity_hot_water_recirc_pump_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_hot_water_solar_thermal_pump_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_lighting_interior_m_btu",
+                  "value" : 4.9989999999999997
+               },
+               {
+                  "name" : "end_use_electricity_lighting_garage_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_lighting_exterior_m_btu",
+                  "value" : 0.53500000000000003
+               },
+               {
+                  "name" : "end_use_electricity_mech_vent_m_btu",
+                  "value" : 0.056000000000000001
+               },
+               {
+                  "name" : "end_use_electricity_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_mech_vent_precooling_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_whole_house_fan_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_refrigerator_m_btu",
+                  "value" : 1.3819999999999999
+               },
+               {
+                  "name" : "end_use_electricity_freezer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_dehumidifier_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_dishwasher_m_btu",
+                  "value" : 0.32400000000000001
+               },
+               {
+                  "name" : "end_use_electricity_clothes_washer_m_btu",
+                  "value" : 0.094
+               },
+               {
+                  "name" : "end_use_electricity_clothes_dryer_m_btu",
+                  "value" : 2.5219999999999998
+               },
+               {
+                  "name" : "end_use_electricity_range_oven_m_btu",
+                  "value" : 1.345
+               },
+               {
+                  "name" : "end_use_electricity_ceiling_fan_m_btu",
+                  "value" : 0.186
+               },
+               {
+                  "name" : "end_use_electricity_television_m_btu",
+                  "value" : 1.45
+               },
+               {
+                  "name" : "end_use_electricity_plug_loads_m_btu",
+                  "value" : 3.3980000000000001
+               },
+               {
+                  "name" : "end_use_electricity_electric_vehicle_charging_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_well_pump_m_btu",
+                  "value" : 1.069
+               },
+               {
+                  "name" : "end_use_electricity_pool_heater_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_pool_pump_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_permanent_spa_heater_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_permanent_spa_pump_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_pv_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_electricity_battery_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_heating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_hot_water_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_clothes_dryer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_range_oven_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_pool_heater_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_permanent_spa_heater_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_grill_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_lighting_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_fireplace_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_natural_gas_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_heating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_hot_water_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_clothes_dryer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_range_oven_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_grill_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_lighting_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_fireplace_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_fuel_oil_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_heating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_hot_water_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_clothes_dryer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_range_oven_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_grill_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_lighting_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_fireplace_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_propane_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_heating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_hot_water_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_clothes_dryer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_range_oven_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_grill_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_lighting_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_fireplace_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_cord_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_heating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_hot_water_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_clothes_dryer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_range_oven_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_grill_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_lighting_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_fireplace_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_wood_pellets_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_heating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_hot_water_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_clothes_dryer_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_range_oven_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_mech_vent_preheating_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_grill_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_lighting_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_fireplace_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "end_use_coal_generator_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_total_lb",
+                  "value" : 7123.1700000000001
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_net_lb",
+                  "value" : 7123.1700000000001
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_total_lb",
+                  "value" : 7123.1700000000001
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_net_lb",
+                  "value" : 7123.1700000000001
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_total_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_total_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_total_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_total_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_total_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_total_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_heating_lb",
+                  "value" : 683.88
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_heating_fans_pumps_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_heating_heat_pump_backup_fans_pumps_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_cooling_lb",
+                  "value" : 299.02999999999997
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_cooling_fans_pumps_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_hot_water_lb",
+                  "value" : 1857.8099999999999
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_hot_water_recirc_pump_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_hot_water_solar_thermal_pump_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_lighting_interior_lb",
+                  "value" : 1263.47
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_lighting_garage_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_lighting_exterior_lb",
+                  "value" : 141.84
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_mech_vent_lb",
+                  "value" : 15.77
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_mech_vent_precooling_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_whole_house_fan_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_refrigerator_lb",
+                  "value" : 339.64999999999998
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_freezer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_dehumidifier_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_dishwasher_lb",
+                  "value" : 79.430000000000007
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_clothes_washer_lb",
+                  "value" : 20.780000000000001
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_clothes_dryer_lb",
+                  "value" : 574.40999999999997
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_range_oven_lb",
+                  "value" : 296.06999999999999
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_ceiling_fan_lb",
+                  "value" : 47.479999999999997
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_television_lb",
+                  "value" : 385.11000000000001
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_plug_loads_lb",
+                  "value" : 844.04999999999995
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_electric_vehicle_charging_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_well_pump_lb",
+                  "value" : 274.38999999999999
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_pool_heater_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_pool_pump_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_permanent_spa_heater_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_permanent_spa_pump_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_pv_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_electricity_battery_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_heating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_hot_water_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_clothes_dryer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_range_oven_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_pool_heater_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_permanent_spa_heater_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_grill_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_lighting_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_fireplace_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_natural_gas_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_heating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_hot_water_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_clothes_dryer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_range_oven_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_grill_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_lighting_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_fireplace_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_fuel_oil_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_heating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_hot_water_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_clothes_dryer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_range_oven_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_grill_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_lighting_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_fireplace_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_propane_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_heating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_hot_water_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_clothes_dryer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_range_oven_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_grill_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_lighting_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_fireplace_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_cord_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_heating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_hot_water_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_clothes_dryer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_range_oven_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_grill_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_lighting_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_fireplace_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_wood_pellets_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_heating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_heating_heat_pump_backup_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_hot_water_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_clothes_dryer_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_range_oven_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_mech_vent_preheating_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_grill_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_lighting_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_fireplace_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "emissions_co_2_e_lrmer_mid_case_15_coal_generator_lb",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "load_heating_delivered_m_btu",
+                  "value" : 2.2599999999999998
+               },
+               {
+                  "name" : "load_heating_heat_pump_backup_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "load_cooling_delivered_m_btu",
+                  "value" : 3.468
+               },
+               {
+                  "name" : "load_hot_water_delivered_m_btu",
+                  "value" : 6.7130000000000001
+               },
+               {
+                  "name" : "load_hot_water_tank_losses_m_btu",
+                  "value" : 1.0409999999999999
+               },
+               {
+                  "name" : "load_hot_water_desuperheater_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "load_hot_water_solar_thermal_m_btu",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "unmet_hours_heating_hr",
+                  "value" : 133.0
+               },
+               {
+                  "name" : "unmet_hours_cooling_hr",
+                  "value" : 24.0
+               },
+               {
+                  "name" : "peak_electricity_winter_total_w",
+                  "value" : 11103.6
+               },
+               {
+                  "name" : "peak_electricity_summer_total_w",
+                  "value" : 7959.6000000000004
+               },
+               {
+                  "name" : "peak_electricity_annual_total_w",
+                  "value" : 11103.6
+               },
+               {
+                  "name" : "peak_load_heating_delivered_k_btu_hr",
+                  "value" : 4.5659999999999998
+               },
+               {
+                  "name" : "peak_load_cooling_delivered_k_btu_hr",
+                  "value" : 9.0229999999999997
+               },
+               {
+                  "name" : "hot_water_clothes_washer_gal",
+                  "value" : 1296.7
+               },
+               {
+                  "name" : "hot_water_dishwasher_gal",
+                  "value" : 707.29999999999995
+               },
+               {
+                  "name" : "hot_water_fixtures_gal",
+                  "value" : 7373.8000000000002
+               },
+               {
+                  "name" : "hot_water_distribution_waste_gal",
+                  "value" : 2650.4000000000001
+               },
+               {
+                  "name" : "resilience_battery_hr",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_capacity_heating_btu_h",
+                  "value" : 4566.0
+               },
+               {
+                  "name" : "hvac_capacity_cooling_btu_h",
+                  "value" : 2132.0
+               },
+               {
+                  "name" : "hvac_capacity_heat_pump_backup_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_temperature_heating_f",
+                  "value" : 4.2800000000000002
+               },
+               {
+                  "name" : "hvac_design_temperature_cooling_f",
+                  "value" : 89.599999999999994
+               },
+               {
+                  "name" : "hvac_design_load_heating_total_btu_h",
+                  "value" : 4566.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_ducts_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_windows_btu_h",
+                  "value" : 3012.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_skylights_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_doors_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_walls_btu_h",
+                  "value" : 842.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_roofs_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_floors_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_slabs_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_ceilings_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_infiltration_btu_h",
+                  "value" : 712.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_ventilation_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_heating_piping_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_total_btu_h",
+                  "value" : 4408.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_ducts_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_windows_btu_h",
+                  "value" : 996.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_skylights_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_doors_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_walls_btu_h",
+                  "value" : 245.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_roofs_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_floors_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_slabs_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_ceilings_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_infiltration_btu_h",
+                  "value" : 77.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_ventilation_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_internal_gains_btu_h",
+                  "value" : 3090.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_blower_heat_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_sensible_aed_excursion_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_latent_total_btu_h",
+                  "value" : 709.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_latent_ducts_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_latent_infiltration_btu_h",
+                  "value" : 109.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_latent_ventilation_btu_h",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "hvac_design_load_cooling_latent_internal_gains_btu_h",
+                  "value" : 600.0
+               },
+               {
+                  "name" : "hvac_geothermal_loop_borehole_trench_count",
+                  "value" : 0
+               },
+               {
+                  "name" : "hvac_geothermal_loop_borehole_trench_length_ft",
+                  "value" : 0.0
+               }
+            ],
+            "step_warnings" : []
+         }
+      },
+      {
+         "arguments" : 
+         {
+            "include_annual_bills" : false,
+            "include_monthly_bills" : false,
+            "register_annual_bills" : true,
+            "register_monthly_bills" : false
+         },
+         "measure_dir_name" : "ReportUtilityBills",
+         "result" : 
+         {
+            "completed_at" : "20241108T185514Z",
+            "measure_class_name" : "ReportUtilityBills",
+            "measure_display_name" : "Utility Bills Report",
+            "measure_name" : "report_utility_bills",
+            "measure_taxonomy" : "Reporting.QAQC",
+            "measure_type" : "ReportingMeasure",
+            "measure_uid" : "ca88a425-e59a-4bc4-af51-c7e7d1e960fe",
+            "measure_version_id" : "dd47ff13-28e8-414a-abb6-940ee40e7c55",
+            "measure_version_modified" : "20240926T050427Z",
+            "measure_xml_checksum" : "15BF4E57",
+            "started_at" : "20241108T185514Z",
+            "stderr" : "",
+            "stdout" : "",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Registering 1328.34 for bills_total_usd.",
+               "Registering 144.0 for bills_electricity_fixed_usd.",
+               "Registering 1184.34 for bills_electricity_energy_usd.",
+               "Registering 0.0 for bills_electricity_pv_credit_usd.",
+               "Registering 1328.34 for bills_electricity_total_usd.",
+               "Registering 0.0 for bills_natural_gas_fixed_usd.",
+               "Registering 0.0 for bills_natural_gas_energy_usd.",
+               "Registering 0.0 for bills_natural_gas_total_usd.",
+               "Registering 0.0 for bills_fuel_oil_fixed_usd.",
+               "Registering 0.0 for bills_fuel_oil_energy_usd.",
+               "Registering 0.0 for bills_fuel_oil_total_usd.",
+               "Registering 0.0 for bills_propane_fixed_usd.",
+               "Registering 0.0 for bills_propane_energy_usd.",
+               "Registering 0.0 for bills_propane_total_usd.",
+               "Registering 0.0 for bills_wood_cord_fixed_usd.",
+               "Registering 0.0 for bills_wood_cord_energy_usd.",
+               "Registering 0.0 for bills_wood_cord_total_usd.",
+               "Registering 0.0 for bills_wood_pellets_fixed_usd.",
+               "Registering 0.0 for bills_wood_pellets_energy_usd.",
+               "Registering 0.0 for bills_wood_pellets_total_usd.",
+               "Registering 0.0 for bills_coal_fixed_usd.",
+               "Registering 0.0 for bills_coal_energy_usd.",
+               "Registering 0.0 for bills_coal_total_usd."
+            ],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "output_format",
+                  "value" : "csv"
+               },
+               {
+                  "name" : "include_annual_bills",
+                  "value" : false
+               },
+               {
+                  "name" : "include_monthly_bills",
+                  "value" : false
+               },
+               {
+                  "name" : "monthly_timestamp_convention",
+                  "value" : "start"
+               },
+               {
+                  "name" : "register_annual_bills",
+                  "value" : true
+               },
+               {
+                  "name" : "register_monthly_bills",
+                  "value" : false
+               },
+               {
+                  "name" : "bills_total_usd",
+                  "value" : 1328.3399999999999
+               },
+               {
+                  "name" : "bills_electricity_fixed_usd",
+                  "value" : 144.0
+               },
+               {
+                  "name" : "bills_electricity_energy_usd",
+                  "value" : 1184.3399999999999
+               },
+               {
+                  "name" : "bills_electricity_pv_credit_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_electricity_total_usd",
+                  "value" : 1328.3399999999999
+               },
+               {
+                  "name" : "bills_natural_gas_fixed_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_natural_gas_energy_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_natural_gas_total_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_fuel_oil_fixed_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_fuel_oil_energy_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_fuel_oil_total_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_propane_fixed_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_propane_energy_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_propane_total_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_wood_cord_fixed_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_wood_cord_energy_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_wood_cord_total_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_wood_pellets_fixed_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_wood_pellets_energy_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_wood_pellets_total_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_coal_fixed_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_coal_energy_usd",
+                  "value" : 0.0
+               },
+               {
+                  "name" : "bills_coal_total_usd",
+                  "value" : 0.0
+               }
+            ],
+            "step_warnings" : []
+         }
+      },
+      {
+         "arguments" : {},
+         "measure_dir_name" : "QOIReport",
+         "result" : 
+         {
+            "completed_at" : "20241108T185514Z",
+            "measure_class_name" : "QOIReport",
+            "measure_display_name" : "QOI Report",
+            "measure_name" : "qoi_report",
+            "measure_taxonomy" : "Reporting.QAQC",
+            "measure_type" : "ReportingMeasure",
+            "measure_uid" : "be0bfc7f-25c6-435a-9acd-2f5fa8ac817d",
+            "measure_version_id" : "88e75066-1ab0-4415-8f5b-1891c9d18f34",
+            "measure_version_modified" : "20240822T151507Z",
+            "measure_xml_checksum" : "15BF4E57",
+            "started_at" : "20241108T185514Z",
+            "stderr" : "",
+            "stdout" : "",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Registering 11.1 for qoi_hourly_peak_magnitude_use_kw.",
+               "Registering 8384.0 for qoi_hourly_peak_magnitude_timing_hour.",
+               "Registering 0.32 for qoi_average_minimum_daily_use_heating_kw.",
+               "Registering 0.28 for qoi_average_minimum_daily_use_cooling_kw.",
+               "Registering 0.24 for qoi_average_minimum_daily_use_overlap_kw.",
+               "Registering 3.55 for qoi_average_maximum_daily_use_heating_kw.",
+               "Registering 2.96 for qoi_average_maximum_daily_use_cooling_kw.",
+               "Registering 3.24 for qoi_average_maximum_daily_use_overlap_kw.",
+               "Registering 15.38 for qoi_average_maximum_daily_timing_heating_hour.",
+               "Registering 14.92 for qoi_average_maximum_daily_timing_cooling_hour.",
+               "Registering 16.09 for qoi_average_maximum_daily_timing_overlap_hour.",
+               "Registering 8.62 for qoi_average_of_top_ten_highest_peaks_use_heating_kw.",
+               "Registering 6.12 for qoi_average_of_top_ten_highest_peaks_use_cooling_kw.",
+               "Registering 16.55 for qoi_average_of_top_ten_highest_peaks_timing_heating_hour.",
+               "Registering 15.18 for qoi_average_of_top_ten_highest_peaks_timing_cooling_hour."
+            ],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "qoi_hourly_peak_magnitude_use_kw",
+                  "value" : 11.1
+               },
+               {
+                  "name" : "qoi_hourly_peak_magnitude_timing_hour",
+                  "value" : 8384.0
+               },
+               {
+                  "name" : "qoi_average_minimum_daily_use_heating_kw",
+                  "value" : 0.32000000000000001
+               },
+               {
+                  "name" : "qoi_average_minimum_daily_use_cooling_kw",
+                  "value" : 0.28000000000000003
+               },
+               {
+                  "name" : "qoi_average_minimum_daily_use_overlap_kw",
+                  "value" : 0.23999999999999999
+               },
+               {
+                  "name" : "qoi_average_maximum_daily_use_heating_kw",
+                  "value" : 3.5499999999999998
+               },
+               {
+                  "name" : "qoi_average_maximum_daily_use_cooling_kw",
+                  "value" : 2.96
+               },
+               {
+                  "name" : "qoi_average_maximum_daily_use_overlap_kw",
+                  "value" : 3.2400000000000002
+               },
+               {
+                  "name" : "qoi_average_maximum_daily_timing_heating_hour",
+                  "value" : 15.380000000000001
+               },
+               {
+                  "name" : "qoi_average_maximum_daily_timing_cooling_hour",
+                  "value" : 14.92
+               },
+               {
+                  "name" : "qoi_average_maximum_daily_timing_overlap_hour",
+                  "value" : 16.09
+               },
+               {
+                  "name" : "qoi_average_of_top_ten_highest_peaks_use_heating_kw",
+                  "value" : 8.6199999999999992
+               },
+               {
+                  "name" : "qoi_average_of_top_ten_highest_peaks_use_cooling_kw",
+                  "value" : 6.1200000000000001
+               },
+               {
+                  "name" : "qoi_average_of_top_ten_highest_peaks_timing_heating_hour",
+                  "value" : 16.550000000000001
+               },
+               {
+                  "name" : "qoi_average_of_top_ten_highest_peaks_timing_cooling_hour",
+                  "value" : 15.18
+               }
+            ],
+            "step_warnings" : []
+         }
+      },
+      {
+         "arguments" : 
+         {
+            "debug" : false,
+            "retain_eplusout_audit" : false,
+            "retain_eplusout_bnd" : false,
+            "retain_eplusout_eio" : false,
+            "retain_eplusout_end" : false,
+            "retain_eplusout_err" : false,
+            "retain_eplusout_eso" : false,
+            "retain_eplusout_mdd" : false,
+            "retain_eplusout_msgpack" : false,
+            "retain_eplusout_mtd" : false,
+            "retain_eplusout_rdd" : false,
+            "retain_eplusout_shd" : false,
+            "retain_eplustbl_htm" : false,
+            "retain_in_idf" : true,
+            "retain_in_osm" : false,
+            "retain_pre_process_idf" : false,
+            "retain_schedules_csv" : true,
+            "retain_stdout_energyplus" : false,
+            "retain_stdout_expandobject" : false
+         },
+         "measure_dir_name" : "ServerDirectoryCleanup",
+         "result" : 
+         {
+            "completed_at" : "20241108T185514Z",
+            "measure_class_name" : "ServerDirectoryCleanup",
+            "measure_display_name" : "Server Directory Cleanup",
+            "measure_name" : "server_directory_cleanup",
+            "measure_taxonomy" : "Calibration",
+            "measure_type" : "ReportingMeasure",
+            "measure_uid" : "ec7d04ad-0b7b-495b-825a-e1b6d28d1d3f",
+            "measure_version_id" : "3d23b09c-eea6-43f6-be52-4ffed86e2b23",
+            "measure_version_modified" : "20240722T222214Z",
+            "measure_xml_checksum" : "5F1EDF75",
+            "started_at" : "20241108T185514Z",
+            "stderr" : "",
+            "stdout" : "",
+            "step_errors" : [],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Deleted ./../in.osm from the run directory.",
+               "Deleted ./../pre-preprocess.idf from the run directory.",
+               "Deleted ./../eplusout.end from the run directory.",
+               "Deleted ./../eplusout.err from the run directory.",
+               "Deleted ./../eplusout.msgpack from the run directory.",
+               "Deleted ./../eplusout_hourly.msgpack from the run directory.",
+               "Deleted ./../eplusout_runperiod.msgpack from the run directory.",
+               "Deleted ./../eplustbl.htm from the run directory.",
+               "Deleted ./../stdout-energyplus from the run directory."
+            ],
+            "step_result" : "Success",
+            "step_values" : 
+            [
+               {
+                  "name" : "retain_in_osm",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_in_idf",
+                  "value" : true
+               },
+               {
+                  "name" : "retain_pre_process_idf",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_audit",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_bnd",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_eio",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_end",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_err",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_eso",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_mdd",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_mtd",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_rdd",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_shd",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplusout_msgpack",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_eplustbl_htm",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_stdout_energyplus",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_stdout_expandobject",
+                  "value" : false
+               },
+               {
+                  "name" : "retain_schedules_csv",
+                  "value" : true
+               },
+               {
+                  "name" : "debug",
+                  "value" : false
+               }
+            ],
+            "step_warnings" : []
+         }
+      }
+   ],
+   "updated_at" : "20241108T185514Z"
+}

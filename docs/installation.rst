@@ -175,59 +175,6 @@ The ``-d`` and ``-e`` flags can also be combined if desired
 
    bash create_kestrel_env.sh -d -e /projects/enduse/envs mydevenv
 
-.. _eagle_install:
-
-Eagle
-~~~~~
-
-buildstockbatch is preinstalled on Eagle. To use it, `ssh into Eagle`_,
-activate the appropriate conda environment:
-
-.. _ssh into Eagle: https://www.nrel.gov/hpc/eagle-user-basics.html
-
-::
-
-   module load conda
-   source activate /shared-projects/buildstock/envs/buildstock-X.X
-
-You can get a list of installed environments by looking in the envs directory
-
-::
-
-   ls /shared-projects/buildstock/envs
-
-Developer installation
-......................
-
-For those doing development work on buildstockbatch (not most users), a new
-conda environment that includes buildstockbatch is created with the bash
-script `create_eagle_env.sh` in the git repo that will need to be cloned onto
-Eagle. The script is called as follows:
-
-::
-
-   bash create_eagle_env.sh env-name
-
-This will create a directory ``/shared-projects/buildstock/envs/env-name`` that
-contains the conda environment with BuildStock Batch installed. This environment
-can then be used by any user.
-
-If you pass the ``-d`` flag to that script, it will install the buildstockbatch
-package in development mode meaning that any changes you make in your cloned
-repo will immediately be available to that environment. However, it means that
-only the user who installed the environment can use it.
-
-If you pass the flag ``-e /projects/someproject/envs``, it will install the
-environment there instead of the default location. This is useful if you need a
-specific installation for a particular project.
-
-The ``-d`` and ``-e`` flags can also be combined if desired
-
-::
-
-   bash create_eagle_env.sh -d -e /projects/enduse/envs mydevenv
-
-
 Amazon Web Services (Beta)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

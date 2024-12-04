@@ -1,0 +1,56 @@
+Report: MyBuilding: Summary,Orientation,Heating HTM,Cooling HTM,Heating CFM,Cooling CFM
+Windows: Window1,S,10.86,8.1
+Windows: Window2,S,10.86,7.03
+Windows: Window3,W,10.86,19.45
+Windows: Window4,W,10.86,17.41
+Windows: Window5,N,10.86,7.03
+Windows: Window6,N,10.86,7.03
+Windows: Window7,N,10.86,7.03
+Windows: Window8,E,10.86,19.45
+Windows: Window9,E,10.86,17.36
+Windows: Window10,E,10.86,17.41
+Doors: Door1,N,7.49,6.28
+Above Grade Walls: Wall3,S,3.41,1.9
+Above Grade Walls: Wall4,W,3.41,1.9
+Above Grade Walls: Wall5,N,2.95,2.49
+Above Grade Walls: Wall6,W,2.95,2.49
+Above Grade Walls: Wall7,N,3.41,1.9
+Above Grade Walls: Wall8,E,3.41,1.9
+Ceilings: Floor2,,1.19,1.44
+Floors: Floor1,,6.12,5.17
+Floors: Slab2,,54.23,0
+Infiltration,,,,360,211
+Ventilation,,,,0,0
+
+Report: MyBuilding: Loads,Area (ft^2),Length (ft),Wall Area Ratio,Heating (Btuh),Cooling Sensible (Btuh),Cooling Latent (Btuh)
+Windows: Window1,42.5,,,462,344
+Windows: Window2,42.5,,,462,299
+Windows: Window3,12.1,,,131,235
+Windows: Window4,35.1,,,381,611
+Windows: Window5,17.1,,,186,120
+Windows: Window6,24.3,,,264,171
+Windows: Window7,20.6,,,224,145
+Windows: Window8,23.6,,,256,459
+Windows: Window9,11.5,,,125,200
+Windows: Window10,23.6,,,256,411
+Doors: Door1,20.0,,,150,126
+Above Grade Walls: Wall3,623.5,,,2123,1185
+Above Grade Walls: Wall4,346.4,,,1180,658
+Above Grade Walls: Wall5,192.0,,,567,478
+Above Grade Walls: Wall6,96.0,,,283,239
+Above Grade Walls: Wall7,434.5,,,1480,826
+Above Grade Walls: Wall8,430.9,,,1467,819
+Ceilings: Floor2,1377.5,,,1633,1979
+Floors: Floor1,576.0,,,3528,2978
+Floors: Slab2,,102,,5521,0
+Infiltration,,,1.0,14812,3799,7862
+Internal Gains,,,,,3320,800
+Ducts,,,,17641,18476,6113
+Ventilation,,,,0,0,0
+Piping,,,,0
+Blower Heat,,,,,0
+AED Excursion,,,,,0
+Total,,,,53131,37878,14775
+
+Report: MyBuilding: AED Curve,Hr 8 (Btuh),Hr 9 (Btuh),Hr 10 (Btuh),Hr 11 (Btuh),Hr 12 (Btuh),Hr 13 (Btuh),Hr 14 (Btuh),Hr 15 (Btuh),Hr 16 (Btuh),Hr 17 (Btuh),Hr 18 (Btuh),Hr 19 (Btuh)
+MyBuilding,3603,3860,3926,3872,3689,3942,4112,4206,4085,4165,3507,1849

@@ -71,17 +71,26 @@ class BuildStockBatchBase(object):
         self.os_sha = self.cfg["os_sha"]
         logger.debug(f"Using OpenStudio version: {self.os_version} with SHA: {self.os_sha}")
 
+    @property
+    def num_upgrades(self):
+        return len(self.cfg.get("upgrades", []))
+
     @staticmethod
     def get_sampler_class(sampler_name):
         sampler_class_name = "".join(x.capitalize() for x in sampler_name.strip().split("_")) + "Sampler"
         return getattr(sampler, sampler_class_name)
 
     @staticmethod
-    def get_workflow_generator_class(workflow_generator_name):
-        workflow_generator_class_name = (
-            "".join(x.capitalize() for x in workflow_generator_name.strip().split("_")) + "WorkflowGenerator"
-        )
-        return getattr(workflow_generator, workflow_generator_class_name)
+    def get_workflow_generator_class(workflow_generator_block):
+        generator_type = workflow_generator_block["type"]
+        # version can be missing in older schema -> default to latest
+        generator_version = workflow_generator_block.get("version", "2024.07.18")
+        if generator_version not in workflow_generator.version2GeneratorClass[generator_type]:
+            raise ValidationError(
+                f"Invalid generator version {generator_version} for {generator_type}."
+                f"Avaliable versions are {workflow_generator.version2GeneratorClass[generator_type].keys()}"
+            )
+        return workflow_generator.version2GeneratorClass[generator_type][generator_version]
 
     @property
     def sampler(self):
@@ -137,7 +146,7 @@ class BuildStockBatchBase(object):
         if "reporting_measure_names" in cfg:
             return cfg["reporting_measure_names"]
 
-        WorkflowGenerator = cls.get_workflow_generator_class(cfg["workflow_generator"]["type"])
+        WorkflowGenerator = cls.get_workflow_generator_class(cfg["workflow_generator"])
         wg = WorkflowGenerator(cfg, 1)  # Number of datapoints doesn't really matter here
         return wg.reporting_measures()
 
@@ -146,7 +155,7 @@ class BuildStockBatchBase(object):
 
     @classmethod
     def create_osw(cls, cfg, n_datapoints, *args, **kwargs):
-        WorkflowGenerator = cls.get_workflow_generator_class(cfg["workflow_generator"]["type"])
+        WorkflowGenerator = cls.get_workflow_generator_class(cfg["workflow_generator"])
         osw_generator = WorkflowGenerator(cfg, n_datapoints)
         return osw_generator.create_osw(*args, **kwargs)
 
@@ -196,7 +205,8 @@ class BuildStockBatchBase(object):
 
         # Convert the timeseries data to parquet
         # and copy it to the results directory
-        timeseries_filepath = os.path.join(sim_dir, "run", "results_timeseries.csv")
+        output_dir = os.path.join(sim_dir, "run")
+        timeseries_filepath = os.path.join(output_dir, "results_timeseries.csv")
         # FIXME: Allowing both names here for compatibility. Should consolidate on one timeseries filename.
         if os.path.isfile(timeseries_filepath):
             units_dict = read_csv(timeseries_filepath, nrows=1).transpose().to_dict()[0]
@@ -206,11 +216,10 @@ class BuildStockBatchBase(object):
             units_dict = {}
             skiprows = []
 
-        schedules_filepath = ""
-        if os.path.isdir(os.path.join(sim_dir, "generated_files")):
-            for file in os.listdir(os.path.join(sim_dir, "generated_files")):
-                if re.match(r".*schedules.*\.csv", file):
-                    schedules_filepath = os.path.join(sim_dir, "generated_files", file)
+        schedules_filepaths = []
+        for file in os.listdir(output_dir):
+            if re.match(r"in.schedules.*\.csv", file):
+                schedules_filepaths.append(os.path.join(output_dir, file))
 
         if os.path.isfile(timeseries_filepath):
             # Find the time columns present in the enduse_timeseries file
@@ -224,7 +233,7 @@ class BuildStockBatchBase(object):
             tsdf = read_csv(timeseries_filepath, parse_dates=actual_time_cols, skiprows=skiprows)
             for col in actual_time_cols:
                 tsdf[col] = tsdf[col].astype(pd.ArrowDtype(pa.timestamp("s")))
-            if os.path.isfile(schedules_filepath):
+            for schedules_filepath in schedules_filepaths:
                 schedules = read_csv(schedules_filepath, dtype=np.float64)
                 schedules.rename(columns=lambda x: f"schedules_{x}", inplace=True)
                 schedules["TimeDST"] = tsdf["Time"]
@@ -366,8 +375,8 @@ class BuildStockBatchBase(object):
     @classmethod
     def validate_workflow_generator(cls, project_file):
         cfg = get_project_configuration(project_file)
-        WorkflowGenerator = cls.get_workflow_generator_class(cfg["workflow_generator"]["type"])
-        return WorkflowGenerator.validate(cfg)
+        WorkflowGenerator = cls.get_workflow_generator_class(cfg["workflow_generator"])
+        return WorkflowGenerator(cfg, 1).validate()
 
     @staticmethod
     def validate_project_schema(project_file):
@@ -779,35 +788,55 @@ class BuildStockBatchBase(object):
         return True  # Only print the warning, but always pass the validation
 
     @staticmethod
+    def get_stock_version_info(project_file):
+        cfg = get_project_configuration(project_file)
+        buildstock_dir = BuildStockBatchBase.get_buildstock_dir(project_file, cfg)
+        version_rb = os.path.join(buildstock_dir, "resources/buildstock.rb")
+        if not os.path.exists(version_rb):
+            return {}
+
+        with open(version_rb, "r") as f:
+            versions = dict(
+                re.findall(
+                    r"^\s*(ResStock|ComStock|BuildStockBatch|WorkflowGenerator)_Version\s*=\s*'(.+)'",
+                    f.read(),
+                    re.MULTILINE,
+                )
+            )
+            return versions
+
+    @staticmethod
     def validate_resstock_or_comstock_version(project_file):
         """
         Checks the minimum required version of BuildStockBatch against the version being used
         """
         cfg = get_project_configuration(project_file)
-
-        buildstock_rb = os.path.join(cfg["buildstock_directory"], "resources/buildstock.rb")
-        if os.path.exists(buildstock_rb):
-            with open(buildstock_rb, "r") as f:
-                versions = dict(
-                    re.findall(
-                        r"^\s*(ResStock|ComStock|BuildStockBatch)_Version\s*=\s*'(.+)'",
-                        f.read(),
-                        re.MULTILINE,
-                    )
-                )
-            BuildStockBatch_Version = semver.parse_version_info(versions["BuildStockBatch"])
-            if bsb_version < BuildStockBatch_Version:
-                if "ResStock" in versions.keys():
-                    stock_version = versions["ResStock"]
-                elif "ComStock" in versions.keys():
-                    stock_version = versions["ComStock"]
-                else:
-                    stock_version = "Unknown"
-                val_err = (
-                    f"BuildStockBatch version {BuildStockBatch_Version} or above is required"
-                    f" for ResStock or ComStock version {stock_version}. Found {bsb_version}"
-                )
-                raise ValidationError(val_err)
+        version_info = BuildStockBatchBase.get_stock_version_info(project_file)
+        if not version_info:
+            return True
+        BuildStockBatch_Version = semver.Version.parse(version_info["BuildStockBatch"])
+        if bsb_version < BuildStockBatch_Version:
+            if "ResStock" in version_info.keys():
+                stock_version = version_info["ResStock"]
+            elif "ComStock" in version_info.keys():
+                stock_version = version_info["ComStock"]
+            else:
+                stock_version = "Unknown"
+            val_err = (
+                f"BuildStockBatch version {BuildStockBatch_Version} or above is required"
+                f" for ResStock or ComStock version {stock_version}. Found {bsb_version}"
+            )
+            raise ValidationError(val_err)
+        wg_version = cfg["workflow_generator"].get("version", "2024.07.18")
+        wg_type = cfg["workflow_generator"]["type"]
+        if wg_version not in workflow_generator.version2info[wg_type]:
+            raise ValidationError(f"Workflow generator version {wg_version} not found")
+        expected_version = version_info.get("WorkflowGenerator", "2024.07.18")
+        if wg_version != expected_version:
+            raise ValidationError(
+                f"Workflow generator version {expected_version} is required by the buildstock."
+                f"The yaml is asking for {wg_version}"
+            )
 
         return True
 
@@ -907,11 +936,12 @@ class BuildStockBatchBase(object):
     def upload_results(self, *args, **kwargs):
         return postprocessing.upload_results(*args, **kwargs)
 
-    def process_results(self, skip_combine=False, use_dask_cluster=True):
+    def process_results(self, skip_combine=False, use_dask_cluster=True, continue_upload=False):
         if use_dask_cluster:
             self.get_dask_client()  # noqa F841
 
         try:
+            do_timeseries = False
             wfg_args = self.cfg["workflow_generator"].get("args", {})
             if self.cfg["workflow_generator"]["type"] == "residential_hpxml":
                 if "simulation_output_report" in wfg_args.keys():
@@ -927,7 +957,7 @@ class BuildStockBatchBase(object):
             aws_conf = self.cfg.get("postprocessing", {}).get("aws", {})
             if "s3" in aws_conf or "aws" in self.cfg:
                 s3_bucket, s3_prefix = self.upload_results(
-                    aws_conf, self.output_dir, self.results_dir, self.sampler.csv_path
+                    aws_conf, self.output_dir, self.results_dir, self.sampler.csv_path, continue_upload=continue_upload
                 )
                 if "athena" in aws_conf:
                     postprocessing.create_athena_tables(

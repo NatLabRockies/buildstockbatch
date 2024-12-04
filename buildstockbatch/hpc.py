@@ -3,7 +3,7 @@
 """
 buildstockbatch.hpc
 ~~~~~~~~~~~~~~~
-This class contains the object & methods that allow for usage of the library with Eagle and Kestrel
+This class contains the object & methods that allow for usage of the library with Kestrel
 
 :author: Noel Merket
 :copyright: (c) 2018 by The Alliance for Sustainable Energy
@@ -132,7 +132,7 @@ class SlurmBatch(BuildStockBatchBase):
         # Create simulation_output dir
         sim_out_ts_dir = pathlib.Path(self.output_dir) / "results" / "simulation_output" / "timeseries"
         os.makedirs(sim_out_ts_dir, exist_ok=True)
-        for i in range(0, len(self.cfg.get("upgrades", [])) + 1):
+        for i in range(0, self.num_upgrades + 1):
             os.makedirs(sim_out_ts_dir / f"up{i:02d}")
 
         # create destination_dir and copy housing_characteristics into it
@@ -161,7 +161,7 @@ class SlurmBatch(BuildStockBatchBase):
         building_ids = df.index.tolist()
         n_datapoints = len(building_ids)
         # number of simulations is number of buildings * number of upgrades
-        n_sims = n_datapoints * (len(self.cfg.get("upgrades", [])) + 1)
+        n_sims = n_datapoints * (self.num_upgrades + 1)
 
         # this is the number of simulations defined for this run as a "full job"
         #     number of simulations per job if we believe the .yml file n_jobs
@@ -170,7 +170,7 @@ class SlurmBatch(BuildStockBatchBase):
         #     larger than we need, now that we know n_sims
         n_sims_per_job = max(n_sims_per_job, self.MIN_SIMS_PER_JOB)
 
-        upgrade_sims = itertools.product(building_ids, range(len(self.cfg.get("upgrades", []))))
+        upgrade_sims = itertools.product(building_ids, range(self.num_upgrades))
         if not self.skip_baseline_sims:
             # create batches of simulations
             baseline_sims = zip(building_ids, itertools.repeat(None))
@@ -213,11 +213,6 @@ class SlurmBatch(BuildStockBatchBase):
             pathlib.Path(self.buildstock_dir) / "measures",
             self.local_buildstock_dir / "measures",
         )
-        if os.path.exists(pathlib.Path(self.buildstock_dir) / "resources/hpxml-measures"):
-            self.clear_and_copy_dir(
-                pathlib.Path(self.buildstock_dir) / "resources/hpxml-measures",
-                self.local_buildstock_dir / "resources/hpxml-measures",
-            )
         self.clear_and_copy_dir(self.weather_dir, self.local_weather_dir)
         self.clear_and_copy_dir(
             pathlib.Path(self.output_dir) / "housing_characteristics",
@@ -377,18 +372,14 @@ class SlurmBatch(BuildStockBatchBase):
                     cls.local_buildstock_dir / "measures",
                     cls.local_weather_dir,
                 ]
+                if (resources_dir := cls.local_buildstock_dir / "resources").exists():
+                    dirs_to_mount.append(resources_dir)
 
                 for src in dirs_to_mount:
                     container_mount = "/" + src.name
                     args.extend(["-B", "{}:{}:ro".format(src, container_mount)])
                     container_symlink = pathlib.Path("/var/simdata/openstudio", src.name)
                     runscript.append("ln -s {} {}".format(*map(shlex.quote, (container_mount, str(container_symlink)))))
-
-                if (cls.local_buildstock_dir / "resources" / "hpxml-measures").exists():
-                    runscript.append("ln -s /resources /var/simdata/openstudio/resources")
-                    src = cls.local_buildstock_dir / "resources" / "hpxml-measures"
-                    container_mount = "/resources/hpxml-measures"
-                    args.extend(["-B", f"{src}:{container_mount}:ro"])
 
                 # Build the openstudio command that will be issued within the
                 # apptainer container If custom gems are to be used in the
@@ -588,7 +579,7 @@ class SlurmBatch(BuildStockBatchBase):
         job_id = m.group(1)
         return [job_id]
 
-    def queue_post_processing(self, after_jobids=[], upload_only=False, hipri=False):
+    def queue_post_processing(self, after_jobids=[], upload_only=False, hipri=False, continue_upload=False):
         # Configuration values
         hpc_cfg = self.cfg[self.HPC_NAME]
         account = hpc_cfg["account"]
@@ -599,7 +590,7 @@ class SlurmBatch(BuildStockBatchBase):
         print(f"Submitting job to {n_workers} {memory}MB memory nodes using {n_procs} cores in each.")
         # Throw an error if the files already exist.
 
-        if not upload_only:
+        if not (upload_only or continue_upload):
             for subdir in ("parquet", "results_csvs"):
                 subdirpath = pathlib.Path(self.output_dir, "results", subdir)
                 if subdirpath.exists():
@@ -626,6 +617,7 @@ class SlurmBatch(BuildStockBatchBase):
             "PROJECTFILE": self.project_filename,
             "OUT_DIR": self.output_dir,
             "UPLOADONLY": str(upload_only),
+            "CONTINUE_UPLOAD": str(continue_upload),
             "MEMORY": str(memory),
             "NPROCS": str(n_procs),
         }
@@ -757,38 +749,6 @@ class SlurmBatch(BuildStockBatchBase):
         self.queue_post_processing(job_ids, hipri=hipri)
 
 
-class EagleBatch(SlurmBatch):
-    DEFAULT_SYS_IMAGE_DIR = "/shared-projects/buildstock/singularity_images"
-    HPC_NAME = "eagle"
-    CORES_PER_NODE = 36
-    MIN_SIMS_PER_JOB = 36 * 2
-    DEFAULT_POSTPROCESSING_NODE_MEMORY_MB = 85248
-    DEFAULT_NODE_MEMORY_MB = 85248  # standard node on Eagle
-    DEFAULT_POSTPROCESSING_N_PROCS = 18
-    DEFAULT_POSTPROCESSING_N_WORKERS = 2
-
-    @classmethod
-    def validate_output_directory_eagle(cls, project_file):
-        cfg = get_project_configuration(project_file)
-        output_dir = path_rel_to_file(project_file, cfg["output_directory"])
-        if not re.match(r"/(lustre/eaglefs/)?(scratch|projects)", output_dir):
-            raise ValidationError(
-                f"`output_directory` must be in /scratch or /projects," f" `output_directory` = {output_dir}"
-            )
-
-    @classmethod
-    def validate_project(cls, project_file):
-        super(cls, cls).validate_project(project_file)
-        cls.validate_output_directory_eagle(project_file)
-        logger.info("Eagle Validation Successful")
-        return True
-
-    @staticmethod
-    def _queue_jobs_env_vars() -> dict:
-        env = {"MY_CONDA_ENV": os.environ["CONDA_PREFIX"]}
-        return env
-
-
 class KestrelBatch(SlurmBatch):
     DEFAULT_SYS_IMAGE_DIR = "/kfs2/shared-projects/buildstock/apptainer_images"
     HPC_NAME = "kestrel"
@@ -849,17 +809,13 @@ logging_config = {
 }
 
 
-def eagle_cli(argv=sys.argv[1:]):
-    user_cli(EagleBatch, argv)
-
-
 def kestrel_cli(argv=sys.argv[1:]):
     user_cli(KestrelBatch, argv)
 
 
 def user_cli(Batch: SlurmBatch, argv: list):
     """
-    This is the user entry point for running buildstockbatch on Eagle/Kestrel
+    This is the user entry point for running buildstockbatch on Kestrel
     """
     # set up logging, currently based on within-this-file hard-coded config
     logging.config.dictConfig(logging_config)
@@ -889,7 +845,13 @@ def user_cli(Batch: SlurmBatch, argv: list):
     )
     group.add_argument(
         "--uploadonly",
-        help="Only upload to S3, useful when postprocessing is already done. Ignores the upload flag in yaml",
+        help="Only upload to S3, useful when postprocessing is already done. Ignores the upload flag in yaml."
+        " Errors out if files already exists in s3",
+        action="store_true",
+    )
+    group.add_argument(
+        "--continue_upload",
+        help="Continue uploading to S3, useful when previous upload was interrupted.",
         action="store_true",
     )
     group.add_argument(
@@ -911,18 +873,18 @@ def user_cli(Batch: SlurmBatch, argv: list):
     # validate the project, and in case of the --validateonly flag return True if validation passes
     Batch.validate_project(project_filename)
     if args.validateonly:
-        return True
+        return
 
     # if the project has already been run, simply queue the correct post-processing step
-    if args.postprocessonly or args.uploadonly:
+    if args.postprocessonly or args.uploadonly or args.continue_upload:
         batch = Batch(project_filename)
-        batch.queue_post_processing(upload_only=args.uploadonly, hipri=args.hipri)
-        return True
+        batch.queue_post_processing(upload_only=args.uploadonly, hipri=args.hipri, continue_upload=args.continue_upload)
+        return
 
     if args.rerun_failed:
         batch = Batch(project_filename)
         batch.rerun_failed_jobs(hipri=args.hipri)
-        return True
+        return
 
     # otherwise, queue up the whole buildstockbatch process
     # the main work of the first job is to run the sampling script ...
@@ -941,7 +903,7 @@ def main():
     - upload results to Athena (job_array_number == 0 and POSTPROCESS and UPLOADONLY)
 
     The context for the work is deinfed by the project_filename (project .yml file),
-    which is used to initialize an EagleBatch object.
+    which is used to initialize an KestrelBatch object.
     """
 
     # set up logging, currently based on within-this-file hard-coded config
@@ -949,21 +911,19 @@ def main():
 
     # only direct script argument is the project .yml file
     parser = argparse.ArgumentParser()
-    parser.add_argument("hpc_name", choices=["eagle", "kestrel"])
+    parser.add_argument("hpc_name", choices=["kestrel"])
     parser.add_argument("project_filename")
     args = parser.parse_args()
 
-    # initialize the EagleBatch/KestrelBatch object
-    if args.hpc_name == "eagle":
-        batch = EagleBatch(args.project_filename)
-    else:
-        assert args.hpc_name == "kestrel"
-        batch = KestrelBatch(args.project_filename)
+    # initialize the KestrelBatch object
+    assert args.hpc_name == "kestrel"
+    batch = KestrelBatch(args.project_filename)
     # other arguments/cues about which part of the process we are in are
     # encoded in slurm job environment variables
     job_array_number = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
     post_process = get_bool_env_var("POSTPROCESS")
     upload_only = get_bool_env_var("UPLOADONLY")
+    continue_upload = get_bool_env_var("CONTINUE_UPLOAD")
     measures_only = get_bool_env_var("MEASURESONLY")
     sampling_only = get_bool_env_var("SAMPLINGONLY")
     if job_array_number:
@@ -979,6 +939,8 @@ def main():
         assert not sampling_only
         if upload_only:
             batch.process_results(skip_combine=True)
+        elif continue_upload:
+            batch.process_results(skip_combine=True, continue_upload=True)
         else:
             batch.process_results()
     else:
@@ -991,9 +953,7 @@ def main():
 
 if __name__ == "__main__":
     bsb_cli = os.environ.get("BUILDSTOCKBATCH_CLI")
-    if bsb_cli == "eagle":
-        eagle_cli()
-    elif bsb_cli == "kestrel":
+    if bsb_cli == "kestrel":
         kestrel_cli()
     else:
         main()

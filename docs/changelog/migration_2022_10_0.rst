@@ -33,5 +33,4 @@ generators. See :doc:`../workflow_generators/index` for more information.
 There are some new, non breaking postprocessing inputs. The number of processors
 per worker and parquet memory size on Eagle are now configurable. There is also
 a new configuration capability to partition the postprocessed output for more
-efficient querying in Athena. See :ref:`eagle-config` and
-:ref:`post-config-opts` for details.
+efficient querying in Athena.

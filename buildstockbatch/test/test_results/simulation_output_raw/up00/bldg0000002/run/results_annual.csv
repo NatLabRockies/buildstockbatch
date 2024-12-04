@@ -1,0 +1,288 @@
+Energy Use: Total (MBtu),44.26
+Energy Use: Net (MBtu),44.26
+
+Fuel Use: Electricity: Total (MBtu),44.26
+Fuel Use: Electricity: Net (MBtu),44.26
+Fuel Use: Natural Gas: Total (MBtu),0.0
+Fuel Use: Fuel Oil: Total (MBtu),0.0
+Fuel Use: Propane: Total (MBtu),0.0
+Fuel Use: Wood Cord: Total (MBtu),0.0
+Fuel Use: Wood Pellets: Total (MBtu),0.0
+Fuel Use: Coal: Total (MBtu),0.0
+
+End Use: Electricity: Heating (MBtu),7.145
+End Use: Electricity: Heating Fans/Pumps (MBtu),0.728
+End Use: Electricity: Heating Heat Pump Backup (MBtu),0.05
+End Use: Electricity: Heating Heat Pump Backup Fans/Pumps (MBtu),0.002
+End Use: Electricity: Cooling (MBtu),11.328
+End Use: Electricity: Cooling Fans/Pumps (MBtu),2.488
+End Use: Electricity: Hot Water (MBtu),5.579
+End Use: Electricity: Hot Water Recirc Pump (MBtu),0.0
+End Use: Electricity: Hot Water Solar Thermal Pump (MBtu),0.0
+End Use: Electricity: Lighting Interior (MBtu),6.639
+End Use: Electricity: Lighting Garage (MBtu),0.341
+End Use: Electricity: Lighting Exterior (MBtu),0.631
+End Use: Electricity: Mech Vent (MBtu),0.075
+End Use: Electricity: Mech Vent Preheating (MBtu),0.0
+End Use: Electricity: Mech Vent Precooling (MBtu),0.0
+End Use: Electricity: Whole House Fan (MBtu),0.0
+End Use: Electricity: Refrigerator (MBtu),1.123
+End Use: Electricity: Freezer (MBtu),0.0
+End Use: Electricity: Dehumidifier (MBtu),0.0
+End Use: Electricity: Dishwasher (MBtu),0.259
+End Use: Electricity: Clothes Washer (MBtu),0.076
+End Use: Electricity: Clothes Dryer (MBtu),2.018
+End Use: Electricity: Range/Oven (MBtu),1.113
+End Use: Electricity: Ceiling Fan (MBtu),0.232
+End Use: Electricity: Television (MBtu),1.122
+End Use: Electricity: Plug Loads (MBtu),3.311
+End Use: Electricity: Electric Vehicle Charging (MBtu),0.0
+End Use: Electricity: Well Pump (MBtu),0.0
+End Use: Electricity: Pool Heater (MBtu),0.0
+End Use: Electricity: Pool Pump (MBtu),0.0
+End Use: Electricity: Permanent Spa Heater (MBtu),0.0
+End Use: Electricity: Permanent Spa Pump (MBtu),0.0
+End Use: Electricity: PV (MBtu),0.0
+End Use: Electricity: Generator (MBtu),0.0
+End Use: Electricity: Battery (MBtu),0.0
+End Use: Natural Gas: Heating (MBtu),0.0
+End Use: Natural Gas: Heating Heat Pump Backup (MBtu),0.0
+End Use: Natural Gas: Hot Water (MBtu),0.0
+End Use: Natural Gas: Clothes Dryer (MBtu),0.0
+End Use: Natural Gas: Range/Oven (MBtu),0.0
+End Use: Natural Gas: Mech Vent Preheating (MBtu),0.0
+End Use: Natural Gas: Pool Heater (MBtu),0.0
+End Use: Natural Gas: Permanent Spa Heater (MBtu),0.0
+End Use: Natural Gas: Grill (MBtu),0.0
+End Use: Natural Gas: Lighting (MBtu),0.0
+End Use: Natural Gas: Fireplace (MBtu),0.0
+End Use: Natural Gas: Generator (MBtu),0.0
+End Use: Fuel Oil: Heating (MBtu),0.0
+End Use: Fuel Oil: Heating Heat Pump Backup (MBtu),0.0
+End Use: Fuel Oil: Hot Water (MBtu),0.0
+End Use: Fuel Oil: Clothes Dryer (MBtu),0.0
+End Use: Fuel Oil: Range/Oven (MBtu),0.0
+End Use: Fuel Oil: Mech Vent Preheating (MBtu),0.0
+End Use: Fuel Oil: Grill (MBtu),0.0
+End Use: Fuel Oil: Lighting (MBtu),0.0
+End Use: Fuel Oil: Fireplace (MBtu),0.0
+End Use: Fuel Oil: Generator (MBtu),0.0
+End Use: Propane: Heating (MBtu),0.0
+End Use: Propane: Heating Heat Pump Backup (MBtu),0.0
+End Use: Propane: Hot Water (MBtu),0.0
+End Use: Propane: Clothes Dryer (MBtu),0.0
+End Use: Propane: Range/Oven (MBtu),0.0
+End Use: Propane: Mech Vent Preheating (MBtu),0.0
+End Use: Propane: Grill (MBtu),0.0
+End Use: Propane: Lighting (MBtu),0.0
+End Use: Propane: Fireplace (MBtu),0.0
+End Use: Propane: Generator (MBtu),0.0
+End Use: Wood Cord: Heating (MBtu),0.0
+End Use: Wood Cord: Heating Heat Pump Backup (MBtu),0.0
+End Use: Wood Cord: Hot Water (MBtu),0.0
+End Use: Wood Cord: Clothes Dryer (MBtu),0.0
+End Use: Wood Cord: Range/Oven (MBtu),0.0
+End Use: Wood Cord: Mech Vent Preheating (MBtu),0.0
+End Use: Wood Cord: Grill (MBtu),0.0
+End Use: Wood Cord: Lighting (MBtu),0.0
+End Use: Wood Cord: Fireplace (MBtu),0.0
+End Use: Wood Cord: Generator (MBtu),0.0
+End Use: Wood Pellets: Heating (MBtu),0.0
+End Use: Wood Pellets: Heating Heat Pump Backup (MBtu),0.0
+End Use: Wood Pellets: Hot Water (MBtu),0.0
+End Use: Wood Pellets: Clothes Dryer (MBtu),0.0
+End Use: Wood Pellets: Range/Oven (MBtu),0.0
+End Use: Wood Pellets: Mech Vent Preheating (MBtu),0.0
+End Use: Wood Pellets: Grill (MBtu),0.0
+End Use: Wood Pellets: Lighting (MBtu),0.0
+End Use: Wood Pellets: Fireplace (MBtu),0.0
+End Use: Wood Pellets: Generator (MBtu),0.0
+End Use: Coal: Heating (MBtu),0.0
+End Use: Coal: Heating Heat Pump Backup (MBtu),0.0
+End Use: Coal: Hot Water (MBtu),0.0
+End Use: Coal: Clothes Dryer (MBtu),0.0
+End Use: Coal: Range/Oven (MBtu),0.0
+End Use: Coal: Mech Vent Preheating (MBtu),0.0
+End Use: Coal: Grill (MBtu),0.0
+End Use: Coal: Lighting (MBtu),0.0
+End Use: Coal: Fireplace (MBtu),0.0
+End Use: Coal: Generator (MBtu),0.0
+
+Emissions: CO2e: LRMER_MidCase_15: Total (lb),6425.05
+Emissions: CO2e: LRMER_MidCase_15: Net (lb),6425.05
+
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Total (lb),6425.05
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Net (lb),6425.05
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Total (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Total (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Total (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Total (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Total (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Total (lb),0.0
+
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Heating (lb),1536.79
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Heating Fans/Pumps (lb),158.44
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Heating Heat Pump Backup (lb),12.4
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Heating Heat Pump Backup Fans/Pumps (lb),0.58
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Cooling (lb),1253.67
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Cooling Fans/Pumps (lb),282.07
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Hot Water (lb),772.32
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Hot Water Recirc Pump (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Hot Water Solar Thermal Pump (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Lighting Interior (lb),950.5
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Lighting Garage (lb),48.85
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Lighting Exterior (lb),103.37
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Mech Vent (lb),13.51
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Mech Vent Precooling (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Whole House Fan (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Refrigerator (lb),161.87
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Freezer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Dehumidifier (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Dishwasher (lb),34.65
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Clothes Washer (lb),9.29
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Clothes Dryer (lb),259.99
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Range/Oven (lb),137.86
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Ceiling Fan (lb),34.53
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Television (lb),164.9
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Plug Loads (lb),489.45
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Electric Vehicle Charging (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Well Pump (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Pool Heater (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Pool Pump (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Permanent Spa Heater (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Permanent Spa Pump (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: PV (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Generator (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Electricity: Battery (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Heating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Heating Heat Pump Backup (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Hot Water (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Clothes Dryer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Range/Oven (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Pool Heater (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Permanent Spa Heater (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Grill (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Lighting (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Fireplace (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Natural Gas: Generator (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Heating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Heating Heat Pump Backup (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Hot Water (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Clothes Dryer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Range/Oven (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Grill (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Lighting (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Fireplace (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Fuel Oil: Generator (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Heating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Heating Heat Pump Backup (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Hot Water (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Clothes Dryer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Range/Oven (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Grill (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Lighting (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Fireplace (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Propane: Generator (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Heating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Heating Heat Pump Backup (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Hot Water (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Clothes Dryer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Range/Oven (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Grill (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Lighting (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Fireplace (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Cord: Generator (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Heating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Heating Heat Pump Backup (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Hot Water (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Clothes Dryer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Range/Oven (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Grill (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Lighting (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Fireplace (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Wood Pellets: Generator (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Heating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Heating Heat Pump Backup (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Hot Water (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Clothes Dryer (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Range/Oven (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Mech Vent Preheating (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Grill (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Lighting (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Fireplace (lb),0.0
+Emissions: CO2e: LRMER_MidCase_15: Coal: Generator (lb),0.0
+
+Load: Heating: Delivered (MBtu),17.681
+Load: Heating: Heat Pump Backup (MBtu),0.052
+Load: Cooling: Delivered (MBtu),34.664
+Load: Hot Water: Delivered (MBtu),4.508
+Load: Hot Water: Tank Losses (MBtu),1.07
+Load: Hot Water: Desuperheater (MBtu),0.0
+Load: Hot Water: Solar Thermal (MBtu),0.0
+
+Unmet Hours: Heating (hr),0.0
+Unmet Hours: Cooling (hr),0.0
+
+Peak Electricity: Winter Total (W),11029.6
+Peak Electricity: Summer Total (W),10430.2
+Peak Electricity: Annual Total (W),11029.6
+
+Peak Load: Heating: Delivered (kBtu/hr),34.147
+Peak Load: Cooling: Delivered (kBtu/hr),24.093
+
+Hot Water: Clothes Washer (gal),1037.4
+Hot Water: Dishwasher (gal),565.9
+Hot Water: Fixtures (gal),5963.9
+Hot Water: Distribution Waste (gal),2143.7
+
+Resilience: Battery (hr),0.0
+
+HVAC Capacity: Heating (Btu/h),42178.0
+HVAC Capacity: Cooling (Btu/h),42178.0
+HVAC Capacity: Heat Pump Backup (Btu/h),42417.0
+
+HVAC Design Temperature: Heating (F),28.4
+HVAC Design Temperature: Cooling (F),90.32
+
+HVAC Design Load: Heating: Total (Btu/h),42417.0
+HVAC Design Load: Heating: Ducts (Btu/h),11985.0
+HVAC Design Load: Heating: Windows (Btu/h),3415.0
+HVAC Design Load: Heating: Skylights (Btu/h),0.0
+HVAC Design Load: Heating: Doors (Btu/h),166.0
+HVAC Design Load: Heating: Walls (Btu/h),5190.0
+HVAC Design Load: Heating: Roofs (Btu/h),0.0
+HVAC Design Load: Heating: Floors (Btu/h),0.0
+HVAC Design Load: Heating: Slabs (Btu/h),9034.0
+HVAC Design Load: Heating: Ceilings (Btu/h),2235.0
+HVAC Design Load: Heating: Infiltration (Btu/h),10392.0
+HVAC Design Load: Heating: Ventilation (Btu/h),0.0
+HVAC Design Load: Heating: Piping (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: Total (Btu/h),25841.0
+HVAC Design Load: Cooling Sensible: Ducts (Btu/h),10544.0
+HVAC Design Load: Cooling Sensible: Windows (Btu/h),3694.0
+HVAC Design Load: Cooling Sensible: Skylights (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: Doors (Btu/h),121.0
+HVAC Design Load: Cooling Sensible: Walls (Btu/h),2958.0
+HVAC Design Load: Cooling Sensible: Roofs (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: Floors (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: Slabs (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: Ceilings (Btu/h),2381.0
+HVAC Design Load: Cooling Sensible: Infiltration (Btu/h),2095.0
+HVAC Design Load: Cooling Sensible: Ventilation (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: Internal Gains (Btu/h),3320.0
+HVAC Design Load: Cooling Sensible: Blower Heat (Btu/h),0.0
+HVAC Design Load: Cooling Sensible: AED Excursion (Btu/h),727.0
+HVAC Design Load: Cooling Latent: Total (Btu/h),9269.0
+HVAC Design Load: Cooling Latent: Ducts (Btu/h),3169.0
+HVAC Design Load: Cooling Latent: Infiltration (Btu/h),5300.0
+HVAC Design Load: Cooling Latent: Ventilation (Btu/h),0.0
+HVAC Design Load: Cooling Latent: Internal Gains (Btu/h),800.0
+
+HVAC Geothermal Loop: Borehole/Trench Count,0
+HVAC Geothermal Loop: Borehole/Trench Length (ft),0.0

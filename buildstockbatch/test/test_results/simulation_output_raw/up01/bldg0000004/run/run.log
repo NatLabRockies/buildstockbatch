@@ -1,0 +1,46 @@
+[12:55:07.374782 WARN] [openstudio.workflow.OSWorkflow] No valid weather file defined in either the osm or osw.
+[12:55:09.390621 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:09.536550 WARN] [openstudio.WorkflowStepResult] WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[12:55:09.581323 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:10.640848 WARN] [openstudio.WorkflowStepResult] WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[12:55:10.641642 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:11.579255 WARN] [openstudio.WorkflowStepResult] WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[12:55:12.455153 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:12.529699 WARN] [openstudio.WorkflowStepResult] WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[12:55:12.554181 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:13.485549 WARN] [openstudio.WorkflowStepResult] WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[12:55:13.486491 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:14.182693 WARN] [openstudio.WorkflowStepResult] WorkflowStepResult value called with undefined stepResult, returning 'Success'
+[12:55:14.194483 WARN] [openstudio.measure.OSRunner] The model contains existing objects and is being reset.
+[12:55:14.477507 WARN] [openstudio.measure.OSRunner] It is not possible to eliminate all HVAC energy use (e.g. crankcase/defrost energy) in EnergyPlus outside of an HVAC season.
+[12:55:14.542974 WARN] [openstudio.measure.OSRunner] Both 'ceiling_fan' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.543014 WARN] [openstudio.measure.OSRunner] Both 'ceiling_fan' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.543030 WARN] [openstudio.measure.OSRunner] Both 'ceiling_fan' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.548348 WARN] [openstudio.measure.OSRunner] Both 'clothes_washer' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.548394 WARN] [openstudio.measure.OSRunner] Both 'clothes_washer' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.548410 WARN] [openstudio.measure.OSRunner] Both 'clothes_washer' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.548661 WARN] [openstudio.measure.OSRunner] Both 'clothes_dryer' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.548684 WARN] [openstudio.measure.OSRunner] Both 'clothes_dryer' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.548697 WARN] [openstudio.measure.OSRunner] Both 'clothes_dryer' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.548908 WARN] [openstudio.measure.OSRunner] Both 'dishwasher' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.548923 WARN] [openstudio.measure.OSRunner] Both 'dishwasher' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.548936 WARN] [openstudio.measure.OSRunner] Both 'dishwasher' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.549681 WARN] [openstudio.measure.OSRunner] Both 'cooking_range' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.549708 WARN] [openstudio.measure.OSRunner] Both 'cooking_range' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.549722 WARN] [openstudio.measure.OSRunner] Both 'cooking_range' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.550963 WARN] [openstudio.measure.OSRunner] Both 'hot_water_fixtures' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.550996 WARN] [openstudio.measure.OSRunner] Both 'hot_water_fixtures' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.551008 WARN] [openstudio.measure.OSRunner] Both 'hot_water_fixtures' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.551879 WARN] [openstudio.measure.OSRunner] Both 'lighting_interior' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.551900 WARN] [openstudio.measure.OSRunner] Both 'lighting_interior' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.551911 WARN] [openstudio.measure.OSRunner] Both 'lighting_interior' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.556114 WARN] [openstudio.measure.OSRunner] Both 'plug_loads_tv' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.556130 WARN] [openstudio.measure.OSRunner] Both 'plug_loads_tv' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.556142 WARN] [openstudio.measure.OSRunner] Both 'plug_loads_tv' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.556364 WARN] [openstudio.measure.OSRunner] Both 'plug_loads_other' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.556382 WARN] [openstudio.measure.OSRunner] Both 'plug_loads_other' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.556399 WARN] [openstudio.measure.OSRunner] Both 'plug_loads_other' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:14.557268 WARN] [openstudio.measure.OSRunner] Both 'occupants' schedule file and weekday fractions provided; the latter will be ignored.
+[12:55:14.557290 WARN] [openstudio.measure.OSRunner] Both 'occupants' schedule file and weekend fractions provided; the latter will be ignored.
+[12:55:14.557302 WARN] [openstudio.measure.OSRunner] Both 'occupants' schedule file and monthly multipliers provided; the latter will be ignored.
+[12:55:15.893428 WARN] [openstudio.workflow.OSWorkflow] Unable to find sql file at /Users/radhikar/Documents/buildstock2025/resstock2025/project_national/national_upgrades/simulation_output/up01/bldg0000004/run/eplusout.sql

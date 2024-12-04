@@ -1,0 +1,20 @@
+[12:55:07.374726 WARN] [openstudio.workflow.OSWorkflow] No valid weather file defined in either the osm or osw.
+[12:55:09.399335 ERROR] [openstudio.measure.OSRunner] Cannot find current Workflow Step
+[12:55:09.501744 ERROR] [openstudio.measure.OSRunner] Measure Failed with Error: Building ID is 3
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run'
+[12:55:09.502150 ERROR] [openstudio.workflow.OSWorkflow] Found error in state 'OpenStudioMeasures' with message: 'Measure 'BuildExistingModel' reported an error with [Measure Failed with Error: Building ID is 3
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'
+/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'
+/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run']'

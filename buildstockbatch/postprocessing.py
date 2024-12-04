@@ -379,19 +379,6 @@ def write_metadata_files(fs, parquet_root_dir, partition_columns):
     parquet.write_metadata(sch, f"{parquet_root_dir}/_common_metadata", filesystem=fs)
     logger.info(f"Written _common_metadata to {parquet_root_dir}")
 
-    if partition_columns:
-        partition_glob = "/".join([f"{c}*" for c in partition_columns])
-        glob_str = f"{parquet_root_dir}/up*/{partition_glob}/*.parquet"
-    else:
-        glob_str = f"{parquet_root_dir}/up*/*.parquet"
-
-    logger.info(f"Gathering all the parquet files in {glob_str}")
-    concat_files = fs.glob(glob_str)
-    logger.info(f"Gathered {len(concat_files)} files. Now writing _metadata")
-    parquet_root_dir = Path(parquet_root_dir).as_posix()
-    create_metadata_file(concat_files, root_dir=parquet_root_dir, engine="pyarrow", fs=fs)
-    logger.info(f"_metadata file written to {parquet_root_dir}")
-
 
 def combine_results(fs, results_dir, cfg, do_timeseries=True):
     """Combine the results of the batch simulations.
@@ -550,7 +537,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
 
             # Determine how many files should be in each partition and group the files
             parquet_memory = int(
-                cfg.get("eagle", {}).get("postprocessing", {}).get("parquet_memory_mb", MAX_PARQUET_MEMORY)
+                cfg.get("kestrel", {}).get("postprocessing", {}).get("parquet_memory_mb", MAX_PARQUET_MEMORY)
             )
             logger.info(f"Max parquet memory: {parquet_memory} MB")
             max_files_per_partition = max(1, math.floor(parquet_memory / (mean_mem / 1e6)))
@@ -625,7 +612,7 @@ def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False)
         fs.rm(ts_in_dir, recursive=True)
 
 
-def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename):
+def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False):
     logger.info("Uploading the parquet files to s3")
 
     output_folder_name = Path(output_dir).name
@@ -640,7 +627,7 @@ def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename):
         all_files.append(file.relative_to(parquet_dir))
     for file in [*ts_dir.glob("_common_metadata"), *ts_dir.glob("_metadata")]:
         all_files.append(file.relative_to(parquet_dir))
-
+    logger.info(f"{len(all_files)} parquet files will be uploaded.")
     s3_prefix = aws_conf.get("s3", {}).get("prefix", "").rstrip("/")
     s3_bucket = aws_conf.get("s3", {}).get("bucket", None)
     if not (s3_prefix and s3_bucket):
@@ -650,10 +637,14 @@ def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename):
 
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(s3_bucket)
-    n_existing_files = len(list(bucket.objects.filter(Prefix=s3_prefix_output)))
-    if n_existing_files > 0:
-        logger.error(f"There are already {n_existing_files} files in the s3 folder {s3_bucket}/{s3_prefix_output}.")
-        raise FileExistsError(f"s3://{s3_bucket}/{s3_prefix_output}")
+    existing_files = {f.key.removeprefix(s3_prefix_output) for f in bucket.objects.filter(Prefix=s3_prefix_output)}
+
+    if len(existing_files) > 0:
+        logger.info(f"There are already {len(existing_files)} files in the s3 folder {s3_bucket}/{s3_prefix_output}.")
+        if not continue_upload:
+            raise FileExistsError("Either use --continue_upload or delete files from s3")
+        all_files = [file for file in all_files if str(file) not in existing_files]
+        logger.info(f"Only uploading the rest of the {len(all_files)} files")
 
     def upload_file(filepath, s3key=None):
         full_path = filepath if filepath.is_absolute() else parquet_dir.joinpath(filepath)
@@ -666,7 +657,9 @@ def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename):
     tasks = list(map(dask.delayed(upload_file), all_files))
     if buildstock_csv_filename is not None:
         buildstock_csv_filepath = Path(buildstock_csv_filename)
-        if buildstock_csv_filepath.exists():
+        if f"buildstock_csv/{buildstock_csv_filepath.name}" in existing_files:
+            logger.info("Buildstock CSV already exists in s3.")
+        elif buildstock_csv_filepath.exists():
             tasks.append(
                 dask.delayed(upload_file)(
                     buildstock_csv_filepath,

@@ -250,7 +250,7 @@ class LocalBatch(BuildStockBatchBase):
             self.cfg,
         )
         upgrade_sims = []
-        for i in range(len(self.cfg.get("upgrades", []))):
+        for i in range(self.num_upgrades):
             upgrade_sims.append(map(functools.partial(run_building_d, upgrade_idx=i), building_ids))
         if not self.skip_baseline_sims:
             baseline_sims = map(run_building_d, building_ids)
@@ -454,7 +454,13 @@ def main():
     )
     group.add_argument(
         "--uploadonly",
-        help="Only upload to S3, useful when postprocessing is already done. Ignores the " "upload flag in yaml",
+        help="Only upload to S3, useful when postprocessing is already done. Ignores the upload flag in yaml."
+        " Errors out if files already exists in s3",
+        action="store_true",
+    )
+    group.add_argument(
+        "--continue_upload",
+        help="Continue uploading to S3, useful when previous upload was interrupted.",
         action="store_true",
     )
     group.add_argument(
@@ -470,9 +476,9 @@ def main():
     # Validate the project, and in case of the --validateonly flag return True if validation passes
     LocalBatch.validate_project(args.project_filename)
     if args.validateonly:
-        return True
+        return
     batch = LocalBatch(args.project_filename)
-    if not (args.postprocessonly or args.uploadonly or args.validateonly):
+    if not (args.postprocessonly or args.uploadonly or args.validateonly or args.continue_upload):
         batch.run_batch(
             n_jobs=args.j,
             measures_only=args.measures_only,
@@ -482,6 +488,8 @@ def main():
         return
     if args.uploadonly:
         batch.process_results(skip_combine=True)
+    elif args.continue_upload:
+        batch.process_results(skip_combine=True, continue_upload=True)
     else:
         batch.process_results()
 

@@ -1,0 +1,1125 @@
+{
+   "completed_at" : "20241108T185509Z",
+   "completed_status" : "Fail",
+   "created_at" : "2024-11-08T12:55:07.100147",
+   "current_step" : 1,
+   "file_paths" : 
+   [
+      "/Users/radhikar/Documents/buildstock2025/resstock2025/project_national/national_upgrades/simulation_output/up00/bldg0000003/generated_files",
+      "./files",
+      "./weather",
+      "../../files",
+      "../../weather",
+      "./"
+   ],
+   "hash" : "495D347F",
+   "id" : "bldg0000003up00",
+   "measure_paths" : 
+   [
+      "measures",
+      "resources/hpxml-measures"
+   ],
+   "run_options" : 
+   {
+      "skip_zip_results" : true
+   },
+   "started_at" : "20241108T185507Z",
+   "steps" : 
+   [
+      {
+         "arguments" : 
+         {
+            "building_id" : 3,
+            "emissions_electricity_folders" : "data/emissions/cambium/2022/LRMER_MidCase_15",
+            "emissions_fuel_oil_values" : "",
+            "emissions_natural_gas_values" : "",
+            "emissions_propane_values" : "",
+            "emissions_scenario_names" : "LRMER_MidCase_15",
+            "emissions_types" : "CO2e",
+            "emissions_wood_values" : "",
+            "sample_weight" : 34911755,
+            "simulation_control_run_period_begin_day_of_month" : 1,
+            "simulation_control_run_period_begin_month" : 1,
+            "simulation_control_run_period_calendar_year" : 2007,
+            "simulation_control_run_period_end_day_of_month" : 31,
+            "simulation_control_run_period_end_month" : 12,
+            "simulation_control_timestep" : 60,
+            "utility_bill_detailed_filepaths" : "",
+            "utility_bill_electricity_fixed_charges" : "",
+            "utility_bill_electricity_marginal_rates" : "",
+            "utility_bill_fuel_oil_fixed_charges" : "",
+            "utility_bill_fuel_oil_marginal_rates" : "",
+            "utility_bill_natural_gas_fixed_charges" : "",
+            "utility_bill_natural_gas_marginal_rates" : "",
+            "utility_bill_propane_fixed_charges" : "",
+            "utility_bill_propane_marginal_rates" : "",
+            "utility_bill_pv_compensation_types" : "",
+            "utility_bill_pv_feed_in_tariff_rates" : "",
+            "utility_bill_pv_monthly_grid_connection_fee_units" : "",
+            "utility_bill_pv_monthly_grid_connection_fees" : "",
+            "utility_bill_pv_net_metering_annual_excess_sellback_rate_types" : "",
+            "utility_bill_pv_net_metering_annual_excess_sellback_rates" : "",
+            "utility_bill_scenario_names" : "Bills",
+            "utility_bill_simple_filepaths" : "",
+            "utility_bill_wood_fixed_charges" : "",
+            "utility_bill_wood_marginal_rates" : ""
+         },
+         "measure_dir_name" : "BuildExistingModel",
+         "result" : 
+         {
+            "completed_at" : "20241108T185509Z",
+            "measure_class_name" : "BuildExistingModel",
+            "measure_display_name" : "Build Existing Model",
+            "measure_name" : "build_existing_model",
+            "measure_taxonomy" : "Whole Building.Space Types",
+            "measure_type" : "ModelMeasure",
+            "measure_uid" : "dedf59bb-3b88-4f16-8755-2c1ff5519cbf",
+            "measure_version_id" : "be99be23-ddd9-49c4-804a-cb9853764e3e",
+            "measure_version_modified" : "20240904T210110Z",
+            "measure_xml_checksum" : "2C38F48B",
+            "started_at" : "20241108T185508Z",
+            "stderr" : "",
+            "stdout" : "[openstudio.measure.OSRunner] <Error> Cannot find current Workflow Step\n[openstudio.measure.OSRunner] <Error> Measure Failed with Error: Building ID is 3\n/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'\n/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run'\n",
+            "step_errors" : 
+            [
+               "Measure Failed with Error: Building ID is 3\n/Users/radhikar/Documents/buildstock2025/resstock2025/measures/ResStockArguments/measure.rb:423:in `run'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:436:in `run_measure'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:235:in `block (2 levels) in apply_measures'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `each'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:227:in `block in apply_measures'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `each'\n/Users/radhikar/Documents/buildstock2025/resstock2025/resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure.rb:222:in `apply_measures'\n/Users/radhikar/Documents/buildstock2025/resstock2025/measures/BuildExistingModel/measure.rb:333:in `run'"
+            ],
+            "step_files" : [],
+            "step_info" : 
+            [
+               "Assigning option 'CBSA New York-Newark-Jersey City, NY-NJ-PA' for parameter 'AHS Region'.",
+               "Assigning option 'No' for parameter 'AIANNH Area'.",
+               "Assigning option '4A' for parameter 'ASHRAE IECC Climate Zone 2004'.",
+               "Assigning option '4A' for parameter 'ASHRAE IECC Climate Zone 2004 - 2A Split'.",
+               "Assigning option '150%+' for parameter 'Area Median Income'.",
+               "Assigning option 'Hour6' for parameter 'Bathroom Spot Vent Hour'.",
+               "Assigning option 'None' for parameter 'Battery'.",
+               "Assigning option '1' for parameter 'Bedrooms'.",
+               "Assigning option 'Mixed-Humid' for parameter 'Building America Climate Zone'.",
+               "Assigning option 'None' for parameter 'CEC Climate Zone'.",
+               "Assigning option 'None' for parameter 'Ceiling Fan'.",
+               "Assigning option 'Middle Atlantic' for parameter 'Census Division'.",
+               "Assigning option 'Middle Atlantic' for parameter 'Census Division RECS'.",
+               "Assigning option 'Northeast' for parameter 'Census Region'.",
+               "Assigning option 'NY, New York' for parameter 'City'.",
+               "Assigning option 'None' for parameter 'Clothes Dryer'.",
+               "Assigning option '120% Usage' for parameter 'Clothes Dryer Usage Level'.",
+               "Assigning option 'None' for parameter 'Clothes Washer'.",
+               "Assigning option 'None' for parameter 'Clothes Washer Presence'.",
+               "Assigning option '120% Usage' for parameter 'Clothes Washer Usage Level'.",
+               "Assigning option 'Gas' for parameter 'Cooking Range'.",
+               "Assigning option '120% Usage' for parameter 'Cooking Range Usage Level'.",
+               "Assigning option '70F' for parameter 'Cooling Setpoint'.",
+               "Assigning option 'No' for parameter 'Cooling Setpoint Has Offset'.",
+               "Assigning option '0F' for parameter 'Cooling Setpoint Offset Magnitude'.",
+               "Assigning option 'None' for parameter 'Cooling Setpoint Offset Period'.",
+               "Assigning option 'Never' for parameter 'Cooling Unavailable Days'.",
+               "Assigning option 'Double-Loaded Interior' for parameter 'Corridor'.",
+               "Assigning option 'NY, New York County' for parameter 'County'.",
+               "Assigning option 'Metropolitan' for parameter 'County Metro Status'.",
+               "Assigning option 'G3600610, G36003805' for parameter 'County and PUMA'.",
+               "Assigning option 'Others' for parameter 'Custom State'.",
+               "Assigning option 'None' for parameter 'Dehumidifier'.",
+               "Assigning option '318 Rated kWh' for parameter 'Dishwasher'.",
+               "Assigning option '120% Usage' for parameter 'Dishwasher Usage Level'.",
+               "Assigning option '20 ft^2' for parameter 'Door Area'.",
+               "Assigning option 'Fiberglass' for parameter 'Doors'.",
+               "Assigning option 'None' for parameter 'Duct Leakage and Insulation'.",
+               "Assigning option 'None' for parameter 'Duct Location'.",
+               "Assigning option '2 ft' for parameter 'Eaves'.",
+               "Assigning option 'None' for parameter 'Electric Vehicle'.",
+               "Assigning option 'North-Central' for parameter 'Energystar Climate Zone 2023'.",
+               "Assigning option '400%+' for parameter 'Federal Poverty Level'.",
+               "Assigning option 'NYSTc' for parameter 'Generation And Emissions Assessment Region'.",
+               "Assigning option 'None' for parameter 'Geometry Attic Type'.",
+               "Assigning option 'Middle' for parameter 'Geometry Building Horizontal Location MF'.",
+               "Assigning option 'None' for parameter 'Geometry Building Horizontal Location SFA'.",
+               "Assigning option 'Middle' for parameter 'Geometry Building Level MF'.",
+               "Assigning option '326' for parameter 'Geometry Building Number Units MF'.",
+               "Assigning option 'None' for parameter 'Geometry Building Number Units SFA'.",
+               "Assigning option '50 or more Unit' for parameter 'Geometry Building Type ACS'.",
+               "Assigning option 'Multifamily with 5+ units, 8+ stories' for parameter 'Geometry Building Type Height'.",
+               "Assigning option 'Multi-Family with 5+ Units' for parameter 'Geometry Building Type RECS'.",
+               "Assigning option '500-749' for parameter 'Geometry Floor Area'.",
+               "Assigning option '0-1499' for parameter 'Geometry Floor Area Bin'.",
+               "Assigning option 'Vented Crawlspace' for parameter 'Geometry Foundation Type'.",
+               "Assigning option 'None' for parameter 'Geometry Garage'.",
+               "Assigning option 'Multi-Family with 5+ Units Middle Unit, Vented Crawlspace, No Attic, No Garage' for parameter 'Geometry Space Combination'.",
+               "Assigning option '21' for parameter 'Geometry Stories'.",
+               "Assigning option '4+' for parameter 'Geometry Stories Low Rise'.",
+               "Assigning option '8+' for parameter 'Geometry Story Bin'.",
+               "Assigning option 'Aluminum, Light' for parameter 'Geometry Wall Exterior Finish'.",
+               "Assigning option 'Steel Frame' for parameter 'Geometry Wall Type'.",
+               "Assigning option '1.1' for parameter 'Ground Thermal Conductivity'.",
+               "Assigning option 'None' for parameter 'HVAC Cooling Autosizing Factor'.",
+               "Assigning option 'Room AC, EER 10.7' for parameter 'HVAC Cooling Efficiency'.",
+               "Assigning option '40% Conditioned' for parameter 'HVAC Cooling Partial Space Conditioning'.",
+               "Assigning option 'Room AC' for parameter 'HVAC Cooling Type'.",
+               "Assigning option 'No' for parameter 'HVAC Has Ducts'.",
+               "Assigning option 'Heating Only' for parameter 'HVAC Has Shared System'.",
+               "Assigning option 'No' for parameter 'HVAC Has Zonal Electric Heating'.",
+               "Assigning option 'None' for parameter 'HVAC Heating Autosizing Factor'.",
+               "Assigning option 'Shared Heating' for parameter 'HVAC Heating Efficiency'.",
+               "Assigning option 'Non-Ducted Heating' for parameter 'HVAC Heating Type'.",
+               "Assigning option 'Natural Gas Shared Heating' for parameter 'HVAC Heating Type And Fuel'.",
+               "Assigning option 'None' for parameter 'HVAC Secondary Heating Efficiency'.",
+               "Assigning option 'None' for parameter 'HVAC Secondary Heating Fuel'.",
+               "Assigning option '0%' for parameter 'HVAC Secondary Heating Partial Space Conditioning'.",
+               "Assigning option 'None' for parameter 'HVAC Secondary Heating Type'.",
+               "Assigning option 'Boiler Baseboards Heating Only, Fuel' for parameter 'HVAC Shared Efficiencies'.",
+               "Assigning option 'No' for parameter 'HVAC System Is Faulted'.",
+               "Assigning option 'No' for parameter 'HVAC System Is Scaled'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed AC Airflow'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed AC Charge'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed ASHP Airflow'.",
+               "Assigning option 'None' for parameter 'HVAC System Single Speed ASHP Charge'.",
+               "Assigning option 'No' for parameter 'Has PV'.",
+               "Assigning option 'Natural Gas' for parameter 'Heating Fuel'.",
+               "Assigning option '72F' for parameter 'Heating Setpoint'.",
+               "Assigning option 'No' for parameter 'Heating Setpoint Has Offset'.",
+               "Assigning option '0F' for parameter 'Heating Setpoint Offset Magnitude'.",
+               "Assigning option 'None' for parameter 'Heating Setpoint Offset Period'.",
+               "Assigning option 'Never' for parameter 'Heating Unavailable Days'.",
+               "Assigning option 'No Exterior Use' for parameter 'Holiday Lighting'.",
+               "Assigning option 'Uninsulated' for parameter 'Hot Water Distribution'.",
+               "Assigning option '120% Usage' for parameter 'Hot Water Fixtures'.",
+               "Assigning option 'No' for parameter 'Household Has Tribal Persons'.",
+               "Assigning option 'NYISO' for parameter 'ISO RTO Region'.",
+               "Assigning option '200000+' for parameter 'Income'.",
+               "Assigning option '140000+' for parameter 'Income RECS2015'.",
+               "Assigning option '150000+' for parameter 'Income RECS2020'.",
+               "Assigning option '20 ACH50' for parameter 'Infiltration'.",
+               "Assigning option 'None' for parameter 'Insulation Ceiling'.",
+               "Assigning option 'Uninsulated' for parameter 'Insulation Floor'.",
+               "Assigning option 'Uninsulated' for parameter 'Insulation Foundation Wall'.",
+               "Assigning option 'Uninsulated' for parameter 'Insulation Rim Joist'.",
+               "Assigning option 'Finished, R-38' for parameter 'Insulation Roof'.",
+               "Assigning option 'None' for parameter 'Insulation Slab'.",
+               "Assigning option 'Wood Stud, Uninsulated' for parameter 'Insulation Wall'.",
+               "Assigning option 'Summer = 0.7, Winter = 0.85' for parameter 'Interior Shading'.",
+               "Assigning option '100% Incandescent' for parameter 'Lighting'.",
+               "Assigning option '100% Usage' for parameter 'Lighting Interior Use'.",
+               "Assigning option '100% Usage' for parameter 'Lighting Other Use'.",
+               "Assigning option 'CR07' for parameter 'Location Region'.",
+               "Assigning option 'None' for parameter 'Mechanical Ventilation'.",
+               "Assigning option 'New York-Newark-Jersey City, NY-NJ-PA MSA' for parameter 'Metropolitan and Micropolitan Statistical Area'.",
+               "Assigning option 'None' for parameter 'Misc Extra Refrigerator'.",
+               "Assigning option 'None' for parameter 'Misc Freezer'.",
+               "Assigning option 'None' for parameter 'Misc Gas Fireplace'.",
+               "Assigning option 'None' for parameter 'Misc Gas Grill'.",
+               "Assigning option 'None' for parameter 'Misc Gas Lighting'.",
+               "Assigning option 'None' for parameter 'Misc Hot Tub Spa'.",
+               "Assigning option 'None' for parameter 'Misc Pool'.",
+               "Assigning option 'None' for parameter 'Misc Pool Heater'.",
+               "Assigning option 'None' for parameter 'Misc Pool Pump'.",
+               "Assigning option 'None' for parameter 'Misc Well Pump'.",
+               "Assigning option 'Cooling Season, 7 days/wk' for parameter 'Natural Ventilation'.",
+               "Assigning option '12' for parameter 'Neighbors'.",
+               "Assigning option '2' for parameter 'Occupants'.",
+               "Assigning option 'West' for parameter 'Orientation'.",
+               "Assigning option 'None' for parameter 'Overhangs'.",
+               "Assigning option 'NY, 03805' for parameter 'PUMA'.",
+               "Assigning option 'In metro area, principal city' for parameter 'PUMA Metro Status'.",
+               "Assigning option 'None' for parameter 'PV Orientation'.",
+               "Assigning option 'None' for parameter 'PV System Size'.",
+               "Assigning option '200%' for parameter 'Plug Load Diversity'.",
+               "Assigning option '89%' for parameter 'Plug Loads'.",
+               "Assigning option '127' for parameter 'REEDS Balancing Area'.",
+               "Assigning option 'None' for parameter 'Radiant Barrier'.",
+               "Assigning option 'Hour16' for parameter 'Range Spot Vent Hour'.",
+               "Assigning option 'EF 17.6' for parameter 'Refrigerator'.",
+               "Assigning option '105% Usage' for parameter 'Refrigerator Usage Level'.",
+               "Assigning option 'Asphalt Shingles, Medium' for parameter 'Roof Material'.",
+               "Assigning option 'None' for parameter 'Solar Hot Water'.",
+               "Assigning option 'NY' for parameter 'State'.",
+               "Assigning option '150%+' for parameter 'State Metro Median Income'.",
+               "Assigning option 'Renter' for parameter 'Tenure'.",
+               "Assigning option 'High' for parameter 'Usage Level'.",
+               "Assigning option 'Occupied' for parameter 'Vacancy Status'.",
+               "Assigning option '1960s' for parameter 'Vintage'.",
+               "Assigning option '1960-79' for parameter 'Vintage ACS'.",
+               "Assigning option 'Natural Gas Standard' for parameter 'Water Heater Efficiency'.",
+               "Assigning option 'Natural Gas' for parameter 'Water Heater Fuel'.",
+               "Assigning option 'No' for parameter 'Water Heater In Unit'.",
+               "Assigning option 'Conditioned Mechanical Room' for parameter 'Water Heater Location'.",
+               "Assigning option 'F30 B30 L30 R30' for parameter 'Window Areas'.",
+               "Assigning option 'Double, Clear, Metal, Air' for parameter 'Windows'.",
+               "Calling ResStockArguments measure with arguments:\nsite_iecc_zone -> 4A \nsite_type -> auto \nbathroom_fans_quantity -> auto \nbathroom_fans_start_hour -> 6 \nbathroom_fans_flow_rate -> auto \nbathroom_fans_hours_in_operation -> auto \nbathroom_fans_power -> auto \nbattery_present -> false \nbattery_location -> auto \nbattery_power -> auto \nbattery_capacity -> auto \nbattery_usable_capacity -> auto \nbattery_round_trip_efficiency -> auto \ngeometry_unit_num_bedrooms -> 1 \ngeometry_unit_num_bathrooms -> auto \nceiling_fan_present -> false \nceiling_fan_label_energy_use -> 0 \nceiling_fan_efficiency -> 0 \nceiling_fan_quantity -> 0 \nceiling_fan_cooling_setpoint_temp_offset -> 0 \nsite_city -> auto \nclothes_dryer_present -> false \nclothes_dryer_location -> auto \nclothes_dryer_fuel_type -> natural gas \nclothes_dryer_efficiency_type -> CombinedEnergyFactor \nclothes_dryer_efficiency -> 2.70 \nclothes_dryer_vented_flow_rate -> auto \nclothes_dryer_usage_multiplier -> 1.2 \nclothes_washer_location -> auto \nclothes_washer_efficiency_type -> IntegratedModifiedEnergyFactor \nclothes_washer_efficiency -> 0 \nclothes_washer_rated_annual_kwh -> 0 \nclothes_washer_label_electric_rate -> 0 \nclothes_washer_label_gas_rate -> 0 \nclothes_washer_label_annual_gas_cost -> 0 \nclothes_washer_label_usage -> 0 \nclothes_washer_capacity -> 0 \nclothes_washer_present -> false \nclothes_washer_usage_multiplier -> 1.2 \ncooking_range_oven_present -> true \ncooking_range_oven_location -> auto \ncooking_range_oven_fuel_type -> natural gas \ncooking_range_oven_is_induction -> false \ncooking_range_oven_is_convection -> auto \ncooking_range_oven_usage_multiplier -> 1.2 \nhvac_control_cooling_weekday_setpoint_temp -> 70 \nhvac_control_cooling_weekend_setpoint_temp -> 70 \nuse_auto_cooling_season -> false \nhvac_control_cooling_season_period -> auto \nhvac_control_cooling_weekday_setpoint_offset_magnitude -> 0 \nhvac_control_cooling_weekend_setpoint_offset_magnitude -> 0 \nhvac_control_cooling_weekday_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nhvac_control_cooling_weekend_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nschedules_space_cooling_unavailable_days -> 0 \ngeometry_corridor_position -> Double-Loaded Interior \ngeometry_corridor_width -> 10 \nsimulation_control_daylight_saving_enabled -> true \nweather_station_epw_filepath -> ../../../weather/G3600610.epw \nsite_zip_code -> 10025 \nsite_time_zone_utc_offset -> -5 \ndehumidifier_type -> none \ndehumidifier_efficiency_type -> EnergyFactor \ndehumidifier_efficiency -> 0 \ndehumidifier_capacity -> 40 \ndehumidifier_rh_setpoint -> 0.5 \ndehumidifier_fraction_dehumidification_load_served -> 1 \ndishwasher_present -> true \ndishwasher_location -> auto \ndishwasher_efficiency_type -> RatedAnnualkWh \ndishwasher_efficiency -> 318 \ndishwasher_label_electric_rate -> 0.12 \ndishwasher_label_gas_rate -> 1.09 \ndishwasher_label_annual_gas_cost -> 25 \ndishwasher_label_usage -> 4 \ndishwasher_place_setting_capacity -> 12 \ndishwasher_usage_multiplier -> 1.2 \ndoor_area -> 20 \ndoor_rvalue -> 5 \nducts_leakage_units -> Percent \nducts_supply_leakage_to_outside_value -> 0 \nducts_return_leakage_to_outside_value -> 0 \nducts_supply_insulation_r -> 0 \nducts_return_insulation_r -> 0 \nducts_supply_buried_insulation_level -> auto \nducts_return_buried_insulation_level -> auto \nducts_supply_fraction_rectangular -> auto \nducts_return_fraction_rectangular -> auto \nducts_supply_location -> conditioned space \nducts_supply_surface_area -> auto \nducts_supply_surface_area_fraction -> auto \nducts_return_location -> conditioned space \nducts_return_surface_area -> auto \nducts_return_surface_area_fraction -> auto \nducts_number_of_return_registers -> 0 \ngeometry_eaves_depth -> 2 \nmisc_plug_loads_vehicle_present -> false \nmisc_plug_loads_vehicle_annual_kwh -> 0 \nmisc_plug_loads_vehicle_usage_multiplier -> 0 \nmisc_plug_loads_vehicle_2_usage_multiplier -> 0 \ngeometry_attic_type -> FlatRoof \ngeometry_roof_type -> gable \ngeometry_roof_pitch -> 6:12 \ngeometry_unit_horizontal_location -> Middle \ngeometry_unit_level -> Middle \ngeometry_building_num_units -> 326 \ngeometry_unit_type -> apartment unit \ngeometry_average_ceiling_height -> 8 \ngeometry_unit_aspect_ratio -> 0.5556 \ngeometry_unit_height_above_grade -> auto \ngeometry_unit_cfa_bin -> 500-749 \ngeometry_unit_cfa -> auto \ngeometry_garage_protrusion -> 0.75 \ngeometry_foundation_type -> VentedCrawlspace \ngeometry_foundation_height -> 4 \ngeometry_foundation_height_above_grade -> 1 \ngeometry_rim_joist_height -> 9.25 \ngeometry_garage_width -> 0 \ngeometry_garage_depth -> 24 \ngeometry_garage_position -> Right \ngeometry_num_floors_above_grade -> 21 \nwall_siding_type -> aluminum siding \nwall_color -> light \nexterior_finish_r -> 0.6 \nsite_ground_conductivity -> 1.1 \nsite_ground_diffusivity -> auto \nsite_soil_and_moisture_type -> auto \ncooling_system_type -> room air conditioner \ncooling_system_cooling_efficiency_type -> EER \ncooling_system_cooling_efficiency -> 10.7 \ncooling_system_cooling_capacity -> auto \ncooling_system_cooling_autosizing_limit -> auto \ncooling_system_is_ducted -> false \ncooling_system_cooling_compressor_type -> auto \ncooling_system_cooling_sensible_heat_fraction -> auto \ncooling_system_crankcase_heater_watts -> auto \ncooling_system_integrated_heating_system_capacity -> auto \ncooling_system_integrated_heating_system_efficiency_percent -> auto \ncooling_system_integrated_heating_system_fraction_heat_load_served -> auto \ncooling_system_integrated_heating_system_fuel -> auto \ncooling_system_fraction_cool_load_served -> .4 \nhvac_blower_fan_watts_per_cfm -> auto \nheating_system_2_type -> none \nheating_system_2_heating_efficiency -> 0 \nheating_system_2_heating_capacity -> auto \nheating_system_2_heating_autosizing_limit -> auto \nheating_system_2_has_flue_or_chimney -> auto \nheating_system_2_fuel -> electricity \nheating_system_2_fraction_heat_load_served -> 0 \nheating_system_type -> Shared Boiler w/ Baseboard \nheating_system_heating_efficiency -> 0.78 \nheating_system_heating_capacity -> auto \nheating_system_heating_autosizing_limit -> auto \nheating_system_fraction_heat_load_served -> 1 \nheating_system_has_flue_or_chimney -> auto \nheat_pump_type -> none \nheat_pump_heating_efficiency_type -> HSPF \nheat_pump_heating_efficiency -> 0 \nheat_pump_cooling_efficiency_type -> SEER \nheat_pump_cooling_efficiency -> 0 \nheat_pump_sizing_methodology -> ACCA \nheat_pump_backup_sizing_methodology -> auto \nheat_pump_heating_capacity -> auto \nheat_pump_heating_autosizing_limit -> auto \nheat_pump_fraction_heat_load_served -> 1 \nheat_pump_cooling_capacity -> auto \nheat_pump_cooling_autosizing_limit -> auto \nheat_pump_fraction_cool_load_served -> 1 \nheat_pump_backup_type -> none \nheat_pump_backup_fuel -> electricity \nheat_pump_backup_heating_efficiency -> 1 \nheat_pump_backup_heating_capacity -> auto \nheat_pump_backup_heating_autosizing_limit -> auto \ngeothermal_loop_configuration -> none \ngeothermal_loop_borefield_configuration -> auto \ngeothermal_loop_loop_flow -> auto \ngeothermal_loop_boreholes_count -> auto \ngeothermal_loop_boreholes_length -> auto \ngeothermal_loop_boreholes_spacing -> auto \ngeothermal_loop_boreholes_diameter -> auto \ngeothermal_loop_grout_type -> auto \ngeothermal_loop_pipe_type -> auto \ngeothermal_loop_pipe_diameter -> auto \nheating_system_fuel -> natural gas \nhvac_control_heating_weekday_setpoint_temp -> 72 \nhvac_control_heating_weekend_setpoint_temp -> 72 \nuse_auto_heating_season -> false \nhvac_control_heating_season_period -> auto \nhvac_control_heating_weekday_setpoint_offset_magnitude -> 0 \nhvac_control_heating_weekend_setpoint_offset_magnitude -> 0 \nhvac_control_heating_weekday_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nhvac_control_heating_weekend_setpoint_schedule -> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \nschedules_space_heating_unavailable_days -> 0 \nholiday_lighting_present -> false \nholiday_lighting_daily_kwh -> 0 \nholiday_lighting_period -> auto \nhot_water_distribution_system_type -> Standard \nhot_water_distribution_standard_piping_length -> auto \nhot_water_distribution_recirc_control_type -> no control \nhot_water_distribution_recirc_piping_length -> 0 \nhot_water_distribution_recirc_branch_piping_length -> 0 \nhot_water_distribution_recirc_pump_power -> 0 \nhot_water_distribution_pipe_r -> 0 \ndwhr_facilities_connected -> none \ndwhr_equal_flow -> true \ndwhr_efficiency -> 0.0 \nwater_fixtures_shower_low_flow -> false \nwater_fixtures_sink_low_flow -> false \nwater_fixtures_usage_multiplier -> 1.2 \nair_leakage_leakiness_description -> auto \nair_leakage_units -> ACH \nair_leakage_house_pressure -> 50 \nair_leakage_value -> 20 \nair_leakage_type -> unit total \nsite_shielding_of_home -> normal \nceiling_assembly_r -> 0 \nceiling_insulation_r -> 0 \nfloor_type -> WoodFrame \nfloor_over_foundation_assembly_r -> 5.3 \nfloor_over_garage_assembly_r -> 5.3 \nfoundation_wall_type -> solid concrete \nfoundation_wall_thickness -> auto \nfoundation_wall_insulation_r -> 0 \nfoundation_wall_insulation_location -> exterior \nfoundation_wall_insulation_distance_to_top -> 0 \nfoundation_wall_insulation_distance_to_bottom -> 0 \nfoundation_wall_assembly_r -> auto \nrim_joist_continuous_exterior_r -> 0 \nrim_joist_continuous_interior_r -> 0 \nrim_joist_assembly_interior_r -> 0 \nrim_joist_assembly_r -> auto \nroof_assembly_r -> 36.5 \nslab_perimeter_insulation_r -> 0 \nslab_perimeter_insulation_depth -> 0 \nslab_exterior_horizontal_insulation_r -> 0 \nslab_exterior_horizontal_insulation_width -> 0 \nslab_exterior_horizontal_insulation_depth_below_grade -> 0 \nslab_under_insulation_r -> 0 \nslab_under_insulation_width -> 0 \nslab_thickness -> auto \nslab_carpet_fraction -> auto \nslab_carpet_r -> auto \nwall_type -> WoodStud \nwall_assembly_r -> 3.4 \nwindow_interior_shading_type -> auto \nwindow_interior_shading_summer -> 0.7 \nwindow_interior_shading_winter -> 0.85 \nlighting_present -> true \nlighting_interior_fraction_cfl -> 0 \nlighting_interior_fraction_lfl -> 0 \nlighting_interior_fraction_led -> 0 \nlighting_exterior_fraction_cfl -> 0 \nlighting_exterior_fraction_lfl -> 0 \nlighting_exterior_fraction_led -> 0 \nlighting_garage_fraction_cfl -> 0 \nlighting_garage_fraction_lfl -> 0 \nlighting_garage_fraction_led -> 0 \nlighting_interior_usage_multiplier -> 1.0 \nlighting_exterior_usage_multiplier -> 1.0 \nlighting_garage_usage_multiplier -> 1.0 \nmech_vent_fan_type -> none \nmech_vent_flow_rate -> 0 \nmech_vent_hours_in_operation -> 0 \nmech_vent_recovery_efficiency_type -> Unadjusted \nmech_vent_total_recovery_efficiency -> 0 \nmech_vent_sensible_recovery_efficiency -> 0 \nmech_vent_fan_power -> 0 \nmech_vent_num_units_served -> 0 \nmech_vent_2_fan_type -> none \nmech_vent_2_flow_rate -> 0 \nmech_vent_2_hours_in_operation -> 0 \nmech_vent_2_recovery_efficiency_type -> Unadjusted \nmech_vent_2_total_recovery_efficiency -> 0 \nmech_vent_2_sensible_recovery_efficiency -> 0 \nmech_vent_2_fan_power -> 0 \nwhole_house_fan_present -> false \nwhole_house_fan_flow_rate -> 0 \nwhole_house_fan_power -> 0 \nmech_vent_shared_frac_recirculation -> auto \nmech_vent_shared_precooling_efficiency -> auto \nmech_vent_shared_precooling_fraction_cool_load_served -> auto \nmech_vent_shared_precooling_fuel -> auto \nmech_vent_shared_preheating_efficiency -> auto \nmech_vent_shared_preheating_fraction_heat_load_served -> auto \nmech_vent_shared_preheating_fuel -> auto \nextra_refrigerator_present -> false \nextra_refrigerator_location -> auto \nextra_refrigerator_rated_annual_kwh -> 0 \nextra_refrigerator_usage_multiplier -> 0 \nfreezer_present -> false \nfreezer_location -> auto \nfreezer_rated_annual_kwh -> 0 \nfreezer_usage_multiplier -> 0 \nmisc_fuel_loads_fireplace_present -> false \nmisc_fuel_loads_fireplace_fuel_type -> natural gas \nmisc_fuel_loads_fireplace_annual_therm -> 0 \nmisc_fuel_loads_fireplace_frac_sensible -> auto \nmisc_fuel_loads_fireplace_frac_latent -> auto \nmisc_fuel_loads_fireplace_usage_multiplier -> 0 \nmisc_fuel_loads_grill_present -> false \nmisc_fuel_loads_grill_fuel_type -> natural gas \nmisc_fuel_loads_grill_annual_therm -> 0 \nmisc_fuel_loads_grill_usage_multiplier -> 0 \nmisc_fuel_loads_lighting_present -> false \nmisc_fuel_loads_lighting_fuel_type -> natural gas \nmisc_fuel_loads_lighting_annual_therm -> 0 \nmisc_fuel_loads_lighting_usage_multiplier -> 0 \npermanent_spa_present -> false \npermanent_spa_pump_annual_kwh -> 0 \npermanent_spa_pump_usage_multiplier -> 0 \npermanent_spa_heater_type -> none \npermanent_spa_heater_annual_kwh -> 0 \npermanent_spa_heater_annual_therm -> 0 \npermanent_spa_heater_usage_multiplier -> 0 \npool_present -> false \npool_heater_type -> none \npool_heater_annual_kwh -> 0 \npool_heater_annual_therm -> 0 \npool_heater_usage_multiplier -> 0 \npool_pump_annual_kwh -> 0 \npool_pump_usage_multiplier -> 0 \nmisc_plug_loads_well_pump_present -> false \nmisc_plug_loads_well_pump_annual_kwh -> 0 \nmisc_plug_loads_well_pump_usage_multiplier -> 0 \nmisc_plug_loads_well_pump_2_usage_multiplier -> 0 \nwindow_fraction_operable -> 0.67 \nneighbor_front_distance -> 0 \nneighbor_back_distance -> 0 \nneighbor_left_distance -> 12 \nneighbor_right_distance -> 12 \nneighbor_front_height -> auto \nneighbor_back_height -> auto \nneighbor_left_height -> auto \nneighbor_right_height -> auto \ngeometry_unit_num_occupants -> 2 \ngeneral_water_use_usage_multiplier -> auto \ngeometry_unit_orientation -> 270 \noverhangs_front_depth -> 0 \noverhangs_front_distance_to_top_of_window -> 0 \noverhangs_front_distance_to_bottom_of_window -> 4 \noverhangs_back_depth -> 0 \noverhangs_back_distance_to_top_of_window -> 0 \noverhangs_back_distance_to_bottom_of_window -> 4 \noverhangs_left_depth -> 0 \noverhangs_left_distance_to_top_of_window -> 0 \noverhangs_left_distance_to_bottom_of_window -> 4 \noverhangs_right_depth -> 0 \noverhangs_right_distance_to_top_of_window -> 0 \noverhangs_right_distance_to_bottom_of_window -> 4 \nsite_elevation -> auto \nsite_latitude -> auto \nsite_longitude -> auto \npv_system_array_azimuth -> 180 \npv_system_2_array_azimuth -> 0 \npv_system_present -> false \npv_system_module_type -> auto \npv_system_max_power_output -> 0 \npv_system_location -> roof \npv_system_tracking -> auto \npv_system_array_tilt -> roofpitch \npv_system_inverter_efficiency -> auto \npv_system_system_losses_fraction -> auto \npv_system_2_present -> false \npv_system_2_module_type -> auto \npv_system_2_max_power_output -> 0 \npv_system_2_location -> auto \npv_system_2_tracking -> auto \npv_system_2_array_tilt -> roofpitch \nmisc_plug_loads_other_2_usage_multiplier -> 2.0 \nmisc_plug_loads_television_2_usage_multiplier -> 2.0 \nmisc_plug_loads_other_annual_kwh -> auto \nmisc_plug_loads_other_frac_sensible -> 0.93 \nmisc_plug_loads_other_frac_latent -> 0.021 \nmisc_plug_loads_other_usage_multiplier -> 0.89 \nmisc_plug_loads_television_present -> true \nmisc_plug_loads_television_annual_kwh -> auto \nmisc_plug_loads_television_usage_multiplier -> 0.89 \nradiant_barrier_attic_location -> none \nradiant_barrier_grade -> 1 \nkitchen_fans_quantity -> auto \nkitchen_fans_start_hour -> 16 \nkitchen_fans_flow_rate -> auto \nkitchen_fans_hours_in_operation -> auto \nkitchen_fans_power -> auto \nrefrigerator_present -> true \nrefrigerator_location -> auto \nrefrigerator_rated_annual_kwh -> 433 \nrefrigerator_usage_multiplier -> 1.05 \nroof_material_type -> asphalt or fiberglass shingles \nroof_color -> medium \nsolar_thermal_system_type -> none \nsolar_thermal_collector_area -> 40 \nsolar_thermal_collector_loop_type -> liquid indirect \nsolar_thermal_collector_type -> single glazing black \nsolar_thermal_collector_azimuth -> 180 \nsolar_thermal_collector_tilt -> roofpitch \nsolar_thermal_collector_rated_optical_efficiency -> 0.77 \nsolar_thermal_collector_rated_thermal_losses -> 0.793 \nsolar_thermal_storage_volume -> auto \nsolar_thermal_solar_fraction -> 0 \nsite_state_code -> NY \nvintage -> 1960s \nyear_built -> auto \nwater_heater_type -> storage water heater \nwater_heater_fuel_type -> natural gas \nwater_heater_tank_volume -> auto \nwater_heater_efficiency_type -> EnergyFactor \nwater_heater_efficiency -> 0.59 \nwater_heater_recovery_efficiency -> 0.76 \nwater_heater_standby_loss -> 0 \nwater_heater_jacket_rvalue -> 0 \nwater_heater_setpoint_temperature -> 125 \nwater_heater_heating_capacity -> auto \nwater_heater_has_flue_or_chimney -> auto \nwater_heater_num_bedrooms_served -> auto \nwater_heater_operating_mode -> auto \nwater_heater_tank_model_type -> auto \nwater_heater_usage_bin -> auto \nwater_heater_uses_desuperheater -> auto \nwater_heater_location -> other heated space \nwindow_front_wwr -> 0.30 \nwindow_back_wwr -> 0.30 \nwindow_left_wwr -> 0.30 \nwindow_right_wwr -> 0.30 \nwindow_area_front -> 0 \nwindow_area_back -> 0 \nwindow_area_left -> 0 \nwindow_area_right -> 0 \nwindow_aspect_ratio -> 1.333 \nskylight_area_front -> 0 \nskylight_area_back -> 0 \nskylight_area_left -> 0 \nskylight_area_right -> 0 \nwindow_ufactor -> 0.76 \nwindow_shgc -> 0.67 \nskylight_ufactor -> 0.37 \nskylight_shgc -> 0.3 \nskylight_storm_type -> auto \nwindow_exterior_shading_type -> auto \nwindow_exterior_shading_summer -> auto \nwindow_exterior_shading_winter -> auto \nwindow_natvent_availability -> auto \nwindow_shading_summer_season -> auto \nwindow_insect_screens -> auto \nbuilding_id -> 3"
+            ],
+            "step_result" : "Fail",
+            "step_values" : 
+            [
+               {
+                  "name" : "buildstock_csv_path",
+                  "value" : "buildstock.csv"
+               },
+               {
+                  "name" : "building_id",
+                  "value" : 3
+               },
+               {
+                  "name" : "sample_weight",
+                  "value" : 34911755.0
+               },
+               {
+                  "name" : "simulation_control_timestep",
+                  "value" : 60
+               },
+               {
+                  "name" : "simulation_control_run_period_begin_month",
+                  "value" : 1
+               },
+               {
+                  "name" : "simulation_control_run_period_begin_day_of_month",
+                  "value" : 1
+               },
+               {
+                  "name" : "simulation_control_run_period_end_month",
+                  "value" : 12
+               },
+               {
+                  "name" : "simulation_control_run_period_end_day_of_month",
+                  "value" : 31
+               },
+               {
+                  "name" : "simulation_control_run_period_calendar_year",
+                  "value" : 2007
+               },
+               {
+                  "name" : "emissions_scenario_names",
+                  "value" : "LRMER_MidCase_15"
+               },
+               {
+                  "name" : "emissions_types",
+                  "value" : "CO2e"
+               },
+               {
+                  "name" : "emissions_electricity_folders",
+                  "value" : "data/emissions/cambium/2022/LRMER_MidCase_15"
+               },
+               {
+                  "name" : "emissions_natural_gas_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "emissions_propane_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "emissions_fuel_oil_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "emissions_wood_values",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_scenario_names",
+                  "value" : "Bills"
+               },
+               {
+                  "name" : "utility_bill_simple_filepaths",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_detailed_filepaths",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_electricity_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_electricity_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_natural_gas_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_natural_gas_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_propane_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_propane_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_fuel_oil_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_fuel_oil_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_wood_fixed_charges",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_wood_marginal_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_compensation_types",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_net_metering_annual_excess_sellback_rate_types",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_net_metering_annual_excess_sellback_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_feed_in_tariff_rates",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_monthly_grid_connection_fee_units",
+                  "value" : ""
+               },
+               {
+                  "name" : "utility_bill_pv_monthly_grid_connection_fees",
+                  "value" : ""
+               },
+               {
+                  "name" : "ahs_region",
+                  "value" : "CBSA New York-Newark-Jersey City, NY-NJ-PA"
+               },
+               {
+                  "name" : "aiannh_area",
+                  "value" : "No"
+               },
+               {
+                  "name" : "ashrae_iecc_climate_zone_2004",
+                  "value" : "4A"
+               },
+               {
+                  "name" : "ashrae_iecc_climate_zone_2004_2_a_split",
+                  "value" : "4A"
+               },
+               {
+                  "name" : "area_median_income",
+                  "value" : "150%+"
+               },
+               {
+                  "name" : "bathroom_spot_vent_hour",
+                  "value" : "Hour6"
+               },
+               {
+                  "name" : "battery",
+                  "value" : "None"
+               },
+               {
+                  "name" : "bedrooms",
+                  "value" : "1"
+               },
+               {
+                  "name" : "building_america_climate_zone",
+                  "value" : "Mixed-Humid"
+               },
+               {
+                  "name" : "cec_climate_zone",
+                  "value" : "None"
+               },
+               {
+                  "name" : "ceiling_fan",
+                  "value" : "None"
+               },
+               {
+                  "name" : "census_division",
+                  "value" : "Middle Atlantic"
+               },
+               {
+                  "name" : "census_division_recs",
+                  "value" : "Middle Atlantic"
+               },
+               {
+                  "name" : "census_region",
+                  "value" : "Northeast"
+               },
+               {
+                  "name" : "city",
+                  "value" : "NY, New York"
+               },
+               {
+                  "name" : "clothes_dryer",
+                  "value" : "None"
+               },
+               {
+                  "name" : "clothes_dryer_usage_level",
+                  "value" : "120% Usage"
+               },
+               {
+                  "name" : "clothes_washer",
+                  "value" : "None"
+               },
+               {
+                  "name" : "clothes_washer_presence",
+                  "value" : "None"
+               },
+               {
+                  "name" : "clothes_washer_usage_level",
+                  "value" : "120% Usage"
+               },
+               {
+                  "name" : "cooking_range",
+                  "value" : "Gas"
+               },
+               {
+                  "name" : "cooking_range_usage_level",
+                  "value" : "120% Usage"
+               },
+               {
+                  "name" : "cooling_setpoint",
+                  "value" : "70F"
+               },
+               {
+                  "name" : "cooling_setpoint_has_offset",
+                  "value" : "No"
+               },
+               {
+                  "name" : "cooling_setpoint_offset_magnitude",
+                  "value" : "0F"
+               },
+               {
+                  "name" : "cooling_setpoint_offset_period",
+                  "value" : "None"
+               },
+               {
+                  "name" : "cooling_unavailable_days",
+                  "value" : "Never"
+               },
+               {
+                  "name" : "corridor",
+                  "value" : "Double-Loaded Interior"
+               },
+               {
+                  "name" : "county",
+                  "value" : "NY, New York County"
+               },
+               {
+                  "name" : "county_metro_status",
+                  "value" : "Metropolitan"
+               },
+               {
+                  "name" : "county_and_puma",
+                  "value" : "G3600610, G36003805"
+               },
+               {
+                  "name" : "custom_state",
+                  "value" : "Others"
+               },
+               {
+                  "name" : "dehumidifier",
+                  "value" : "None"
+               },
+               {
+                  "name" : "dishwasher",
+                  "value" : "318 Rated kWh"
+               },
+               {
+                  "name" : "dishwasher_usage_level",
+                  "value" : "120% Usage"
+               },
+               {
+                  "name" : "door_area",
+                  "value" : "20 ft^2"
+               },
+               {
+                  "name" : "doors",
+                  "value" : "Fiberglass"
+               },
+               {
+                  "name" : "duct_leakage_and_insulation",
+                  "value" : "None"
+               },
+               {
+                  "name" : "duct_location",
+                  "value" : "None"
+               },
+               {
+                  "name" : "eaves",
+                  "value" : "2 ft"
+               },
+               {
+                  "name" : "electric_vehicle",
+                  "value" : "None"
+               },
+               {
+                  "name" : "energystar_climate_zone_2023",
+                  "value" : "North-Central"
+               },
+               {
+                  "name" : "federal_poverty_level",
+                  "value" : "400%+"
+               },
+               {
+                  "name" : "generation_and_emissions_assessment_region",
+                  "value" : "NYSTc"
+               },
+               {
+                  "name" : "geometry_attic_type",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_building_horizontal_location_mf",
+                  "value" : "Middle"
+               },
+               {
+                  "name" : "geometry_building_horizontal_location_sfa",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_building_level_mf",
+                  "value" : "Middle"
+               },
+               {
+                  "name" : "geometry_building_number_units_mf",
+                  "value" : "326"
+               },
+               {
+                  "name" : "geometry_building_number_units_sfa",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_building_type_acs",
+                  "value" : "50 or more Unit"
+               },
+               {
+                  "name" : "geometry_building_type_height",
+                  "value" : "Multifamily with 5+ units, 8+ stories"
+               },
+               {
+                  "name" : "geometry_building_type_recs",
+                  "value" : "Multi-Family with 5+ Units"
+               },
+               {
+                  "name" : "geometry_floor_area",
+                  "value" : "500-749"
+               },
+               {
+                  "name" : "geometry_floor_area_bin",
+                  "value" : "0-1499"
+               },
+               {
+                  "name" : "geometry_foundation_type",
+                  "value" : "Vented Crawlspace"
+               },
+               {
+                  "name" : "geometry_garage",
+                  "value" : "None"
+               },
+               {
+                  "name" : "geometry_space_combination",
+                  "value" : "Multi-Family with 5+ Units Middle Unit, Vented Crawlspace, No Attic, No Garage"
+               },
+               {
+                  "name" : "geometry_stories",
+                  "value" : "21"
+               },
+               {
+                  "name" : "geometry_stories_low_rise",
+                  "value" : "4+"
+               },
+               {
+                  "name" : "geometry_story_bin",
+                  "value" : "8+"
+               },
+               {
+                  "name" : "geometry_wall_exterior_finish",
+                  "value" : "Aluminum, Light"
+               },
+               {
+                  "name" : "geometry_wall_type",
+                  "value" : "Steel Frame"
+               },
+               {
+                  "name" : "ground_thermal_conductivity",
+                  "value" : "1.1"
+               },
+               {
+                  "name" : "hvac_cooling_autosizing_factor",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_cooling_efficiency",
+                  "value" : "Room AC, EER 10.7"
+               },
+               {
+                  "name" : "hvac_cooling_partial_space_conditioning",
+                  "value" : "40% Conditioned"
+               },
+               {
+                  "name" : "hvac_cooling_type",
+                  "value" : "Room AC"
+               },
+               {
+                  "name" : "hvac_has_ducts",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_has_shared_system",
+                  "value" : "Heating Only"
+               },
+               {
+                  "name" : "hvac_has_zonal_electric_heating",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_heating_autosizing_factor",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_heating_efficiency",
+                  "value" : "Shared Heating"
+               },
+               {
+                  "name" : "hvac_heating_type",
+                  "value" : "Non-Ducted Heating"
+               },
+               {
+                  "name" : "hvac_heating_type_and_fuel",
+                  "value" : "Natural Gas Shared Heating"
+               },
+               {
+                  "name" : "hvac_secondary_heating_efficiency",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_secondary_heating_fuel",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_secondary_heating_partial_space_conditioning",
+                  "value" : "0%"
+               },
+               {
+                  "name" : "hvac_secondary_heating_type",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_shared_efficiencies",
+                  "value" : "Boiler Baseboards Heating Only, Fuel"
+               },
+               {
+                  "name" : "hvac_system_is_faulted",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_system_is_scaled",
+                  "value" : "No"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ac_airflow",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ac_charge",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ashp_airflow",
+                  "value" : "None"
+               },
+               {
+                  "name" : "hvac_system_single_speed_ashp_charge",
+                  "value" : "None"
+               },
+               {
+                  "name" : "has_pv",
+                  "value" : "No"
+               },
+               {
+                  "name" : "heating_fuel",
+                  "value" : "Natural Gas"
+               },
+               {
+                  "name" : "heating_setpoint",
+                  "value" : "72F"
+               },
+               {
+                  "name" : "heating_setpoint_has_offset",
+                  "value" : "No"
+               },
+               {
+                  "name" : "heating_setpoint_offset_magnitude",
+                  "value" : "0F"
+               },
+               {
+                  "name" : "heating_setpoint_offset_period",
+                  "value" : "None"
+               },
+               {
+                  "name" : "heating_unavailable_days",
+                  "value" : "Never"
+               },
+               {
+                  "name" : "holiday_lighting",
+                  "value" : "No Exterior Use"
+               },
+               {
+                  "name" : "hot_water_distribution",
+                  "value" : "Uninsulated"
+               },
+               {
+                  "name" : "hot_water_fixtures",
+                  "value" : "120% Usage"
+               },
+               {
+                  "name" : "household_has_tribal_persons",
+                  "value" : "No"
+               },
+               {
+                  "name" : "iso_rto_region",
+                  "value" : "NYISO"
+               },
+               {
+                  "name" : "income",
+                  "value" : "200000+"
+               },
+               {
+                  "name" : "income_recs_2015",
+                  "value" : "140000+"
+               },
+               {
+                  "name" : "income_recs_2020",
+                  "value" : "150000+"
+               },
+               {
+                  "name" : "infiltration",
+                  "value" : "20 ACH50"
+               },
+               {
+                  "name" : "insulation_ceiling",
+                  "value" : "None"
+               },
+               {
+                  "name" : "insulation_floor",
+                  "value" : "Uninsulated"
+               },
+               {
+                  "name" : "insulation_foundation_wall",
+                  "value" : "Uninsulated"
+               },
+               {
+                  "name" : "insulation_rim_joist",
+                  "value" : "Uninsulated"
+               },
+               {
+                  "name" : "insulation_roof",
+                  "value" : "Finished, R-38"
+               },
+               {
+                  "name" : "insulation_slab",
+                  "value" : "None"
+               },
+               {
+                  "name" : "insulation_wall",
+                  "value" : "Wood Stud, Uninsulated"
+               },
+               {
+                  "name" : "interior_shading",
+                  "value" : "Summer = 0.7, Winter = 0.85"
+               },
+               {
+                  "name" : "lighting",
+                  "value" : "100% Incandescent"
+               },
+               {
+                  "name" : "lighting_interior_use",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "lighting_other_use",
+                  "value" : "100% Usage"
+               },
+               {
+                  "name" : "location_region",
+                  "value" : "CR07"
+               },
+               {
+                  "name" : "mechanical_ventilation",
+                  "value" : "None"
+               },
+               {
+                  "name" : "metropolitan_and_micropolitan_statistical_area",
+                  "value" : "New York-Newark-Jersey City, NY-NJ-PA MSA"
+               },
+               {
+                  "name" : "misc_extra_refrigerator",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_freezer",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_gas_fireplace",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_gas_grill",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_gas_lighting",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_hot_tub_spa",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_pool",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_pool_heater",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_pool_pump",
+                  "value" : "None"
+               },
+               {
+                  "name" : "misc_well_pump",
+                  "value" : "None"
+               },
+               {
+                  "name" : "natural_ventilation",
+                  "value" : "Cooling Season, 7 days/wk"
+               },
+               {
+                  "name" : "neighbors",
+                  "value" : "12"
+               },
+               {
+                  "name" : "occupants",
+                  "value" : "2"
+               },
+               {
+                  "name" : "orientation",
+                  "value" : "West"
+               },
+               {
+                  "name" : "overhangs",
+                  "value" : "None"
+               },
+               {
+                  "name" : "puma",
+                  "value" : "NY, 03805"
+               },
+               {
+                  "name" : "puma_metro_status",
+                  "value" : "In metro area, principal city"
+               },
+               {
+                  "name" : "pv_orientation",
+                  "value" : "None"
+               },
+               {
+                  "name" : "pv_system_size",
+                  "value" : "None"
+               },
+               {
+                  "name" : "plug_load_diversity",
+                  "value" : "200%"
+               },
+               {
+                  "name" : "plug_loads",
+                  "value" : "89%"
+               },
+               {
+                  "name" : "reeds_balancing_area",
+                  "value" : "127"
+               },
+               {
+                  "name" : "radiant_barrier",
+                  "value" : "None"
+               },
+               {
+                  "name" : "range_spot_vent_hour",
+                  "value" : "Hour16"
+               },
+               {
+                  "name" : "refrigerator",
+                  "value" : "EF 17.6"
+               },
+               {
+                  "name" : "refrigerator_usage_level",
+                  "value" : "105% Usage"
+               },
+               {
+                  "name" : "roof_material",
+                  "value" : "Asphalt Shingles, Medium"
+               },
+               {
+                  "name" : "solar_hot_water",
+                  "value" : "None"
+               },
+               {
+                  "name" : "state",
+                  "value" : "NY"
+               },
+               {
+                  "name" : "state_metro_median_income",
+                  "value" : "150%+"
+               },
+               {
+                  "name" : "tenure",
+                  "value" : "Renter"
+               },
+               {
+                  "name" : "usage_level",
+                  "value" : "High"
+               },
+               {
+                  "name" : "vacancy_status",
+                  "value" : "Occupied"
+               },
+               {
+                  "name" : "vintage",
+                  "value" : "1960s"
+               },
+               {
+                  "name" : "vintage_acs",
+                  "value" : "1960-79"
+               },
+               {
+                  "name" : "water_heater_efficiency",
+                  "value" : "Natural Gas Standard"
+               },
+               {
+                  "name" : "water_heater_fuel",
+                  "value" : "Natural Gas"
+               },
+               {
+                  "name" : "water_heater_in_unit",
+                  "value" : "No"
+               },
+               {
+                  "name" : "water_heater_location",
+                  "value" : "Conditioned Mechanical Room"
+               },
+               {
+                  "name" : "window_areas",
+                  "value" : "F30 B30 L30 R30"
+               },
+               {
+                  "name" : "windows",
+                  "value" : "Double, Clear, Metal, Air"
+               }
+            ],
+            "step_warnings" : []
+         }
+      },
+      {
+         "arguments" : 
+         {
+            "add_component_loads" : false,
+            "debug" : false,
+            "hpxml_path" : "../../run/home.xml",
+            "output_dir" : "../../run",
+            "skip_validation" : true
+         },
+         "measure_dir_name" : "HPXMLtoOpenStudio"
+      },
+      {
+         "arguments" : 
+         {
+            "debug" : false
+         },
+         "measure_dir_name" : "UpgradeCosts"
+      },
+      {
+         "arguments" : 
+         {
+            "add_timeseries_dst_column" : true,
+            "add_timeseries_utc_column" : true,
+            "include_annual_component_loads" : true,
+            "include_annual_emission_end_uses" : true,
+            "include_annual_emission_fuels" : true,
+            "include_annual_emissions" : true,
+            "include_annual_end_use_consumptions" : true,
+            "include_annual_fuel_consumptions" : true,
+            "include_annual_hot_water_uses" : true,
+            "include_annual_hvac_summary" : true,
+            "include_annual_peak_fuels" : true,
+            "include_annual_peak_loads" : true,
+            "include_annual_resilience" : true,
+            "include_annual_system_use_consumptions" : false,
+            "include_annual_total_consumptions" : true,
+            "include_annual_total_loads" : true,
+            "include_annual_unmet_hours" : true,
+            "include_timeseries_airflows" : true,
+            "include_timeseries_component_loads" : true,
+            "include_timeseries_emission_end_uses" : true,
+            "include_timeseries_emission_fuels" : true,
+            "include_timeseries_emissions" : true,
+            "include_timeseries_end_use_consumptions" : true,
+            "include_timeseries_fuel_consumptions" : true,
+            "include_timeseries_hot_water_uses" : true,
+            "include_timeseries_resilience" : true,
+            "include_timeseries_system_use_consumptions" : false,
+            "include_timeseries_total_consumptions" : true,
+            "include_timeseries_total_loads" : true,
+            "include_timeseries_unmet_hours" : true,
+            "include_timeseries_weather" : true,
+            "include_timeseries_zone_temperatures" : true,
+            "timeseries_frequency" : "hourly",
+            "timeseries_num_decimal_places" : 3,
+            "timeseries_timestamp_convention" : "end",
+            "user_output_variables" : ""
+         },
+         "measure_dir_name" : "ReportSimulationOutput"
+      },
+      {
+         "arguments" : 
+         {
+            "include_annual_bills" : false,
+            "include_monthly_bills" : false,
+            "register_annual_bills" : true,
+            "register_monthly_bills" : false
+         },
+         "measure_dir_name" : "ReportUtilityBills"
+      },
+      {
+         "arguments" : {},
+         "measure_dir_name" : "QOIReport"
+      },
+      {
+         "arguments" : 
+         {
+            "debug" : false,
+            "retain_eplusout_audit" : false,
+            "retain_eplusout_bnd" : false,
+            "retain_eplusout_eio" : false,
+            "retain_eplusout_end" : false,
+            "retain_eplusout_err" : false,
+            "retain_eplusout_eso" : false,
+            "retain_eplusout_mdd" : false,
+            "retain_eplusout_msgpack" : false,
+            "retain_eplusout_mtd" : false,
+            "retain_eplusout_rdd" : false,
+            "retain_eplusout_shd" : false,
+            "retain_eplustbl_htm" : false,
+            "retain_in_idf" : true,
+            "retain_in_osm" : false,
+            "retain_pre_process_idf" : false,
+            "retain_schedules_csv" : true,
+            "retain_stdout_energyplus" : false,
+            "retain_stdout_expandobject" : false
+         },
+         "measure_dir_name" : "ServerDirectoryCleanup"
+      }
+   ],
+   "updated_at" : "20241108T185509Z"
+}

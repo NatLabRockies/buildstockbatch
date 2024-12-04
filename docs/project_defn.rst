@@ -91,12 +91,12 @@ Information about baseline simulations are listed under the ``baseline`` key.
 - ``skip_sims``: Include this key to control whether the set of baseline simulations are run. The default (i.e., when
   this key is not included) is to run all the baseline simulations. No results csv table with baseline characteristics
   will be provided when the baseline simulations are skipped.
-- ``custom_gems``: true or false. **ONLY WORKS ON EAGLE, KESTREL, AND LOCAL**
+- ``custom_gems``: true or false. **ONLY WORKS ON KESTREL AND LOCAL**
   When true, buildstockbatch will call the OpenStudio CLI commands with the
   ``bundle`` and ``bundle_path`` options. These options tell the CLI to load a
   custom set of gems rather than those included in the OpenStudio CLI. For both
-  Eagle, Kestrel, and local Docker runs, these gems are first specified in the
-  ``buildstock\resources\Gemfile``. For Eagle, Kestrel, when the apptainer image
+  Kestrel and local Docker runs, these gems are first specified in the
+  ``buildstock\resources\Gemfile``. For Kestrel, when the apptainer image
   is built, these gems are added to the image. For local Docker, when the
   containers are started, the gems specified in the Gemfile are installed into a
   Docker volume on the local computer. This volume is mounted by each container
@@ -153,34 +153,6 @@ Output Directory
 ~~~~~~~~~~~~~~~~
 
 ``output_directory``: specifies where the outputs of the simulation should be stored. The last folder in the path will be used as the table name in Athena (if aws configuration is present under postprocessing) so needs to be lowercase, start from letters and contain only letters, numbers and underscore character. `Athena requirement. <https://docs.aws.amazon.com/athena/latest/ug/glue-best-practices.html#schema-names>`_
-
-.. _eagle-config:
-
-Eagle Configuration
-~~~~~~~~~~~~~~~~~~~
-
-Under the ``eagle`` key is a list of configuration for running the batch job on
-the Eagle supercomputer.
-
-*  ``n_jobs``: Number of eagle jobs to parallelize the simulation into
-*  ``minutes_per_sim``: Required. Maximum allocated simulation time in minutes.
-*  ``account``: Required. Eagle allocation account to charge the job to.
-*  ``sampling``: Configuration for the sampling in eagle
-
-    *  ``time``: Maximum time in minutes to allocate to sampling job
-
-*  ``postprocessing``: Eagle configuration for the postprocessing step
-
-    *  ``time``: Maximum time in minutes to allocate postprocessing job
-    *  ``n_workers``: Number of eagle nodes to parallelize the postprocessing
-       job into. Max supported is 32. Default is 2.
-    *  ``n_procs``: Number of CPUs to use within each eagle nodes. Max is 36.
-       Default is 18. Try reducing this if you get OOM error.
-    *  ``node_memory_mb``: The memory (in MB) to request for eagle node for
-       postprocessing. The valid values are 85248, 180224 and 751616. Default is
-       85248.
-    *  ``parquet_memory_mb``: The size (in MB) of the combined parquet file in
-       memory. Default is 1000.
 
 .. _kestrel-config:
 
@@ -290,7 +262,7 @@ using `GCP Batch <https://cloud.google.com/batch>`_ and `Cloud Run <https://clou
 
     When BuildStockBatch is run on GCP, it will only save results to GCP Cloud Storage (using the
     ``gcs`` configuration below); i.e., it currently cannot save to AWS S3 and Athena. Likewise,
-    buildstock run locally, on Eagle, or on AWS cannot save to GCP.
+    buildstock run locally, on Kestrel, or on AWS cannot save to GCP.
 
 *  ``job_identifier``: A unique string that starts with an alphabetical character,
    is up to 48 characters long, and only has lowercase letters, numbers and/or hyphens.
@@ -387,9 +359,9 @@ BuildStock results can optionally be uploaded to AWS for further analysis using
 Athena. This process requires appropriate access to an AWS account to be
 configured on your machine. You will need to set this up wherever you use
 buildstockbatch. If you don't have keys, consult your AWS administrator to get
-them set up. The appropriate keys are already installed on Eagle and Kestrel, so
-no action is required. If you run on AWS, this step is already done since the
-simulation outputs are already on S3.
+them set up. The appropriate keys are already installed on Kestrel, so no action
+is required. If you run on AWS, this step is already done since the simulation
+outputs are already on S3.
 
 * :ref:`Local AWS setup instructions <aws-user-config-local>`
 * `Detailed instructions from AWS <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration>`_

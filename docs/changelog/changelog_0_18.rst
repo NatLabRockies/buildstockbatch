@@ -60,9 +60,9 @@
 
         Added option to activate custom gems in the singularity container in eagle-based simulations by setting the
         ``custom_gem`` key in the ``baseline`` section of the configuration yaml to ``True``. This is implemented via
-        the ``bundle`` and ``bundle_path`` options in the OpenStudio CLI. See :func:`~.EagleBatch.run_building` for
-        additional implementation details.
-
+        the ``bundle`` and ``bundle_path`` options in the OpenStudio CLI.
+        See `run_building <https://github.com/NREL/buildstockbatch/blob/61c00cc4139769939f16db9b62f3a7dc58f1f46e/buildstockbatch/eagle.py#L334>`_
+        for additional implementation details.
 
     .. change::
         :tags: change, schema

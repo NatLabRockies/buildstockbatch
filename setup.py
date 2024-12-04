@@ -39,8 +39,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=metadata["__url__"],
     packages=setuptools.find_packages(),
-    python_requires=">=3.8",
-    package_data={"buildstockbatch": ["*.sh", "schemas/*.yaml"], "": ["LICENSE"]},
+    python_requires=">=3.11, <3.13",
+    package_data={
+        "buildstockbatch": ["*.sh", "schemas/*.yaml", "workflow_generator/residential/**/*.yml"],
+        "": ["LICENSE"],
+    },
     install_requires=[
         "pyyaml",
         "requests",
@@ -84,7 +87,6 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "buildstock_local=buildstockbatch.local:main",
-            "buildstock_eagle=buildstockbatch.hpc:eagle_cli",
             "buildstock_kestrel=buildstockbatch.hpc:kestrel_cli",
             "buildstock_gcp=buildstockbatch.gcp.gcp:main",
             "buildstock_aws=buildstockbatch.aws.aws:main",
@@ -97,9 +99,7 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
 )

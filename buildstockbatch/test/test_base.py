@@ -218,11 +218,6 @@ def test_upload_files(mocker, basic_residential_project_file):
     assert (source_file_path, s3_file_path) in files_uploaded
     files_uploaded.remove((source_file_path, s3_file_path))
 
-    s3_file_path = s3_path + "timeseries/_metadata"
-    source_file_path = os.path.join(source_path, "timeseries", "_metadata")
-    assert (source_file_path, s3_file_path) in files_uploaded
-    files_uploaded.remove((source_file_path, s3_file_path))
-
     s3_file_path = s3_path + "buildstock_csv/buildstock.csv"
     source_file_path = str(buildstock_csv_path)
     assert (source_file_path, s3_file_path) in files_uploaded
@@ -259,13 +254,6 @@ def test_skipping_baseline(basic_residential_project_file):
     with gzip.open(results_json_filename, "wt", encoding="utf-8") as f:
         json.dump(dpouts2, f)
 
-    # remove jobs for baseline from jobx.json
-    with open(os.path.join(results_dir, "..", "job0.json"), "rt") as f:
-        job_json = json.load(f)
-    job_json["batch"] = list(filter(lambda job: job[1] is not None, job_json["batch"]))
-    with open(os.path.join(results_dir, "..", "job0.json"), "wt") as f:
-        json.dump(job_json, f)
-
     # run postprocessing
     with patch.object(BuildStockBatchBase, "weather_dir", None), patch.object(
         BuildStockBatchBase, "get_dask_client"
@@ -285,6 +273,12 @@ def test_skipping_baseline(basic_residential_project_file):
 
     up01_csv_gz = os.path.join(results_dir, "results_csvs", "results_up01.csv.gz")
     assert os.path.exists(up01_csv_gz)
+
+    baseline_ts = os.path.join(results_dir, "parquet", "timeseries", "upgrade=0", "group0.parquet")
+    assert not os.path.exists(baseline_ts)
+
+    up01_ts = os.path.join(results_dir, "parquet", "timeseries", "upgrade=1", "group0.parquet")
+    assert os.path.exists(up01_ts)
 
 
 def test_provide_buildstock_csv(basic_residential_project_file, mocker):

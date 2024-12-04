@@ -1,0 +1,42 @@
+Report: MyBuilding: Summary,Orientation,Heating HTM,Cooling HTM,Heating CFM,Cooling CFM
+Windows: Window1,W,31.62,44.0
+Windows: Window2,N,31.62,17.44
+Windows: Window3,E,31.62,43.36
+Windows: Window4,S,31.62,17.44
+Doors: Door1,E,8.32,6.06
+Above Grade Walls: Wall3,W,3.82,1.84
+Above Grade Walls: Wall4,N,3.82,1.84
+Above Grade Walls: Wall5,E,3.82,3.42
+Above Grade Walls: Wall6,N,3.82,3.42
+Above Grade Walls: Wall7,E,3.82,1.84
+Above Grade Walls: Wall8,S,3.82,1.84
+Ceilings: Floor2,,1.32,1.4
+Floors: Slab2,,60.22,0
+Infiltration,,,,227,124
+Ventilation,,,,0,0
+
+Report: MyBuilding: Loads,Area (ft^2),Length (ft),Wall Area Ratio,Heating (Btuh),Cooling Sensible (Btuh),Cooling Latent (Btuh)
+Windows: Window1,43.0,,,1359,1892
+Windows: Window2,15.3,,,484,267
+Windows: Window3,25.8,,,816,1119
+Windows: Window4,23.9,,,756,417
+Doors: Door1,20.0,,,166,121
+Above Grade Walls: Wall3,435.3,,,1661,801
+Above Grade Walls: Wall4,154.4,,,589,284
+Above Grade Walls: Wall5,192.0,,,733,657
+Above Grade Walls: Wall6,96.0,,,366,329
+Above Grade Walls: Wall7,240.5,,,918,442
+Above Grade Walls: Wall8,241.8,,,923,445
+Ceilings: Floor2,1698.0,,,2235,2381
+Floors: Slab2,,150,,9034,0
+Infiltration,,,1.0,10392,2095,5300
+Internal Gains,,,,,3320,800
+Ducts,,,,11985,10544,3169
+Ventilation,,,,0,0,0
+Piping,,,,0
+Blower Heat,,,,,0
+AED Excursion,,,,,727
+Total,,,,42417,25841,9269
+
+Report: MyBuilding: AED Curve,Hr 8 (Btuh),Hr 9 (Btuh),Hr 10 (Btuh),Hr 11 (Btuh),Hr 12 (Btuh),Hr 13 (Btuh),Hr 14 (Btuh),Hr 15 (Btuh),Hr 16 (Btuh),Hr 17 (Btuh),Hr 18 (Btuh),Hr 19 (Btuh)
+MyBuilding,3627,3824,3796,3787,3517,4202,4762,5388,5584,6393,5137,2290

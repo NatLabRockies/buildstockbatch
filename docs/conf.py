@@ -60,7 +60,7 @@ changelog_sections = [
     "sampler",
     "workflow",
     "resstock",
-    "eagle",
+    "hpc",
     "local",
     "aws",
     "postprocessing",
@@ -228,7 +228,7 @@ todo_include_todos = True
 nitpick_ignore = [
     ("py:func", "BuildStockBatchBase.validate_precomputed_sample"),
     ("py:func", "BuildStockBatchBase.validate_xor_nor_schema_keys"),
-    ("py:func", "EagleBatch.run_building"),
+    ("py:func", "KestrelBatch.run_building"),
     ("py:class", "sampler.CommercialSobolSingularitySampler"),
     ("py:class", "sampler.CommercialSobolDockerSampler"),
     ("py:class", "workflow_generator.CommercialDefaultWorkflowGenerator"),

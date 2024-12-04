@@ -199,14 +199,22 @@ class DockerBatchBase(BuildStockBatchBase):
             stage = "buildstockbatch"
 
         logger.info(f"Building docker image stage: {stage} from OpenStudio {self.os_version}")
-        img, build_logs = self.docker_client.images.build(
-            path=str(root_path),
-            tag=self.docker_image,
-            rm=True,
-            target=stage,
-            platform="linux/amd64",
-            buildargs={"OS_VER": self.os_version, "CLOUD_PLATFORM": platform},
-        )
+        try:
+            img, build_logs = self.docker_client.images.build(
+                path=str(root_path),
+                tag=self.docker_image,
+                rm=True,
+                target=stage,
+                platform="linux/amd64",
+                buildargs={"OS_VER": self.os_version, "CLOUD_PLATFORM": platform},
+            )
+        except docker.errors.BuildError as e:
+            for line in e.build_log:
+                if "stream" in line:
+                    logger.error(line["stream"].strip())
+                elif "errorDetail" in line:
+                    logger.error(f"Error: {line['errorDetail']['message'].strip()}")
+            raise
         build_image_log = os.path.join(local_log_dir, "build_image.log")
         with open(build_image_log, "w") as f_out:
             f_out.write("Built image")
@@ -234,9 +242,13 @@ class DockerBatchBase(BuildStockBatchBase):
             "openstudio --bundle /var/oscli/Gemfile --bundle_path /var/oscli/gems "
             "--bundle_without native_ext gem_list"
         )
-        container_output = self.docker_client.containers.run(
-            self.docker_image, list_gems_cmd, remove=True, name="list_gems"
-        )
+        try:
+            container_output = self.docker_client.containers.run(
+                self.docker_image, list_gems_cmd, remove=True, name="list_gems"
+            )
+        except docker.errors.ContainerError as e:
+            logger.error(e.stderr.decode("utf-8"))
+            raise
         gem_list_log = os.path.join(local_log_dir, "openstudio_gem_list_output.log")
         with open(gem_list_log, "wb") as f_out:
             f_out.write(container_output)
@@ -423,9 +435,9 @@ class DockerBatchBase(BuildStockBatchBase):
         building_ids = df.index.tolist()
         n_datapoints = len(building_ids)
         if self.skip_baseline_sims:
-            n_sims = n_datapoints * len(self.cfg.get("upgrades", []))
+            n_sims = n_datapoints * self.num_upgrades
         else:
-            n_sims = n_datapoints * (len(self.cfg.get("upgrades", [])) + 1)
+            n_sims = n_datapoints * (self.num_upgrades + 1)
         logger.debug("Total number of simulations = {}".format(n_sims))
 
         n_sims_per_job = math.ceil(n_sims / self.batch_array_size)
@@ -433,7 +445,7 @@ class DockerBatchBase(BuildStockBatchBase):
         logger.debug("Number of simulations per array job = {}".format(n_sims_per_job))
 
         # Create list of (building ID, upgrade to apply) pairs for all simulations to run.
-        upgrade_sims = itertools.product(building_ids, range(len(self.cfg.get("upgrades", []))))
+        upgrade_sims = itertools.product(building_ids, range(self.num_upgrades))
         if not self.skip_baseline_sims:
             baseline_sims = zip(building_ids, itertools.repeat(None))
             all_sims = list(itertools.chain(baseline_sims, upgrade_sims))

@@ -16,6 +16,7 @@ from buildstockbatch.cloud import docker_base
 from buildstockbatch.cloud.docker_base import DockerBatchBase
 from buildstockbatch.test.shared_testing_stuff import docker_available
 from buildstockbatch.utils import get_project_configuration
+from buildstockbatch import postprocessing
 
 here = os.path.dirname(os.path.abspath(__file__))
 resources_dir = os.path.join(here, "test_inputs", "test_openstudio_buildstock", "resources")
@@ -212,21 +213,15 @@ def test_log_summary(basic_residential_project_file, mocker, caplog):
     Test logging a summary of simulation statuses.
     """
     project_filename, results_dir = basic_residential_project_file()
-
+    fs = LocalFileSystem()
     mocker.patch.object(DockerBatchBase, "results_dir", results_dir)
     dbb = DockerBatchBase(project_filename)
-    # Add results CSV files
-    shutil.copytree(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "test_results",
-            "parquet",
-        ),
-        os.path.join(results_dir, "parquet"),
-    )
+    cfg = get_project_configuration(project_filename)
+
+    postprocessing.combine_results(fs, results_dir, cfg, do_timeseries=False)
 
     with caplog.at_level(logging.INFO):
         dbb.log_summary()
-        assert "Upgrade 01   Success: 4        Fail: 0" in caplog.text
-        assert "Baseline     Success: 4        Fail: 0" in caplog.text
-        assert "Total        Success: 8        Fail: 0" in caplog.text
+        assert "Upgrade 01   Success: 3        Fail: 1" in caplog.text
+        assert "Baseline     Success: 3        Fail: 1" in caplog.text
+        assert "Total        Success: 6        Fail: 2" in caplog.text

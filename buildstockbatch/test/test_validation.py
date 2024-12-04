@@ -17,7 +17,7 @@ import types
 import tempfile
 import json
 import pathlib
-from buildstockbatch.hpc import EagleBatch, SlurmBatch, KestrelBatch
+from buildstockbatch.hpc import SlurmBatch, KestrelBatch
 from buildstockbatch.aws.aws import AwsBatch
 from buildstockbatch.local import LocalBatch
 from buildstockbatch.base import BuildStockBatchBase, ValidationError
@@ -53,8 +53,8 @@ def test_base_schema_validation_is_static():
     assert isinstance(BuildStockBatchBase.validate_project_schema, types.FunctionType)
 
 
-def test_eagle_validation_is_classmethod():
-    assert inspect.ismethod(EagleBatch.validate_project)
+def test_kestrel_validation_is_classmethod():
+    assert inspect.ismethod(KestrelBatch.validate_project)
 
 
 def test_local_docker_validation_is_classmethod():
@@ -106,7 +106,7 @@ def test_xor_violations_fail(project_file, expected):
 
 
 @pytest.mark.parametrize(
-    "project_file, base_expected, eagle_expected",
+    "project_file, base_expected, kestrel_expected",
     [
         (
             os.path.join(example_yml_dir, "missing-required-schema.yml"),
@@ -127,7 +127,7 @@ def test_xor_violations_fail(project_file, expected):
         (os.path.join(example_yml_dir, "minimal-schema.yml"), True, ValidationError),
     ],
 )
-def test_validation_integration(project_file, base_expected, eagle_expected):
+def test_validation_integration(project_file, base_expected, kestrel_expected):
     # patch the validate_options_lookup function to always return true for this case
     with patch.object(BuildStockBatchBase, "validate_options_lookup", lambda _: True), patch.object(
         BuildStockBatchBase, "validate_measure_references", lambda _: True
@@ -138,7 +138,7 @@ def test_validation_integration(project_file, base_expected, eagle_expected):
     ):
         for cls, expected in [
             (BuildStockBatchBase, base_expected),
-            (EagleBatch, eagle_expected),
+            (KestrelBatch, kestrel_expected),
         ]:
             if expected is not True:
                 with pytest.raises(expected):
@@ -187,6 +187,42 @@ def test_bad_measures(project_file):
             raise Exception(
                 "measures_and_arguments was supposed to raise ValidationError for" " enforce-validate-measures-bad.yml"
             )
+
+
+@pytest.mark.parametrize(
+    "project_file",
+    [os.path.join(example_yml_dir, "enforce-validate-measures-missing-dir.yml")],
+)
+def test_missing_measures(project_file):
+    with LogCapture(level=logging.INFO) as _:
+        try:
+            BuildStockBatchBase.validate_workflow_generator(project_file)
+        except (ValidationError, YamaleError) as er:
+            assert "'QOIReport' not found" in str(er)
+        else:
+            raise Exception("Supposed to raise missing measure error for QOIReport")
+
+
+@pytest.mark.parametrize(
+    "project_file",
+    [os.path.join(example_yml_dir, "validate_workflow_generator_invalid_version.yml")],
+)
+def test_missing_version(project_file):
+    with LogCapture(level=logging.INFO) as _:
+        try:
+            BuildStockBatchBase.validate_workflow_generator(project_file)
+        except (ValidationError, YamaleError) as er:
+            assert "Invalid generator version" in str(er)
+        else:
+            raise Exception("Supposed to raise missing measure error for QOIReport")
+
+
+@pytest.mark.parametrize(
+    "project_file",
+    [os.path.join(example_yml_dir, "validate_workflow_generator_valid_version.yml")],
+)
+def test_valid_version(project_file):
+    BuildStockBatchBase.validate_workflow_generator(project_file)
 
 
 @pytest.mark.parametrize(
@@ -354,6 +390,80 @@ def test_validate_resstock_or_comstock_version(mocker):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
 
+@resstock_required
+def test_validate_workflow_gen_version_pass(mocker):
+    # Set the version to a 'really old' one so we trigger the version check error
+    mocker.patch("buildstockbatch.base.bsb_version", "3000.0.0")
+    mocker.patch(
+        "buildstockbatch.base.workflow_generator.version2info",
+        {
+            "residential_hpxml": {
+                "3024.12.23": {
+                    "version": "3024.12.23",
+                },
+            }
+        },
+    )
+    mocker.patch(
+        "buildstockbatch.base.BuildStockBatchBase.get_stock_version_info",
+        lambda _: {"BuildStockBatch": "0.0.0", "ResStock": "3.2.0", "WorkflowGenerator": "3024.12.23"},
+    )
+    mocker.patch(
+        "buildstockbatch.base.get_project_configuration",
+        lambda _: {"workflow_generator": {"version": "3024.12.23", "type": "residential_hpxml", "args": {}}},
+    )
+    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
+
+
+@resstock_required
+def test_validate_workflow_gen_version_fail_unavailable(mocker):
+    # Set the version to a 'really old' one so we trigger the version check error
+    mocker.patch("buildstockbatch.base.bsb_version", "3000.0.0")
+    mocker.patch(
+        "buildstockbatch.base.workflow_generator.version2info",
+        {"residential_hpxml": {}},
+    )
+    mocker.patch(
+        "buildstockbatch.base.BuildStockBatchBase.get_stock_version_info",
+        lambda _: {"BuildStockBatch": "0.0.0", "ResStock": "3.2.0", "WorkflowGenerator": "3024.12.23"},
+    )
+    mocker.patch(
+        "buildstockbatch.base.get_project_configuration",
+        lambda _: {"workflow_generator": {"version": "3024.12.23", "type": "residential_hpxml", "args": {}}},
+    )
+    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    with pytest.raises(ValidationError):
+        BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
+
+
+@resstock_required
+def test_validate_workflow_gen_version_fail_mismatch(mocker):
+    # Set the version to a 'really old' one so we trigger the version check error
+    mocker.patch("buildstockbatch.base.bsb_version", "3000.0.0")
+    mocker.patch(
+        "buildstockbatch.base.workflow_generator.version2info",
+        {
+            "residential_hpxml": {
+                "3024.12.24": {
+                    "version": "3024.12.24",
+                },
+            }
+        },
+    )
+    mocker.patch(
+        "buildstockbatch.base.BuildStockBatchBase.get_stock_version_info",
+        lambda _: {"BuildStockBatch": "0.0.0", "ResStock": "3.2.0", "WorkflowGenerator": "3024.12.23"},
+    )
+    mocker.patch(
+        "buildstockbatch.base.get_project_configuration",
+        lambda _: {"workflow_generator": {"version": "3024.12.24", "type": "residential_hpxml", "args": {}}},
+    )
+    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    with pytest.raises(ValidationError):
+        BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
+
+
 def test_dask_config():
     orig_filename = os.path.join(example_yml_dir, "minimal-schema.yml")
     cfg = get_project_configuration(orig_filename)
@@ -384,27 +494,6 @@ def test_dask_config():
             json.dump(cfg, f)
         with pytest.raises(ValidationError, match=r"needs to be a multiple of 1024"):
             AwsBatch.validate_dask_settings(test3_filename)
-
-
-def test_validate_eagle_output_directory():
-    minimal_yml = pathlib.Path(example_yml_dir, "minimal-schema.yml")
-    with pytest.raises(ValidationError, match=r"must be in /scratch or /projects"):
-        EagleBatch.validate_output_directory_eagle(str(minimal_yml))
-    with tempfile.TemporaryDirectory() as tmpdir:
-        dirs_to_try = [
-            "/scratch/username/out_dir",
-            "/projects/projname/out_dir",
-            "/lustre/eaglefs/scratch/username/out_dir",
-            "/lustre/eaglefs/projects/projname/out_dir",
-        ]
-        for output_directory in dirs_to_try:
-            with open(minimal_yml, "r") as f:
-                cfg = yaml.load(f, Loader=yaml.SafeLoader)
-            cfg["output_directory"] = output_directory
-            temp_yml = pathlib.Path(tmpdir, "temp.yml")
-            with open(temp_yml, "w") as f:
-                yaml.dump(cfg, f, Dumper=yaml.SafeDumper)
-            EagleBatch.validate_output_directory_eagle(str(temp_yml))
 
 
 def test_validate_kestrel_output_directory():
