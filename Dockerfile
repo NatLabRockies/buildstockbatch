@@ -1,33 +1,30 @@
-FROM nrel/openstudio:3.6.1
+FROM nrel/openstudio:3.8.0
 
+# Set environment variables
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+# Install Python 3.11 using deadsnakes PPA and necessary tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common wget build-essential libssl-dev libffi-dev zlib1g-dev \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends python3.11 python3.11-venv python3.11-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN sudo apt update && \
-    sudo apt install -y wget build-essential checkinstall libreadline-gplv2-dev libncursesw5-dev libssl-dev \
-    libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev
+# Set up virtual environment
+ENV VENV_DIR=/opt/venv
+RUN python3.11 -m venv $VENV_DIR
+ENV PATH=$VENV_DIR/bin:$PATH
 
-RUN wget https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz && \
-    tar xzf Python-3.8.8.tgz && \
-    cd Python-3.8.8 && \
-    ./configure --enable-optimizations && \
-    make altinstall && \
-    rm -rf Python-3.8.8 && \
-    rm -rf Python-3.8.8.tgz
-
-
+# Install Python dependencies
 COPY . /buildstock-batch/
-RUN python3.8 -m pip install "dask[distributed]" --upgrade
-RUN python3.8 -m pip install "bokeh" --upgrade
-RUN python3.8 -m pip install /buildstock-batch
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir "dask[distributed]" "bokeh" /buildstock-batch
 
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda
+# Clean unnecessary files
+RUN rm -rf /var/log/* /buildstock-batch/__pycache__
 
-# Put conda in path so we can use conda activate
-ENV PATH=$CONDA_DIR/bin:$PATH
-RUN conda create -y -n bsq_env python=3.10
-RUN echo "source activate bsq_env" > ~/.bashrc
+# Default command
+CMD ["/bin/bash"]
