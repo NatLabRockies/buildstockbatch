@@ -45,6 +45,8 @@ utility-bill-scenario-spec:
     pv_monthly_grid_connection_fee: num(required=False)
 sim-output-report-spec:
     timeseries_frequency: enum('none', 'timestep', 'hourly', 'daily', 'monthly', required=False)
+    include_annual_vehicle_outputs: bool(required=False)
+    include_timeseries_vehicle_outputs: bool(required=False)
     include_timeseries_total_consumptions: bool(required=False)
     include_timeseries_fuel_consumptions: bool(required=False)
     include_timeseries_end_use_consumptions: bool(required=False)

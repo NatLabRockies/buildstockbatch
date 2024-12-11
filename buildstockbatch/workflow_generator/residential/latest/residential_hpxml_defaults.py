@@ -63,6 +63,8 @@ DEFAULT_MEASURE_ARGS = {
         "include_timeseries_system_use_consumptions": False,
         "include_timeseries_unmet_hours": False,
         "include_timeseries_resilience": False,
+        "include_timeseries_vehicle_outputs": False,
+        "include_annual_vehicle_outputs": False,
         "timeseries_num_decimal_places": 3,
         "user_output_variables": "",
     },
