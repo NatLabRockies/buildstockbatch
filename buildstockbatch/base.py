@@ -88,7 +88,7 @@ class BuildStockBatchBase(object):
         if generator_version not in workflow_generator.version2GeneratorClass[generator_type]:
             raise ValidationError(
                 f"Invalid generator version {generator_version} for {generator_type}."
-                f"Availiable versions are {workflow_generator.version2GeneratorClass[generator_type].keys()}"
+                f"Available versions are {workflow_generator.version2GeneratorClass[generator_type].keys()}"
             )
         return workflow_generator.version2GeneratorClass[generator_type][generator_version]
 
