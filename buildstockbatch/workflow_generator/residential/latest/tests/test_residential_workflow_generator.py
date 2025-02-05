@@ -63,6 +63,10 @@ test_cfg = {
                     {"name": "Zone Mean Air Temperature"},
                     {"name": "Zone People Occupant Count"},
                 ],
+                "output_meters": [
+                    {"name": "Electricity:Facility"},
+                    {"name": "HeatingCoils:EnergyTransfer"},
+                ],
                 "include_monthly_bills": True,
             },
             "server_directory_cleanup": {"retain_in_osm": True, "retain_eplusout_msgpack": True},
@@ -153,9 +157,11 @@ def pytest_generate_tests(metafunc):
             if "simulation_output_report" not in blocks:
                 cfg = copy.deepcopy(cfg)
                 cfg["workflow_generator"]["args"]["simulation_output_report"]["output_variables"].pop()
+                cfg["workflow_generator"]["args"]["simulation_output_report"]["output_meters"].pop()
                 cfg_variants.append(cfg)
                 cfg = copy.deepcopy(cfg)
                 del cfg["workflow_generator"]["args"]["simulation_output_report"]["output_variables"]
+                del cfg["workflow_generator"]["args"]["simulation_output_report"]["output_meters"]
                 cfg_variants.append(cfg)
 
         metafunc.parametrize("dynamic_cfg", cfg_variants)
@@ -262,6 +268,10 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
             assert simulation_output_step["arguments"]["user_output_variables"] == ",".join(
                 v["name"] for v in workflow_args["simulation_output_report"]["output_variables"]
             )
+        if "output_meters" in workflow_args["simulation_output_report"]:
+            assert simulation_output_step["arguments"]["user_output_meters"] == ",".join(
+                v["name"] for v in workflow_args["simulation_output_report"]["output_meters"]
+            )
     else:  # Defaults
         assert simulation_output_step["arguments"]["timeseries_frequency"] == "none"
         assert simulation_output_step["arguments"]["include_timeseries_total_consumptions"] is False
@@ -269,6 +279,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
         assert simulation_output_step["arguments"]["include_timeseries_total_loads"] is True
         assert simulation_output_step["arguments"]["include_timeseries_zone_temperatures"] is False
         assert simulation_output_step["arguments"]["user_output_variables"] == ""
+        assert simulation_output_step["arguments"]["user_output_meters"] == ""
 
     assert simulation_output_step["arguments"]["include_annual_total_consumptions"] is True
     assert simulation_output_step["arguments"]["include_annual_fuel_consumptions"] is True

@@ -62,6 +62,7 @@ ARG_MAP = {
     "ReportSimulationOutput": {
         "simulation_output_report": {
             "output_variables": "user_output_variables",
+            "output_meters": "user_output_meters",
         },
     },
     "ReportUtilityBills": {

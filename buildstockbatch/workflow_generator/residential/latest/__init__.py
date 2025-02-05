@@ -1,8 +1,7 @@
-__version__ = "2025.01.29"
+__version__ = "2025.02.05"
 version_info = {
     "version": __version__,
     "version_description": """
-In this version, the BuildExistingModel and ApplyUpgrade measures are passed project_directory argument.
-In previous versions, we were copying housing_characteristics and measures into lib folder.
+In this version, the ReportSimulationOutput measure can be passed EnergyPlus output meters.
 """,
 }
