@@ -153,14 +153,19 @@ def pytest_generate_tests(metafunc):
                 cfg["workflow_generator"]["args"]["utility_bills"].pop()
                 cfg_variants.append(cfg)
 
-            # Add a variant with only one output_variable, and no output_variables key
+            # Add a variant with only one output variable/meter, and no output variables/meters key
             if "simulation_output_report" not in blocks:
                 cfg = copy.deepcopy(cfg)
                 cfg["workflow_generator"]["args"]["simulation_output_report"]["output_variables"].pop()
-                cfg["workflow_generator"]["args"]["simulation_output_report"]["output_meters"].pop()
                 cfg_variants.append(cfg)
                 cfg = copy.deepcopy(cfg)
                 del cfg["workflow_generator"]["args"]["simulation_output_report"]["output_variables"]
+                cfg_variants.append(cfg)
+
+                cfg = copy.deepcopy(cfg)
+                cfg["workflow_generator"]["args"]["simulation_output_report"]["output_meters"].pop()
+                cfg_variants.append(cfg)
+                cfg = copy.deepcopy(cfg)
                 del cfg["workflow_generator"]["args"]["simulation_output_report"]["output_meters"]
                 cfg_variants.append(cfg)
 
