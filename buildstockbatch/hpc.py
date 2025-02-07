@@ -223,6 +223,10 @@ class SlurmBatch(BuildStockBatchBase):
             pathlib.Path(self.output_dir) / "housing_characteristics",
             self.local_housing_characteristics_dir,
         )
+        self.clear_and_copy_dir(
+            pathlib.Path(self.output_dir) / "housing_characteristics",
+            self.local_buildstock_dir / project_directory / "housing_characteristics",
+        )
         if os.path.exists(self.local_apptainer_img):
             os.remove(self.local_apptainer_img)
         shutil.copy2(self.apptainer_image, self.local_apptainer_img)
@@ -235,7 +239,7 @@ class SlurmBatch(BuildStockBatchBase):
         # trim the buildstock.csv file to only include rows for current batch. Helps speed up simulation
         logger.debug("Trimming buildstock.csv")
         building_ids = {x[0] for x in args["batch"]}
-        buildstock_csv_path = self.local_housing_characteristics_dir / "buildstock.csv"
+        buildstock_csv_path = self.local_buildstock_dir / project_directory / "housing_characteristics" / "buildstock.csv"
         valid_rows = []
         with open(buildstock_csv_path, "r", encoding="utf-8") as f:
             csv_reader = csv.DictReader(f)
