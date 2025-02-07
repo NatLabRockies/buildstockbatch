@@ -239,7 +239,9 @@ class SlurmBatch(BuildStockBatchBase):
         # trim the buildstock.csv file to only include rows for current batch. Helps speed up simulation
         logger.debug("Trimming buildstock.csv")
         building_ids = {x[0] for x in args["batch"]}
-        buildstock_csv_path = self.local_buildstock_dir / project_directory / "housing_characteristics" / "buildstock.csv"
+        buildstock_csv_path = (
+            self.local_buildstock_dir / project_directory / "housing_characteristics" / "buildstock.csv"
+        )
         valid_rows = []
         with open(buildstock_csv_path, "r", encoding="utf-8") as f:
             csv_reader = csv.DictReader(f)
