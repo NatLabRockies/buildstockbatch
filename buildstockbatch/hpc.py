@@ -213,6 +213,11 @@ class SlurmBatch(BuildStockBatchBase):
             pathlib.Path(self.buildstock_dir) / "measures",
             self.local_buildstock_dir / "measures",
         )
+        project_directory = self.cfg.get("project_directory", "project_national")
+        self.clear_and_copy_dir(
+            pathlib.Path(self.buildstock_dir) / project_directory,
+            self.local_buildstock_dir / project_directory,
+        )
         self.clear_and_copy_dir(self.weather_dir, self.local_weather_dir)
         self.clear_and_copy_dir(
             pathlib.Path(self.output_dir) / "housing_characteristics",
@@ -358,6 +363,11 @@ class SlurmBatch(BuildStockBatchBase):
                 ]
                 if (resources_dir := cls.local_buildstock_dir / "resources").exists():
                     dirs_to_mount.append(resources_dir)
+
+                project_directory = cfg.get("project_directory", "project_national")
+                project_dir_local = cls.local_buildstock_dir / project_directory
+                if project_dir_local.exists():
+                    dirs_to_mount.append(project_dir_local)
 
                 for src in dirs_to_mount:
                     container_mount = "/" + src.name
