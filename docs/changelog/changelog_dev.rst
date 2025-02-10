@@ -21,3 +21,9 @@ Development Changelog
         This PR adds a new version of the WorkflowGenerator for ResStock and ComStock that passes the buildstock_directory
         argument to BuildExistingModel and ApplyUpgrade measure. This is in support of the change in ResStock
         (and potentially in ComStock) to get rid of the lib folder.
+    
+    .. change::
+        :tags: WorkflowGenerator, feature
+        :pullreq: 483
+
+        This PR adds the necessary copying of project_direcotry in HPC so that BSB can work in Kestrel.
