@@ -31,6 +31,8 @@ Configuration Example
           include_timeseries_emissions: true
           output_variables:
             - name: Zone People Occupant Count
+          output_meters:
+            - name: Electricity:Facility
           include_monthly_bills: true
 
         reporting_measures:
@@ -116,7 +118,8 @@ Arguments
   - ``timeseries_num_decimal_places``: Allows overriding the default number of decimal places for timeseries output.
   - ``add_timeseries_dst_column``: Optionally add, in addition to the default local standard Time column, a local clock TimeDST column. Requires that daylight saving time is enabled.
   - ``add_timeseries_utc_column``: Optionally add, in addition to the default local standard Time column, a local clock TimeUTC column. If the time zone UTC offset is not provided in the HPXML file, the time zone in the EPW header will be used.
-  - ``output_variables``: Optionally request EnergyPlus output variables. Do not include key values; by default all key values will be requested.
+  - ``output_variables``: Optionally generates timeseries EnergyPlus output variables. Do not include key values; by default all key values will be requested.
+  - ``output_meters``: Optionally generates timeseries EnergyPlus output meters.
   - ``include_annual_bills``: Registers annual utility bills with the OpenStudio runner for downstream processing. Default is true.
   - ``include_monthly_bills``: Registers monthly utility bills with the OpenStudio runner for downstream processing. Default is false.
 

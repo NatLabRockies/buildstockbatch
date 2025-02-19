@@ -338,20 +338,14 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
                     {"name": "var1"},
                     {"name": "var2"}
                 ]
-                "output_meters": [
-                    {"name": "meter1"},
-                    {"name": "meter2"}
-                ]
             }
-            arg_map = {"output_variables": "user_output_variables",
-                       "output_meters": "user_output_meters"}
+            arg_map = {"output_variables": "user_output_variables"}
 
         Example output:
         {
-            output = {"normal_arg1", 1, "user_output_variables": "var1,var2", "user_output_meters": "meter1,meter2"}
+            output = {"normal_arg1", 1, "user_output_variables": "var1,var2"}
             "ReportSimulationOutput": {
                 "user_output_variables": "var1,va2",
-                "user_output_meters": "meter1,meter2",
         }
         """
         block_count = len(block) if isinstance(block, list) else 1
