@@ -368,7 +368,7 @@ def test_logic_validation_pass(project_file):
 
 @resstock_required
 def test_number_of_options_apply_upgrade():
-    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
     cfg = get_project_configuration(str(proj_filename))
     cfg["upgrades"][-1]["options"] = cfg["upgrades"][-1]["options"] * 10
     cfg["upgrades"][0]["options"][0]["costs"] = cfg["upgrades"][0]["options"][0]["costs"] * 5
@@ -385,7 +385,7 @@ def test_number_of_options_apply_upgrade():
 def test_validate_resstock_or_comstock_version(mocker):
     # Set the version to a 'really old' one so we trigger the version check error
     mocker.patch("buildstockbatch.base.bsb_version", "1.0.0")
-    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
     with pytest.raises(ValidationError):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
@@ -412,7 +412,7 @@ def test_validate_workflow_gen_version_pass(mocker):
         "buildstockbatch.base.get_project_configuration",
         lambda _: {"workflow_generator": {"version": "3024.12.23", "type": "residential_hpxml", "args": {}}},
     )
-    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
     BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
 
@@ -432,7 +432,7 @@ def test_validate_workflow_gen_version_fail_unavailable(mocker):
         "buildstockbatch.base.get_project_configuration",
         lambda _: {"workflow_generator": {"version": "3024.12.23", "type": "residential_hpxml", "args": {}}},
     )
-    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
     with pytest.raises(ValidationError):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
@@ -459,7 +459,7 @@ def test_validate_workflow_gen_version_fail_mismatch(mocker):
         "buildstockbatch.base.get_project_configuration",
         lambda _: {"workflow_generator": {"version": "3024.12.24", "type": "residential_hpxml", "args": {}}},
     )
-    proj_filename = resstock_directory / "project_national" / "national_upgrades.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
     with pytest.raises(ValidationError):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 

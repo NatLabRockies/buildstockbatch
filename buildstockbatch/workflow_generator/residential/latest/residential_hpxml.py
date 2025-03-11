@@ -155,6 +155,7 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         measure_args["BuildExistingModel"].update(
             {
                 "building_id": building_id,
+                "project_directory": self.cfg["project_directory"],
                 "sample_weight": self.cfg["baseline"]["n_buildings_represented"] / self.n_datapoints,
             }
         )
@@ -186,7 +187,7 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         measure_d = self.cfg["upgrades"][upgrade_idx]
         apply_upgrade_measure = {
             "measure_dir_name": "ApplyUpgrade",
-            "arguments": {"run_measure": 1},
+            "arguments": {"run_measure": 1, "project_directory": self.cfg["project_directory"]},
         }
         if "upgrade_name" in measure_d:
             apply_upgrade_measure["arguments"]["upgrade_name"] = measure_d["upgrade_name"]
@@ -337,14 +338,20 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
                     {"name": "var1"},
                     {"name": "var2"}
                 ]
+                "output_meters": [
+                    {"name": "meter1"},
+                    {"name": "meter2"}
+                ]
             }
-            arg_map = {"output_variables": "user_output_variables"}
+            arg_map = {"output_variables": "user_output_variables",
+                       "output_meters": "user_output_meters"}
 
         Example output:
         {
-            output = {"normal_arg1", 1, "user_output_variables": "var1,var2"}
+            output = {"normal_arg1", 1, "user_output_variables": "var1,var2", "user_output_meters": "meter1,meter2"}
             "ReportSimulationOutput": {
                 "user_output_variables": "var1,va2",
+                "user_output_meters": "meter1,meter2",
         }
         """
         block_count = len(block) if isinstance(block, list) else 1

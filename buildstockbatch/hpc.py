@@ -108,7 +108,7 @@ class SlurmBatch(BuildStockBatchBase):
     def clear_and_copy_dir(src, dst):
         if os.path.exists(dst):
             shutil.rmtree(dst, ignore_errors=True)
-        shutil.copytree(src, dst)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
 
     @classmethod
     def get_apptainer_image(cls, cfg, os_version, os_sha):
@@ -213,10 +213,19 @@ class SlurmBatch(BuildStockBatchBase):
             pathlib.Path(self.buildstock_dir) / "measures",
             self.local_buildstock_dir / "measures",
         )
+        project_directory = self.cfg.get("project_directory", "project_national")
+        self.clear_and_copy_dir(
+            pathlib.Path(self.buildstock_dir) / project_directory,
+            self.local_buildstock_dir / project_directory,
+        )
         self.clear_and_copy_dir(self.weather_dir, self.local_weather_dir)
         self.clear_and_copy_dir(
             pathlib.Path(self.output_dir) / "housing_characteristics",
             self.local_housing_characteristics_dir,
+        )
+        self.clear_and_copy_dir(
+            pathlib.Path(self.output_dir) / "housing_characteristics",
+            self.local_buildstock_dir / project_directory / "housing_characteristics",
         )
         if os.path.exists(self.local_apptainer_img):
             os.remove(self.local_apptainer_img)
@@ -230,7 +239,9 @@ class SlurmBatch(BuildStockBatchBase):
         # trim the buildstock.csv file to only include rows for current batch. Helps speed up simulation
         logger.debug("Trimming buildstock.csv")
         building_ids = {x[0] for x in args["batch"]}
-        buildstock_csv_path = self.local_housing_characteristics_dir / "buildstock.csv"
+        buildstock_csv_path = (
+            self.local_buildstock_dir / project_directory / "housing_characteristics" / "buildstock.csv"
+        )
         valid_rows = []
         with open(buildstock_csv_path, "r", encoding="utf-8") as f:
             csv_reader = csv.DictReader(f)
@@ -374,6 +385,11 @@ class SlurmBatch(BuildStockBatchBase):
                 ]
                 if (resources_dir := cls.local_buildstock_dir / "resources").exists():
                     dirs_to_mount.append(resources_dir)
+
+                project_directory = cfg.get("project_directory", "project_national")
+                project_dir_local = cls.local_buildstock_dir / project_directory
+                if project_dir_local.exists():
+                    dirs_to_mount.append(project_dir_local)
 
                 for src in dirs_to_mount:
                     container_mount = "/" + src.name

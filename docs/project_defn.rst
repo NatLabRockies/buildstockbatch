@@ -8,7 +8,7 @@ that defines how the project will be run. The project file (also known as the
 files are:
 
 - `ResStock National Baseline <https://github.com/NREL/resstock/blob/develop/project_national/national_baseline.yml>`_
-- `ResStock National with Upgrades <https://github.com/NREL/resstock/blob/develop/project_national/national_upgrades.yml>`_
+- `ResStock National with Upgrades <https://github.com/NREL/resstock/blob/develop/project_national/sdr_upgrades_tmy3.yml>`_
 
 Similar project files can be found in the ComStock repo.
 
