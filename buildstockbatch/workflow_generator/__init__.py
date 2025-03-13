@@ -45,6 +45,7 @@ version2info = {
     "commercial_default": {
         "latest": commercial_latest.version_info,
         commercial_latest.__version__: commercial_latest.version_info,
+        commercial_v2024_07_18.__version__: commercial_v2024_07_18.version_info,
     },
     "residential_hpxml": {
         "latest": residential_latest.version_info,
