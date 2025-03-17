@@ -82,7 +82,7 @@ class CommercialDefaultWorkflowGenerator(WorkflowGeneratorBase):
         :param building_id: integer building id to use from the sampled buildstock.csv
         :param upgrade_idx: integer index of the upgrade scenario to apply, None if baseline
         """
-        logger.debug("Generating OSW, sim_id={}".format(sim_id))
+        #logger.debug("Generating OSW, sim_id={}".format(sim_id))
 
         workflow_args = {"measures": []}
         workflow_args.update(self.cfg["workflow_generator"].get("args", {}))
