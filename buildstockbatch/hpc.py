@@ -32,6 +32,8 @@ import sys
 import tempfile
 import time
 import csv
+import multiprocessing
+from multiprocessing import Manager, cpu_count
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch.utils import (
@@ -269,10 +271,12 @@ class SlurmBatch(BuildStockBatchBase):
 
         # Run the simulations, get the data_point_out.json info from each
         tick = time.time()
-        with Parallel(n_jobs=-1, verbose=9) as parallel:
+        with Parallel(n_jobs=2, verbose=9) as parallel:
             dpouts = parallel(itertools.starmap(run_building_d, args["batch"]))
         tick = time.time() - tick
         logger.info("Simulation time: {:.2f} minutes".format(tick / 60.0))
+
+        logger.info(f"multiprocessing.cpu_count(): {multiprocessing.cpu_count()}")
 
         # Send pkill to any lingering EnergyPlus processes
         logger.info("Running pkill -9 -f energyplus to force lingering EnergyPlus processes to exit")
