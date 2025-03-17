@@ -413,7 +413,7 @@ class SlurmBatch(BuildStockBatchBase):
                 args.extend([str(cls.local_apptainer_img), "bash", "-x"])
                 env_vars = dict(os.environ)
                 env_vars["SINGULARITYENV_BUILDSTOCKBATCH_VERSION"] = bsb_version
-                #logger.debug("\n".join(map(str, args))) # this add too much output to job.out files
+                logger.debug("\n".join(map(str, args)))
                 max_time_min = cfg.get("max_minutes_per_sim")
                 if max_time_min is not None:
                     subprocess_kw = {"timeout": max_time_min * 60}
