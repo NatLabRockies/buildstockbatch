@@ -65,7 +65,6 @@ DEFAULT_MEASURE_ARGS = {
         "include_timeseries_resilience": False,
         "timeseries_num_decimal_places": 3,
         "user_output_variables": "",
-        "user_output_meters": "",
     },
     "ReportUtilityBills": {
         "include_annual_bills": False,

@@ -253,7 +253,6 @@ def test_queue_jobs_minutes_per_sim(mocker, basic_residential_project_file, monk
     assert f"--time={n_minutes}" in mock_subprocess.run.call_args[0][0]
 
 
-@pytest.mark.skip(reason="Too many mocks - doesn't really catch errors")
 def test_run_building_process(mocker, basic_residential_project_file):
     project_filename, results_dir = basic_residential_project_file(raw=True)
     results_dir = pathlib.Path(results_dir)

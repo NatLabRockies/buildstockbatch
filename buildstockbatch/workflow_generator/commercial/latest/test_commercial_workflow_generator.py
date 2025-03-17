@@ -9,7 +9,6 @@ def test_com_default_workflow_generator_basic(mocker):
     upgrade_idx = None
     cfg = {
         "baseline": {"n_buildings_represented": 100},
-        "project_directory": "project_testing",
         "workflow_generator": {"type": "commercial_default", "args": {}},
     }
     osw_gen = CommercialDefaultWorkflowGenerator(cfg, 10)
@@ -31,7 +30,6 @@ def test_com_default_workflow_generator_with_timeseries(mocker):
     upgrade_idx = None
     cfg = {
         "baseline": {"n_buildings_represented": 100},
-        "project_directory": "project_testing",
         "workflow_generator": {
             "type": "commercial_default",
             "args": {
@@ -65,7 +63,6 @@ def test_com_default_workflow_generator_extended(mocker):
     upgrade_idx = None
     cfg = {
         "baseline": {"n_buildings_represented": 100},
-        "project_directory": "project_testing",
         "workflow_generator": {
             "type": "commercial_default",
             "args": {
