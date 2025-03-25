@@ -88,7 +88,7 @@ class BuildStockBatchBase(object):
         if generator_version not in workflow_generator.version2GeneratorClass[generator_type]:
             raise ValidationError(
                 f"Invalid generator version {generator_version} for {generator_type}."
-                f"Available versions are {workflow_generator.version2GeneratorClass[generator_type].keys()}"
+                f"Available versions are {list(workflow_generator.version2GeneratorClass[generator_type].keys())}"
             )
         return workflow_generator.version2GeneratorClass[generator_type][generator_version]
 
@@ -830,8 +830,10 @@ class BuildStockBatchBase(object):
         wg_version = cfg["workflow_generator"].get("version", "2024.07.18")
         wg_type = cfg["workflow_generator"]["type"]
         if wg_version not in workflow_generator.version2info[wg_type]:
-            raise ValidationError(f"Workflow generator version {wg_version} not found. "
-                                  f"Available versions: {workflow_generator.version2info[wg_type].keys()}")
+            raise ValidationError(
+                f"Workflow generator version {wg_version} not found. "
+                f"Available versions: {list(workflow_generator.version2info[wg_type].keys())}"
+            )
         expected_version = version_info.get("WorkflowGenerator", "2024.07.18")
         if wg_version != expected_version:
             raise ValidationError(
