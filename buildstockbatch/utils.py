@@ -8,6 +8,8 @@ import pandas as pd
 import shutil
 import traceback
 import yaml
+import sys
+import importlib.util
 
 
 logger = logging.getLogger(__name__)
@@ -144,3 +146,13 @@ def calc_hash_for_file(filename):
 
 def get_bool_env_var(varname):
     return os.environ.get(varname, "0").lower() in ("true", "t", "1", "y", "yes")
+
+
+def dynamic_import(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if not spec or not spec.loader:
+        raise ImportError(f"Cannot load {name} from {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
