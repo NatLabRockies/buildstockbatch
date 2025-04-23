@@ -235,14 +235,6 @@ class LocalBatch(BuildStockBatchBase):
                 pass
             finally:
                 fs = LocalFileSystem()
-                cls.cleanup_sim_dir(
-                    sim_dir,
-                    fs,
-                    f"{results_dir}/simulation_output/timeseries",
-                    upgrade_id,
-                    i,
-                )
-
                 # Clean up symlinks
                 for directory in ("measures", "lib", "weather"):
                     (sim_path / directory).unlink()
@@ -253,6 +245,14 @@ class LocalBatch(BuildStockBatchBase):
                 # Read data_point_out.json
                 reporting_measures = cls.get_reporting_measures(cfg)
                 dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, i)
+                cls.cleanup_sim_dir(
+                    sim_dir,
+                    fs,
+                    f"{results_dir}/simulation_output/timeseries",
+                    upgrade_id,
+                    i,
+                    remove_sim_dir=True
+                )
                 return dpout
 
     def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False):

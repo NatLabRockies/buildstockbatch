@@ -188,7 +188,8 @@ class BuildStockBatchBase(object):
         return sim_id, sim_dir
 
     @staticmethod
-    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id):
+    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id,
+                        remove_sim_dir=False):
         """Clean up the output directory for a single simulation.
 
         :param sim_dir: simulation directory
@@ -201,6 +202,8 @@ class BuildStockBatchBase(object):
         :type upgrade_id: int
         :param building_id: building id from buildstock.csv
         :type building_id: int
+        :param remove_sim_dir: whether to remove the simulation directory entirely
+        :type remove_sim_dir: bool
         """
 
         # Convert the timeseries data to parquet
@@ -258,6 +261,10 @@ class BuildStockBatchBase(object):
                 dest_fs,
                 f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet",
             )
+
+        if remove_sim_dir:
+            shutil.rmtree(sim_dir)
+            return
 
         # Remove files already in data_point.zip
         zipfilename = os.path.join(sim_dir, "run", "data_point.zip")
@@ -971,4 +978,4 @@ class BuildStockBatchBase(object):
                 self.cleanup_dask()
 
         keep_individual_timeseries = self.cfg.get("postprocessing", {}).get("keep_individual_timeseries", False)
-        postprocessing.remove_intermediate_files(fs, self.results_dir, keep_individual_timeseries)
+        # postprocessing.remove_intermediate_files(fs, self.results_dir, keep_individual_timeseries)
