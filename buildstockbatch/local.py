@@ -140,6 +140,7 @@ class LocalBatch(BuildStockBatchBase):
         cfg,
         i,
         upgrade_idx=None,
+        low_disk=False,
     ):
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
 
@@ -251,11 +252,11 @@ class LocalBatch(BuildStockBatchBase):
                     f"{results_dir}/simulation_output/timeseries",
                     upgrade_id,
                     i,
-                    remove_sim_dir=True
+                    low_disk=low_disk,
                 )
                 return dpout
 
-    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False):
+    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=False):
         buildstock_csv_filename = self.sampler.run_sampling()
 
         if sampling_only:
@@ -311,13 +312,16 @@ class LocalBatch(BuildStockBatchBase):
             json.dump(dpouts, f)
         del dpouts
 
+        if low_disk:
+            return
+
         sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
         logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
         with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
             for dirname in os.listdir(sim_out_path):
                 if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
                     tarf.add(sim_out_path / dirname, arcname=dirname)
-                    shutil.rmtree(sim_out_path / dirname)
+                    shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
 
     @property
     def output_dir(self):
@@ -385,6 +389,11 @@ def main():
         action="store_true",
         help="Only apply the measures, but don't run simulations. Useful for debugging.",
     )
+    parser.add_argument(
+        "--low-disk",
+        action="store_true",
+        help="Delete unused simulation result files immediately after processing to save disk space.",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--postprocessonly",
@@ -422,6 +431,7 @@ def main():
             n_jobs=args.j,
             measures_only=args.measures_only,
             sampling_only=args.samplingonly,
+            low_disk=args.low_disk,
         )
     if args.measures_only or args.samplingonly:
         return
