@@ -188,8 +188,7 @@ class BuildStockBatchBase(object):
         return sim_id, sim_dir
 
     @staticmethod
-    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id,
-                        low_disk=False):
+    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id, low_disk=False):
         """Clean up the output directory for a single simulation.
 
         :param sim_dir: simulation directory
