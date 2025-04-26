@@ -138,9 +138,9 @@ class LocalBatch(BuildStockBatchBase):
         measures_only,
         n_datapoints,
         cfg,
+        low_disk,
         i,
         upgrade_idx=None,
-        low_disk=False,
     ):
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
 
@@ -289,6 +289,7 @@ class LocalBatch(BuildStockBatchBase):
             measures_only,
             n_datapoints,
             self.cfg,
+            low_disk,
         )
         upgrade_sims = []
         for i in range(self.num_upgrades):
