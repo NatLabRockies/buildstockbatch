@@ -130,6 +130,7 @@ def test_local_simulation_timeout(mocker):
             measures_only=False,
             n_datapoints=cfg["sampler"]["args"]["n_datapoints"],
             cfg=cfg,
+            low_disk=False,
             i=1,
         )
         sim_path = pathlib.Path(tmpdir, "simulation_output", "up00", "bldg0000001")
