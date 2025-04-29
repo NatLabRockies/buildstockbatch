@@ -56,6 +56,7 @@ sim-output-report-spec:
     include_timeseries_component_loads: bool(required=False)
     include_timeseries_unmet_hours: bool(required=False)
     include_timeseries_zone_temperatures: bool(required=False)
+    include_timeseries_zone_conditions: bool(required=False)
     include_timeseries_airflows: bool(required=False)
     include_timeseries_weather: bool(required=False)
     include_timeseries_resilience: bool(required=False)
