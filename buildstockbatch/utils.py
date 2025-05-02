@@ -123,7 +123,7 @@ def log_error_details(output_file="buildstockbatch_crash_details.log"):
                     text = "\n" + "#" * 20 + "\n"
                     text += get_error_details()
                     f.write(text)
-                    print(text)
+                    logger.error(text)
                 raise
 
         return run_with_error_capture
