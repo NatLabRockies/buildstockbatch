@@ -40,7 +40,6 @@ DEFAULT_MEASURE_ARGS = {
         "include_timeseries_total_loads": True,
         "include_timeseries_component_loads": False,
         "include_timeseries_zone_temperatures": False,
-        "include_timeseries_zone_conditions": False,
         "include_timeseries_airflows": False,
         "include_timeseries_weather": False,
         "timeseries_timestamp_convention": "end",
