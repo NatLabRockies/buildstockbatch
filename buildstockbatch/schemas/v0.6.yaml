@@ -152,7 +152,7 @@ postprocessing-spec:
   partition_columns: list(str(), required=False)
   aws: include('aws-postprocessing-spec', required=False)
   keep_individual_timeseries: bool(required=False)
-  transform_annual_results: bool(required=False)
+  publish_annual_results: bool(required=False)  # Polish the results further for publication
 
 aws-postprocessing-spec:
   region_name: str(required=False)

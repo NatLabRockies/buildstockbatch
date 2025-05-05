@@ -31,7 +31,7 @@ import re
 import tempfile
 import time
 import sys
-from buildstockbatch.utils import dynamic_import
+from buildstockbatch.utils import get_annual_publishing_functions
 import polars as pl
 
 logger = logging.getLogger(__name__)
@@ -399,23 +399,20 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     results_csvs_dir = f"{results_dir}/results_csvs"
     results_csvs_pub_dir = None
     parquet_pub_dir = None
-    mt = None  # metadata transform
+    publish_baseline, publish_upgrade = None, None  # metadata transform
     parquet_dir = f"{results_dir}/parquet"
     ts_dir = f"{results_dir}/parquet/timeseries"
     dirs = [results_csvs_dir, parquet_dir]
     if do_timeseries:
         dirs.append(ts_dir)
 
-    if cfg.get("postprocessing", {}).get("transform_annual_results", False):
+    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
         parquet_pub_dir = f"{parquet_dir}/pub_annual"
         dirs.append(results_csvs_pub_dir)
         dirs.append(parquet_pub_dir)
-        buildstock_dir = Path(cfg.get("buildstock_directory"))
-        postprocessing_dir = buildstock_dir / "postprocessing"
-        sys.path.insert(0, str(postprocessing_dir))
-        transform_metadata_file = postprocessing_dir /  "resstockpostproc" /  "transform_metadata.py"
-        mt = dynamic_import("resstockpostproc.transform_metadata", transform_metadata_file)
+        stock_type = cfg.get("stock_type", "residential")
+        publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
 
     # create the postprocessing results directories
     for dr in dirs:
@@ -526,18 +523,18 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info(f"The types for {unresolved} columns couldn't be determined.")
                 else:
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
-        if mt is not None:
+        if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = mt.process_baseline_metadata(failed_bldgs, pl.from_pandas(df, include_index=True).lazy())
+                pub_df_lazy: pl.LazyFrame = publish_baseline(failed_bldgs, pl.from_pandas(df, include_index=True).lazy())
                 base_df_lazy = pub_df_lazy
             else:
-                pub_df_lazy = mt.process_upgrade_metadata(failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id)
+                pub_df_lazy = publish_upgrade(failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id)
 
             pub_df = pub_df_lazy.collect()
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
             logger.info(f"Writing {csv_filename}")
             with fs.open(csv_filename, "wb") as f:
-                with gzip.open(f, "wt", encoding="utf-8") as gf:
+                with gzip.open(f, "wb") as gf:  # Use wb here because polars writes in binary mode to file
                     pub_df.write_csv(file=gf, line_terminator="\n")
 
             dir = f"{parquet_pub_dir}/upgrade={upgrade_id}"
