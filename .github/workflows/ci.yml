@@ -47,6 +47,25 @@ jobs:
           sudo apt install -y "./${OS_INSTALLER_FILENAME}"
           openstudio openstudio_version
           which openstudio
+
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.cargo/bin:$PATH"
+      - name: Install buildstockbatch with UV
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cd buildstockbatch
+          uv pip compile --extra dev --extra aws --output-file requirements-dev.txt pyproject.toml
+          grep -v "buildstock-query @ git+" requirements-dev.txt > requirements-dev-filtered.txt
+          mv requirements-dev-filtered.txt requirements-dev.txt
+          pip install --use-pep517 -r requirements-dev.txt
+      - name: Upload Requirements File
+        uses: actions/upload-artifact@v4
+        with:
+          name: requirements-dev
+          path: buildstockbatch/requirements-dev.txt
+
       - name: Install buildstockbatch
         run: |
           cd buildstockbatch
