@@ -25,7 +25,7 @@ gcp_requires = [
 ]
 
 aws_requires = [
-    "dask-cloudprovider[aws]",
+    "dask-cloudprovider[aws]>=2024.9.0",
 ]
 
 
