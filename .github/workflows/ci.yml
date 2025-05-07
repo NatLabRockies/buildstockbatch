@@ -63,7 +63,7 @@ jobs:
       - name: Upload Requirements File
         uses: actions/upload-artifact@v4
         with:
-          name: requirements-dev
+          name: requirements-dev-${{ matrix.python-version }}
           path: buildstockbatch/requirements-dev.txt
 
       - name: Install buildstockbatch
