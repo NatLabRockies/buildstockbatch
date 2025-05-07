@@ -440,6 +440,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     results_df = dd.from_delayed(delayed_results_dfs, verify_meta=False)
 
     logger.info("Collecting all the failed simulations buildings")
+
     def get_failed_bldg_ids(filename):
         with fs.open(filename, "rb") as f1:
             with gzip.open(f1, "rt", encoding="utf-8") as f2:
@@ -447,12 +448,12 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         df = pd.DataFrame(dpouts)
         return df[~df["completed_status"].isin(["Success", "Invalid"])]["building_id"].tolist()
 
-    failed_bldgs = db.from_sequence(results_json_files) \
-                     .map(get_failed_bldg_ids) \
-                     .compute()
+    failed_bldgs = db.from_sequence(results_json_files).map(get_failed_bldg_ids).compute()
 
     failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
-    logger.info(f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from from published annual results.")
+    logger.info(
+        f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from from published annual results."
+    )
 
     if do_timeseries:
         # Look at all the parquet files to see what columns are in all of them.
@@ -525,10 +526,14 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
         if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(failed_bldgs, pl.from_pandas(df, include_index=True).lazy())
+                pub_df_lazy: pl.LazyFrame = publish_baseline(
+                    failed_bldgs, pl.from_pandas(df, include_index=True).lazy()
+                )
                 base_df_lazy = pub_df_lazy
             else:
-                pub_df_lazy = publish_upgrade(failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id)
+                pub_df_lazy = publish_upgrade(
+                    failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id
+                )
 
             pub_df = pub_df_lazy.collect()
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
