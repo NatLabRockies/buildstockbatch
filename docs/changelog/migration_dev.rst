@@ -21,7 +21,7 @@ New Flags
 =========
 A new flag ``low-disk`` has been added to ``buildstock_local`` to delete unused results and minimize hard-drive space used by buildstockbatch.
 
-.. code-block:: bash
+.. code-block:: text
 
   buildstock_local --help
 
