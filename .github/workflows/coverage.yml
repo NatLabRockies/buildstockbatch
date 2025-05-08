@@ -7,7 +7,7 @@ on:
       - completed
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.id }}
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Download Coverage Artifacts
         uses: Legit-Labs/action-download-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GHB_TOKEN }}
           workflow: ${{ github.event.workflow_run.workflow_id }}
           workflow_conclusion: success
           commit: ${{ github.event.workflow_run.head_commit.id }}
@@ -42,6 +42,6 @@ jobs:
         uses: 5monkeys/cobertura-action@v13
         with:
           path: buildstockbatch/coverage/coverage.xml
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GHB_TOKEN }}
           minimum_coverage: 33
           fail_below_threshold: true
