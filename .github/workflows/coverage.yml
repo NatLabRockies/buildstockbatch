@@ -17,7 +17,7 @@ jobs:
   coverage:
     name: Post coverage report to PR
     runs-on: ubuntu-latest
-    # 🚨 Only run when the test workflow succeeded AND it was triggered by a PR
+    # Only run when the test workflow succeeded AND it was triggered by a PR
     if: >
       ${{
         github.event.workflow_run.event == 'pull_request' &&
