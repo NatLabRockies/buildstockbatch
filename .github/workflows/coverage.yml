@@ -29,6 +29,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_commit.id }}
+      - name: Dump artifacts for the run
+        run: |
+          gh api \
+            /repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts \
+            --jq '.artifacts[].name'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download coverage artifacts
         uses: actions/download-artifact@v4
