@@ -1,6 +1,8 @@
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml import ResidentialHpxmlWorkflowGenerator
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml_defaults import DEFAULT_MEASURE_ARGS
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml_arg_mapping import ARG_MAP
+from buildstockbatch.workflow_generator.residential.v2025_02_25.residential_hpxml import (
+    ResidentialHpxmlWorkflowGenerator,
+)
+from buildstockbatch.workflow_generator.residential.v2025_02_25.residential_hpxml_defaults import DEFAULT_MEASURE_ARGS
+from buildstockbatch.workflow_generator.residential.v2025_02_25.residential_hpxml_arg_mapping import ARG_MAP
 from testfixtures import LogCapture
 import os
 import yamale
@@ -59,7 +61,6 @@ test_cfg = {
                 "include_timeseries_end_use_consumptions": True,
                 "include_timeseries_total_loads": True,
                 "include_timeseries_zone_temperatures": True,
-                "include_timeseries_zone_conditions": True,
                 "output_variables": [
                     {"name": "Zone Mean Air Temperature"},
                     {"name": "Zone People Occupant Count"},
@@ -265,7 +266,6 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
         assert simulation_output_step["arguments"]["include_timeseries_end_use_consumptions"] is True
         assert simulation_output_step["arguments"]["include_timeseries_total_loads"] is True
         assert simulation_output_step["arguments"]["include_timeseries_zone_temperatures"] is True
-        assert simulation_output_step["arguments"]["include_timeseries_zone_conditions"] is True
         if "output_variables" in workflow_args["simulation_output_report"]:
             assert simulation_output_step["arguments"]["user_output_variables"] == ",".join(
                 v["name"] for v in workflow_args["simulation_output_report"]["output_variables"]
@@ -280,7 +280,6 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
         assert simulation_output_step["arguments"]["include_timeseries_end_use_consumptions"] is True
         assert simulation_output_step["arguments"]["include_timeseries_total_loads"] is True
         assert simulation_output_step["arguments"]["include_timeseries_zone_temperatures"] is False
-        assert simulation_output_step["arguments"]["include_timeseries_zone_conditions"] is False
         assert simulation_output_step["arguments"]["user_output_variables"] == ""
         assert simulation_output_step["arguments"]["user_output_meters"] == ""
 

@@ -6,6 +6,15 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read          # checkout, etc.
+  actions: read           # download the artifact
+  pull-requests: write    # post the sticky comment
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
 jobs:
   coverage:
     name: Post coverage report to PR
@@ -19,25 +28,28 @@ jobs:
           ref: ${{ github.event.workflow_run.head_commit.id }}
 
       - name: Download Coverage Artifacts
-        uses: Legit-Labs/action-download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: ${{ github.event.workflow_run.workflow_id }}
-          workflow_conclusion: success
-          commit: ${{ github.event.workflow_run.head_commit.id }}
+          run-id: ${{ github.event.workflow_run.id }}
           name: coverage-report-xml
           path: buildstockbatch/coverage
 
-        # This step is here instead of in ci.yml because PRs from other forks
-        # do not have write permission to the PR during a pull_request action.
-        # More information:
-        # https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-        # Example to follow:
-        # https://github.com/5monkeys/cobertura-action/tree/master/.github/workflows
-      - name: Report coverage to PR
-        uses: 5monkeys/cobertura-action@v13
+      - name: Generate Coverage report
+        uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          path: buildstockbatch/coverage/coverage.xml
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          minimum_coverage: 33
-          fail_below_threshold: true
+          filename: buildstockbatch/coverage/coverage.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '33 75'
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event.workflow_run.event == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md

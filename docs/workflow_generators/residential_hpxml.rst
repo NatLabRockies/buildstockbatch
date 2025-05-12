@@ -101,20 +101,21 @@ Arguments
 
   - ``timeseries_frequency``: The frequency at which to report timeseries output data. Using 'none' will disable timeseries outputs. Valid choices are 'none', 'timestep', 'hourly', 'daily', and 'monthly'.
   - ``include_timeseries_total_consumptions``: Generates timeseries energy consumptions for the total building.
-  - ``include_timeseries_fuel_consumptions``: Generates timeseries energy consumptions for each fuel type (in kBtu for fossil fuels and kWh for electricity).
-  - ``include_timeseries_end_use_consumptions``: Generates timeseries energy consumptions for each end use type (in kBtu for fossil fuels and kWh for electricity).
-  - ``include_timeseries_emissions``: Generates timeseries emissions (e.g., CO2). Requires the appropriate HPXML inputs to be specified.
+  - ``include_timeseries_fuel_consumptions``: Generates timeseries energy consumptions for each fuel type.
+  - ``include_timeseries_end_use_consumptions``: Generates timeseries energy consumptions for each end use.
+  - ``include_timeseries_emissions``: Generates timeseries emissions. Requires the appropriate HPXML inputs to be specified.
   - ``include_timeseries_emission_fuels``: Generates timeseries emissions for each fuel type. Requires the appropriate HPXML inputs to be specified.
   - ``include_timeseries_emission_end_uses``: Generates timeseries emissions for each end use. Requires the appropriate HPXML inputs to be specified.
-  - ``include_timeseries_hot_water_uses``: Generates timeseries hot water usages for each end use type (in gallons).
-  - ``include_timeseries_total_loads``: Generates timeseries total heating, cooling, and hot water loads (in kBtu) for the building.
-  - ``include_timeseries_component_loads``: Generates timeseries heating and cooling loads (in kBtu) disaggregated by component type (e.g., Walls, Windows, Infiltration, Ducts, etc.).
-  - ``include_timeseries_unmet_hours``: Generates timeseries unmet hours for heating and cooling.
-  - ``include_timeseries_zone_temperatures``: Generates timeseries average temperatures (in deg-F) for each space modeled (e.g., living space, attic, garage, basement, crawlspace, etc.).
-  - ``include_timeseries_airflows``: Generates timeseries airflow rates (in cfm) for infiltration, mechanical ventilation (including clothes dryer exhaust), natural ventilation, whole house fans.
-  - ``include_timeseries_weather``: Generates timeseries weather file data including outdoor temperatures, relative humidity, wind speed, and solar.
+  - ``include_timeseries_hot_water_uses``: Generates timeseries hot water usages for each end use.
+  - ``include_timeseries_total_loads``: Generates timeseries heating, cooling, and hot water loads.
+  - ``include_timeseries_component_loads``: Generates timeseries heating and cooling loads disaggregated by component type.
+  - ``include_timeseries_unmet_hours``: Generates timeseries unmet hours for heating, cooling, and EV driving.
+  - ``include_timeseries_zone_temperatures``: Generates timeseries temperatures for each thermal zone.
+  - ``include_timeseries_zone_conditions``: Generates timeseries temperatures and humidities for each thermal zone.
+  - ``include_timeseries_airflows``: Generates timeseries airflows.
+  - ``include_timeseries_weather``: Generates timeseries weather data.
   - ``include_timeseries_resilience``: Generates timeseries resilience outputs.
-  - ``timeseries_timestamp_convention``: Determines whether timeseries timestamps use the start-of-timestep or end-of-timestep convention. Valid choices are 'start' and 'end'.
+  - ``timeseries_timestamp_convention``: Determines whether timeseries timestamps use the start-of-timestep or end-of-timestep convention. Doesn't apply if the output format is 'csv_dview'. Valid choices are 'start' and 'end'.
   - ``timeseries_num_decimal_places``: Allows overriding the default number of decimal places for timeseries output.
   - ``add_timeseries_dst_column``: Optionally add, in addition to the default local standard Time column, a local clock TimeDST column. Requires that daylight saving time is enabled.
   - ``add_timeseries_utc_column``: Optionally add, in addition to the default local standard Time column, a local clock TimeUTC column. If the time zone UTC offset is not provided in the HPXML file, the time zone in the EPW header will be used.
