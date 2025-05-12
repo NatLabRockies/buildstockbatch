@@ -1,15 +1,13 @@
 name: Coverage report
-
 on:
   workflow_run:
     workflows: ["BuildStockBatch Tests"]
-    types:
-      - completed
+    types: [completed]
 
 permissions:
-  contents: read          # checkout, etc.
-  actions: read           # download the artifact
-  pull-requests: write    # post the sticky comment
+  contents: read
+  actions: read
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.workflow_run.id }}
@@ -19,7 +17,12 @@ jobs:
   coverage:
     name: Post coverage report to PR
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    # 🚨 Only run when the test workflow succeeded AND it was triggered by a PR
+    if: >
+      ${{
+        github.event.workflow_run.event == 'pull_request' &&
+        github.event.workflow_run.conclusion == 'success'
+      }}
 
     steps:
       - uses: actions/checkout@v4
@@ -27,29 +30,25 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_commit.id }}
 
-      - name: Download Coverage Artifacts
+      - name: Download coverage artifacts
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
           name: coverage-report-xml
           path: buildstockbatch/coverage
 
-      - name: Generate Coverage report
+      - name: Generate coverage report
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: buildstockbatch/coverage/coverage.xml
           badge: true
           fail_below_min: true
           format: markdown
-          hide_branch_rate: false
-          hide_complexity: true
           indicators: true
-          output: both
           thresholds: '33 75'
 
-      - name: Add Coverage PR Comment
+      - name: Comment on the PR
         uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event.workflow_run.event == 'pull_request'
         with:
           recreate: true
           path: code-coverage-results.md
