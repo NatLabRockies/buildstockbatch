@@ -52,6 +52,7 @@ jobs:
           badge: true
           fail_below_min: true
           format: markdown
+          output: both
           indicators: true
           thresholds: '33 75'
 
