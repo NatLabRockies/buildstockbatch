@@ -38,3 +38,13 @@ Development Changelog
 
         When running ``buildstock_local``, especially in CI, it is useful to be able to use minimal disk space.
         This PR adds a ``low-disk`` flag to use minimal disk space.
+
+
+    .. change::
+        :tags: postprocessing, feature
+        :pullreq: 492
+
+
+        Added support for publishing annual results in the postprocessing step. When enabled via the ``publish_annual_results``
+        configuration option, the system will generate additional processed results in both CSV and Parquet formats.
+        For resstock projects, this functionality leverages the ``resstockpostproc`` module's publishing functions.
