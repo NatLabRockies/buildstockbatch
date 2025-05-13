@@ -340,7 +340,7 @@ class LocalBatch(BuildStockBatchBase):
         self.dask_cluster = LocalCluster(local_directory=os.path.join(self.results_dir, "dask-tmp"))
         self.dask_client = Client(self.dask_cluster)
         return self.dask_client
-    
+
     def cleanup_dask(self):
         self.dask_client.close()
         self.dask_cluster.close()
