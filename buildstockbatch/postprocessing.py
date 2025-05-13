@@ -439,21 +439,23 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     ]
     results_df = dd.from_delayed(delayed_results_dfs, verify_meta=False)
 
-    logger.info("Collecting all the failed simulations buildings")
+    failed_bldgs = []
+    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+        logger.info("Collecting all the failed simulations buildings")
 
-    def get_failed_bldg_ids(filename):
-        with fs.open(filename, "rb") as f1:
-            with gzip.open(f1, "rt", encoding="utf-8") as f2:
-                dpouts = json.load(f2)
-        df = pd.DataFrame(dpouts)
-        return df[~df["completed_status"].isin(["Success", "Invalid"])]["building_id"].tolist()
+        def get_failed_bldg_ids(filename):
+            with fs.open(filename, "rb") as f1:
+                with gzip.open(f1, "rt", encoding="utf-8") as f2:
+                    dpouts = json.load(f2)
+            df = pd.DataFrame(dpouts)
+            return df[~df["completed_status"].isin(["Success", "Invalid"])]["building_id"].tolist()
 
-    failed_bldgs = db.from_sequence(results_json_files).map(get_failed_bldg_ids).compute()
+        failed_bldgs = db.from_sequence(results_json_files).map(get_failed_bldg_ids).compute()
 
-    failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
-    logger.info(
-        f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from from published annual results."
-    )
+        failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
+        logger.info(
+            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from from published annual results."
+        )
 
     if do_timeseries:
         # Look at all the parquet files to see what columns are in all of them.
