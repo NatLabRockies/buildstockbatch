@@ -66,11 +66,12 @@ jobs:
           name: requirements-dev-${{ matrix.python-version }}
           path: buildstockbatch/requirements-dev.txt
 
-      - name: Install buildstockbatch
+      - name: Install buildstockbatch and ResStock postprocessing
         run: |
           cd buildstockbatch
           python -m pip install --progress-bar off --upgrade pip
-          pip install .[dev,aws] --progress-bar off
+          chmod +x install.sh
+          ./install.sh dev
       - name: Black
         uses: psf/black@stable
         with:
