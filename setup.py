@@ -62,10 +62,10 @@ setuptools.setup(
         "lxml",
         "semver",
         "tqdm",
-        "resstock-postprocessing @ "
-        "git+https://github.com/NREL/resstock.git"
-        "@resstockpostproc"
-        "#subdirectory=postprocessing&egg=resstock-postprocessing",
+        # "resstock-postprocessing @ "
+        # "git+https://github.com/NREL/resstock.git"
+        # "@resstockpostproc"
+        # "#subdirectory=postprocessing&egg=resstock-postprocessing",
     ],
     extras_require={
         "dev": [
