@@ -35,18 +35,19 @@ fi
 
 echo "Cloning ResStock repository for postprocessing module..."
 # Clone ResStock repository with sparse checkout for postprocessing
+mkdir -p ../resstock-src
 git clone \
   --depth 1 \
   --filter=blob:none \
   --sparse \
   --branch resstockpostproc \
-  https://github.com/NREL/resstock.git resstock-src
+  https://github.com/NREL/resstock.git ../resstock-src
 
 # Set sparse-checkout to only get the postprocessing directory
-git -C resstock-src sparse-checkout set postprocessing
+git -C ../resstock-src sparse-checkout set postprocessing
 
 echo "Installing ResStock postprocessing module..."
 # Install the postprocessing module
-pip install --no-cache-dir resstock-src/postprocessing
+pip install --no-cache-dir ../resstock-src/postprocessing
 
 echo "Installation complete!"
