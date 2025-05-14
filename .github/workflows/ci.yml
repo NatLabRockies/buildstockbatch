@@ -28,7 +28,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: resstockpostproc
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -48,17 +48,11 @@ jobs:
           openstudio openstudio_version
           which openstudio
 
-      - name: Clone ResStock (postprocessing folder only to save space)
-        run: |
-          git clone --depth 1 --filter=blob:none --sparse --branch resstockpostproc https://github.com/NREL/resstock.git resstock
-          git -C ressstock sparse-checkout set postprocessing
-
       - name: Install buildstockbatch and ResStock postprocessing
         run: |
           cd buildstockbatch
           python -m pip install --progress-bar off --upgrade pip
-          chmod +x install.sh
-          ./install.sh dev
+          bash install.sh dev
       - name: Black
         uses: psf/black@stable
         with:
