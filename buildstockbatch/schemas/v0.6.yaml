@@ -166,4 +166,4 @@ s3-aws-postprocessing-spec:
 athena-aws-postprocessing-spec:
   glue_service_role: str(required=False)
   database_name: regex('^[a-z][a-z0-9_]*$', required=True)
-  max_crawling_time: num(requried=False)
+  max_crawling_time: num(required=False)

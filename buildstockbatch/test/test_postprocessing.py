@@ -161,15 +161,21 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
             return upgrade.rename(rename_map)
 
     # Add the mock module to sys.modules
+    original_resstockpostproc = sys.modules.get("resstockpostproc")
     sys.modules["resstockpostproc"] = MockResstockpostproc
+    try:
+        # Create and run the BuildStockBatchBase instance
+        bsb = BuildStockBatchBase(project_filename)
+        bsb.process_results()
 
-    # Create and run the BuildStockBatchBase instance
-    bsb = BuildStockBatchBase(project_filename)
-    bsb.process_results()
-
-    # Check that the expected directories and files exist
-    results_path = pathlib.Path(results_dir)
-
+        # Check that the expected directories and files exist
+        results_path = pathlib.Path(results_dir)
+    finally:
+        # Restore the original state of sys.modules
+        if original_resstockpostproc is not None:
+            sys.modules["resstockpostproc"] = original_resstockpostproc
+        else:
+            del sys.modules["resstockpostproc"]
     # Check for results_csvs_pub folder with CSV files
     results_csvs_pub_path = results_path / "results_csvs_pub"
     assert results_csvs_pub_path.exists(), "results_csvs_pub folder should exist"
