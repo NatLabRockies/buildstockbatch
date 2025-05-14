@@ -454,7 +454,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
 
         failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
         logger.info(
-            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from from published annual results."
+            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from published annual results."
         )
 
     if do_timeseries:
