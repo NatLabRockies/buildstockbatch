@@ -48,6 +48,11 @@ jobs:
           openstudio openstudio_version
           which openstudio
 
+      - name: Clone ResStock (postprocessing folder only to save space)
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse --branch resstockpostproc https://github.com/NREL/resstock.git resstock
+          git -C ressstock sparse-checkout set postprocessing
+
       - name: Install buildstockbatch and ResStock postprocessing
         run: |
           cd buildstockbatch

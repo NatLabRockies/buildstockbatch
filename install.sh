@@ -33,21 +33,53 @@ if [ "$DEV_MODE" = true ]; then
   pre-commit install
 fi
 
-echo "Cloning ResStock repository for postprocessing module..."
-# Clone ResStock repository with sparse checkout for postprocessing
-mkdir -p ../resstock-src
-git clone \
-  --depth 1 \
-  --filter=blob:none \
-  --sparse \
-  --branch resstockpostproc \
-  https://github.com/NREL/resstock.git ../resstock-src
+echo "Checking for existing ResStock repository..."
+RESSTOCK_PATH="../resstock"
+INSTALL_POSTPROCESSING=false
 
-# Set sparse-checkout to only get the postprocessing directory
-git -C ../resstock-src sparse-checkout set postprocessing
+# Function to check if a path has a valid postprocessing folder
+check_postprocessing() {
+  local path=$1
+  if [ -d "$path" ] && [ -d "$path/postprocessing" ]; then
+    RESSTOCK_PATH="$path"
+    INSTALL_POSTPROCESSING=true
+    return 0
+  fi
+  return 1
+}
 
-echo "Installing ResStock postprocessing module..."
-# Install the postprocessing module
-pip install --no-cache-dir ../resstock-src/postprocessing
+# Check if default resstock folder exists and has postprocessing
+if check_postprocessing "$RESSTOCK_PATH"; then
+  echo "Found existing ResStock folder with postprocessing"
+else
+  # Either folder doesn't exist or doesn't have postprocessing
+  if [ -d "$RESSTOCK_PATH" ]; then
+    echo "WARNING: Found an older version of ResStock without postprocessing folder."
+  else
+    echo "ResStock folder not found."
+  fi
+
+  # Ask for alternative path
+  read -p "Enter path to ResStock with postprocessing (or press Enter to skip): " ALT_PATH
+
+  if [ -z "$ALT_PATH" ]; then
+    echo "No path provided. Skipping installation of postprocessing related library to buildstockbatch."
+  elif [ ! -d "$ALT_PATH" ]; then
+    echo "WARNING: The provided path '$ALT_PATH' does not exist."
+    echo "Skipping installation of postprocessing related library to buildstockbatch."
+  elif [ ! -d "$ALT_PATH/postprocessing" ]; then
+    echo "WARNING: The provided path '$ALT_PATH' does not contain a postprocessing folder."
+    echo "Skipping installation of postprocessing related library to buildstockbatch."
+  else
+    check_postprocessing "$ALT_PATH"
+    echo "Found postprocessing folder in provided path"
+  fi
+fi
+
+# Install postprocessing if a valid path was found
+if [ "$INSTALL_POSTPROCESSING" = true ]; then
+  echo "Installing ResStock postprocessing module from $RESSTOCK_PATH/postprocessing..."
+  pip install --no-cache-dir "$RESSTOCK_PATH/postprocessing"
+fi
 
 echo "Installation complete!"
