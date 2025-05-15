@@ -144,3 +144,12 @@ def calc_hash_for_file(filename):
 
 def get_bool_env_var(varname):
     return os.environ.get(varname, "0").lower() in ("true", "t", "1", "y", "yes")
+
+
+def get_annual_publishing_functions(stock_type):
+    if stock_type == "residential":
+        from resstockpostproc import publish_baseline_annual_results, publish_upgrade_annual_results
+
+        return publish_baseline_annual_results, publish_upgrade_annual_results
+    else:
+        raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")

@@ -8,6 +8,7 @@ import re
 import tarfile
 import pytest
 import shutil
+import sys
 from unittest.mock import patch, MagicMock
 
 from buildstockbatch import postprocessing
@@ -129,3 +130,69 @@ def test_upgrade_missing_ts(basic_residential_project_file, mocker, caplog):
     record = caplog.records[0]
     assert record.levelname == "WARNING"
     assert record.message == "There are no timeseries files for upgrade1."
+
+
+def test_publish_annual_results(basic_residential_project_file, mocker):
+    """Test that when publish_annual_results is True, the expected folders and files are created."""
+    # Create project with schema v0.6 and publish_annual_results set to True
+    project_filename, results_dir = basic_residential_project_file(
+        {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
+    )
+
+    # Mock necessary objects for testing
+    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
+    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
+    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
+
+    # Create a simple mock module and add it to sys.modules
+    class MockResstockpostproc:
+        @staticmethod
+        def publish_baseline_annual_results(failed_bldgs, base):
+            # Simply rename columns with pub_ prefix
+            cols = base.collect_schema().names()
+            rename_map = {col: f"pub_{col}" for col in cols}
+            return base.rename(rename_map)
+
+        @staticmethod
+        def publish_upgrade_annual_results(failed_bldgs, base, upgrade, upgrade_num):
+            # Simply rename columns with pub_ prefix
+            cols = upgrade.collect_schema().names()
+            rename_map = {col: f"pub_{col}" for col in cols}
+            return upgrade.rename(rename_map)
+
+    # Add the mock module to sys.modules
+    original_resstockpostproc = sys.modules.get("resstockpostproc")
+    sys.modules["resstockpostproc"] = MockResstockpostproc
+    try:
+        # Create and run the BuildStockBatchBase instance
+        bsb = BuildStockBatchBase(project_filename)
+        bsb.process_results()
+
+        # Check that the expected directories and files exist
+        results_path = pathlib.Path(results_dir)
+    finally:
+        # Restore the original state of sys.modules
+        if original_resstockpostproc is not None:
+            sys.modules["resstockpostproc"] = original_resstockpostproc
+        else:
+            del sys.modules["resstockpostproc"]
+    # Check for results_csvs_pub folder with CSV files
+    results_csvs_pub_path = results_path / "results_csvs_pub"
+    assert results_csvs_pub_path.exists(), "results_csvs_pub folder should exist"
+    assert len(list(results_csvs_pub_path.glob("*.csv.gz"))) > 0, "results_csvs_pub should contain CSV files"
+
+    # Check for pub_annual folder inside parquet_dir with files
+    parquet_dir = results_path / "parquet"
+    pub_annual_path = parquet_dir / "pub_annual"
+    assert pub_annual_path.exists(), "pub_annual folder should exist inside parquet_dir"
+    assert len(list(pub_annual_path.rglob("*.parquet"))) > 0, "pub_annual should contain parquet files"
+
+    # Verify the structure - there should be upgrade=X folders inside pub_annual
+    upgrade_folders = list(pub_annual_path.glob("upgrade=*"))
+    assert len(upgrade_folders) > 0, "pub_annual should contain upgrade folders"
+
+    # Check each upgrade folder has the expected parquet files
+    for upgrade_folder in upgrade_folders:
+        upgrade_id = int(upgrade_folder.name.split("=")[1])
+        expected_file = upgrade_folder / f"results_up{upgrade_id:02d}.parquet"
+        assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"

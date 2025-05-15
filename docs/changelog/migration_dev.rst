@@ -43,4 +43,4 @@ A new flag ``low-disk`` has been added to ``buildstock_local`` to delete unused 
 Schema Updates
 ==============
 
-Add as changes are made.
+Added the ``publish_annual_results`` configuration option to the postprocessing section in project yaml. When set to ``true``, additional processed annual results will be generated in both CSV and Parquet formats. This functionality, which only works for ResStock, leverages the ``resstockpostproc`` module's publishing functions. The processed results are stored in a ``results_csvs_pub`` directory and a ``pub_annual`` subdirectory within the parquet directory. Default is ``false``.

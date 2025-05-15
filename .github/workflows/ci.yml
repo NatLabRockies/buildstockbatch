@@ -28,7 +28,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: resstockpostproc
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -47,11 +47,12 @@ jobs:
           sudo apt install -y "./${OS_INSTALLER_FILENAME}"
           openstudio openstudio_version
           which openstudio
-      - name: Install buildstockbatch
+
+      - name: Install buildstockbatch and ResStock postprocessing
         run: |
           cd buildstockbatch
           python -m pip install --progress-bar off --upgrade pip
-          pip install .[dev,aws] --progress-bar off
+          bash install.sh dev
       - name: Black
         uses: psf/black@stable
         with:

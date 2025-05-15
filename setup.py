@@ -25,7 +25,7 @@ gcp_requires = [
 ]
 
 aws_requires = [
-    "dask-cloudprovider[aws]",
+    "dask-cloudprovider[aws]>=2024.9.0",
 ]
 
 
@@ -49,6 +49,8 @@ setuptools.setup(
         "requests",
         "numpy",
         "pandas>=2",
+        "polars>=1.2.0",
+        "geopandas>=1.0.0",
         "joblib",
         "pyarrow",
         "dask[complete]>=2022.10.0",
