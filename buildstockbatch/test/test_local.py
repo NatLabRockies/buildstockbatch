@@ -41,7 +41,9 @@ def test_resstock_local_batch(project_filename):
         n_datapoints = 4
     else:
         n_datapoints = 2
-    batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
+
+    if "n_datapoints" in batch.cfg["sampler"]["args"]:
+        batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
 
     local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
     if local_weather_file.exists():
