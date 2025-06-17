@@ -57,6 +57,7 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
     for upgrade_id in (0, 1):
         df = read_csv(str(results_dir / "results_csvs" / f"results_up{upgrade_id:02d}.csv.gz"))
         assert "Measure Failed" in df[df["building_id"] == 3]["step_failures"].iloc[0]
+        assert "EnergyPlus Failed with Error: Building ID is 3" in df[df["building_id"] == 3]["eplusout_err"].iloc[0]
         df = df[df["building_id"] != 3]
         assert (df["reporting_measure1.column_1"] == 1).all()
         assert (df["reporting_measure1.column_2"] == 2).all()
