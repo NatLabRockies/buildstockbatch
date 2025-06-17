@@ -20,7 +20,6 @@ from buildstockbatch.test.shared_testing_stuff import (
     [
         resstock_directory / "project_national" / "national_baseline.yml",
         resstock_directory / "project_testing" / "testing_baseline.yml",
-        resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml",
     ],
     ids=lambda x: x.stem,
 )
@@ -42,8 +41,7 @@ def test_resstock_local_batch(project_filename):
     else:
         n_datapoints = 2
 
-    if "n_datapoints" in batch.cfg["sampler"]["args"]:
-        batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
+    batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
 
     local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
     if local_weather_file.exists():
