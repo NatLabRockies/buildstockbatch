@@ -3,6 +3,7 @@
    "completed_status" : "Fail",
    "created_at" : "2024-11-08T12:55:07.099713",
    "current_step" : 1,
+   "eplusout_err" : "EnergyPlus Failed with Error: Building ID is 3",
    "file_paths" : 
    [
       "/Users/radhikar/Documents/buildstock2025/resstock2025/project_national/national_upgrades/simulation_output/up01/bldg0000003/generated_files",

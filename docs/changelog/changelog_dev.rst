@@ -48,3 +48,11 @@ Development Changelog
         Added support for publishing annual results in the postprocessing step. When enabled via the ``publish_annual_results``
         configuration option, the system will generate additional processed results in both CSV and Parquet formats.
         For resstock projects, this functionality leverages the ``resstockpostproc`` module's publishing functions.
+
+    .. change::
+        :tags: postprocessing, feature
+        :pullreq: 499
+
+
+        Added eplusout_err column in the results_csv to provide visibility into Energplus warnings and errors. Especially useful
+        for failed simulations.
