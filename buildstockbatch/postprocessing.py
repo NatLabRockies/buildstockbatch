@@ -113,7 +113,8 @@ def read_out_osw(fs, filename):
         keys_to_copy = ["started_at", "completed_at", "completed_status"]
         for key in keys_to_copy:
             out_d[key] = d.get(key, None)
-
+        if "eplusout_err" in d:
+            out_d["eplusout_err"] = d["eplusout_err"]
         step_errors = []
         for step in d.get("steps", []):
             measure_dir_name = step["measure_dir_name"]
