@@ -44,21 +44,14 @@ def sample_param(param_tuple: TSVTuple, sample_df: pd.DataFrame, param: str, num
             samples = get_samples(probs, opt_cols, num_samples)
         else:
             grouped_df = sample_df.groupby(dep_cols, sort=False)
-            prob_list = []
-            sample_size_list = []
-            index_list = []
+            flat_samples = [''] * num_samples
             for group_key, indexes in grouped_df.groups.items():
                 group_key = group_key if isinstance(group_key, tuple) else (str(group_key),)
-                index_list.append(indexes)
                 probs = group2values[group_key]
-                prob_list.append(probs)
-                sample_size_list.append(len(indexes))
-
-            samples_list = map(get_samples, prob_list, it.cycle([opt_cols]), sample_size_list)
-            flat_samples = []
-            for indexes, samples in zip(index_list, samples_list):
-                flat_samples.extend(list(zip(indexes, samples)))
-            samples = [s[1] for s in sorted(flat_samples)]
+                samples = get_samples(probs, opt_cols, len(indexes))
+                for index, sample in zip(indexes, samples):
+                    flat_samples[index] = sample
+            return flat_samples
     except Exception:
         print(f"Prininting error for {param}")
         text = "\n" + "#" * 20 + "\n"
