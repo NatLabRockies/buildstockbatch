@@ -451,7 +451,7 @@ def main():
     elif args.continue_upload:
         batch.process_results(skip_combine=True, continue_upload=True)
     elif args.replace_existing:
-        batch.process_results(skip_combine=True, replace_existing=True)
+        batch.process_results(skip_combine=False, replace_existing=True)
     else:
         batch.process_results()
 
