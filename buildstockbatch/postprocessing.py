@@ -42,6 +42,7 @@ MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using 
 # 1. It is inefficient
 # 2. It is easy to make mistakes and wipe out a significant run
 
+
 def read_data_point_out_json(fs, reporting_measures, filename):
     try:
         with fs.open(filename, "r") as f:
