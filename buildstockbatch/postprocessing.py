@@ -37,7 +37,7 @@ import polars as pl
 logger = logging.getLogger(__name__)
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
-MAX_REPLACE_FILES = 999  # maximum number of files to replace in s3 when using --replace_existing. We don't
+MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using --replace_existing. We don't
 # want to automatically delete large number of files using current API for two reasons:
 # 1. It is inefficient
 # 2. It is easy to make mistakes and wipe out a significant run
