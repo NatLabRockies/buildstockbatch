@@ -669,7 +669,9 @@ def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False)
         fs.rm(ts_in_dir, recursive=True)
 
 
-def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False):
+def upload_results(
+    aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False, replace_existing=False
+):
     logger.info("Uploading the parquet files to s3")
 
     output_folder_name = Path(output_dir).name
@@ -698,8 +700,12 @@ def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, c
 
     if len(existing_files) > 0:
         logger.info(f"There are already {len(existing_files)} files in the s3 folder {s3_bucket}/{s3_prefix_output}.")
-        if not continue_upload:
-            raise FileExistsError("Either use --continue_upload or delete files from s3")
+        if not continue_upload and not replace_existing:
+            raise FileExistsError("Either use --continue_upload or --replace_existing or delete files from s3")
+        if replace_existing:
+            bucket.objects.filter(Prefix=s3_prefix_output).delete()
+            logger.info(f"Deleted {len(existing_files)} files from s3 folder {s3_bucket}/{s3_prefix_output}.")
+            existing_files = set()
         all_files = [file for file in all_files if str(file) not in existing_files]
         logger.info(f"Only uploading the rest of the {len(all_files)} files")
 
