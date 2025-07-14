@@ -579,9 +579,7 @@ class SlurmBatch(BuildStockBatchBase):
         job_id = m.group(1)
         return [job_id]
 
-    def queue_post_processing(
-        self, after_jobids=[], upload_only=False, hipri=False, continue_upload=False, replace_existing=False
-    ):
+    def queue_post_processing(self, after_jobids=[], upload_only=False, hipri=False, continue_upload=False):
         # Configuration values
         hpc_cfg = self.cfg[self.HPC_NAME]
         account = hpc_cfg["account"]
@@ -595,13 +593,10 @@ class SlurmBatch(BuildStockBatchBase):
         if not (upload_only or continue_upload):
             for subdir in ("parquet", "results_csvs"):
                 subdirpath = pathlib.Path(self.output_dir, "results", subdir)
-                if subdirpath.exists() and not replace_existing:
+                if subdirpath.exists():
                     raise FileExistsError(
                         f"{subdirpath} already exists. This means you may have run postprocessing already. If you are sure you want to rerun, delete that directory and try again."
                     )  # noqa E501
-                elif subdirpath.exists() and replace_existing:
-                    logger.info(f"Removing {subdirpath} to make way for new postprocessing.")
-                    shutil.rmtree(subdirpath)
 
         # Move old output logs and config to make way for new ones
         for filename in (
@@ -623,7 +618,6 @@ class SlurmBatch(BuildStockBatchBase):
             "OUT_DIR": self.output_dir,
             "UPLOADONLY": str(upload_only),
             "CONTINUE_UPLOAD": str(continue_upload),
-            "REPLACE_EXISTING": str(replace_existing),
             "MEMORY": str(memory),
             "NPROCS": str(n_procs),
         }
@@ -861,11 +855,6 @@ def user_cli(Batch: SlurmBatch, argv: list):
         action="store_true",
     )
     group.add_argument(
-        "--replace_existing",
-        help="Replace existing files in S3, useful when previous upload was interrupted.",
-        action="store_true",
-    )
-    group.add_argument(
         "--validateonly",
         help="Only validate the project YAML file and references. Nothing is executed",
         action="store_true",
@@ -887,14 +876,9 @@ def user_cli(Batch: SlurmBatch, argv: list):
         return
 
     # if the project has already been run, simply queue the correct post-processing step
-    if args.postprocessonly or args.uploadonly or args.continue_upload or args.replace_existing:
+    if args.postprocessonly or args.uploadonly or args.continue_upload:
         batch = Batch(project_filename)
-        batch.queue_post_processing(
-            upload_only=args.uploadonly,
-            hipri=args.hipri,
-            continue_upload=args.continue_upload,
-            replace_existing=args.replace_existing,
-        )
+        batch.queue_post_processing(upload_only=args.uploadonly, hipri=args.hipri, continue_upload=args.continue_upload)
         return
 
     if args.rerun_failed:
@@ -940,7 +924,6 @@ def main():
     post_process = get_bool_env_var("POSTPROCESS")
     upload_only = get_bool_env_var("UPLOADONLY")
     continue_upload = get_bool_env_var("CONTINUE_UPLOAD")
-    replace_existing = get_bool_env_var("REPLACE_EXISTING")
     measures_only = get_bool_env_var("MEASURESONLY")
     sampling_only = get_bool_env_var("SAMPLINGONLY")
     if job_array_number:
@@ -958,8 +941,6 @@ def main():
             batch.process_results(skip_combine=True)
         elif continue_upload:
             batch.process_results(skip_combine=True, continue_upload=True)
-        elif replace_existing:
-            batch.process_results(skip_combine=True, replace_existing=True)
         else:
             batch.process_results()
     else:
