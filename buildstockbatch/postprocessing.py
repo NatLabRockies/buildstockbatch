@@ -709,7 +709,7 @@ def upload_results(
         if replace_existing and len(existing_files) > MAX_REPLACE_FILES:
             raise FileExistsError(
                 f"{len(existing_files)} files exist in s3://{s3_bucket}/{s3_prefix_output} folder."
-                "Can't replace more than {MAX_REPLACE_FILES} files."
+                f"Can't replace more than {MAX_REPLACE_FILES} files."
             )
         if replace_existing:
             bucket.objects.filter(Prefix=s3_prefix_output).delete()
