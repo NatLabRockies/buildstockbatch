@@ -56,3 +56,10 @@ Development Changelog
 
         Added eplusout_err column in the results_csv to provide visibility into Energplus warnings and errors. Especially useful
         for failed simulations.
+
+    .. change::
+        :tags: postprocessing, feature
+        :pullreq: 500
+
+        Added support for replacing existing results in s3 for buildstock_local. When --replace_existing is passed to buildstock_local,
+        it will replace existing results in s3.

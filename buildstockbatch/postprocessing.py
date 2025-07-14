@@ -37,6 +37,10 @@ import polars as pl
 logger = logging.getLogger(__name__)
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
+MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using --replace_existing. We don't
+# want to automatically delete large number of files using current API for two reasons:
+# 1. It is inefficient
+# 2. It is easy to make mistakes and wipe out a significant run
 
 
 def read_data_point_out_json(fs, reporting_measures, filename):
@@ -669,7 +673,9 @@ def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False)
         fs.rm(ts_in_dir, recursive=True)
 
 
-def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False):
+def upload_results(
+    aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False, replace_existing=False
+):
     logger.info("Uploading the parquet files to s3")
 
     output_folder_name = Path(output_dir).name
@@ -698,10 +704,20 @@ def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, c
 
     if len(existing_files) > 0:
         logger.info(f"There are already {len(existing_files)} files in the s3 folder {s3_bucket}/{s3_prefix_output}.")
-        if not continue_upload:
-            raise FileExistsError("Either use --continue_upload or delete files from s3")
-        all_files = [file for file in all_files if str(file) not in existing_files]
-        logger.info(f"Only uploading the rest of the {len(all_files)} files")
+        if not continue_upload and not replace_existing:
+            raise FileExistsError("Either use --continue_upload or --replace_existing or delete files from s3")
+        if replace_existing and len(existing_files) > MAX_REPLACE_FILES:
+            raise FileExistsError(
+                f"{len(existing_files)} files exist in s3://{s3_bucket}/{s3_prefix_output} folder."
+                f"Can't replace more than {MAX_REPLACE_FILES} files."
+            )
+        if replace_existing:
+            bucket.objects.filter(Prefix=s3_prefix_output).delete()
+            logger.info(f"Deleted {len(existing_files)} files from s3://{s3_bucket}/{s3_prefix_output} folder.")
+            logger.info(f"Now uploading all {len(all_files)} files.")
+        else:
+            all_files = [file for file in all_files if str(file) not in existing_files]
+            logger.info(f"Only uploading the rest of the {len(all_files)} files")
 
     def upload_file(filepath, s3key=None):
         full_path = filepath if filepath.is_absolute() else parquet_dir.joinpath(filepath)

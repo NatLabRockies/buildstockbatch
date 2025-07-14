@@ -418,6 +418,11 @@ def main():
         action="store_true",
     )
     group.add_argument(
+        "--replace_existing",
+        help="Replace existing files in S3 / output folder if they exist instead of erroring out.",
+        action="store_true",
+    )
+    group.add_argument(
         "--validateonly",
         help="Only validate the project YAML file and references. Nothing is executed",
         action="store_true",
@@ -445,6 +450,8 @@ def main():
         batch.process_results(skip_combine=True)
     elif args.continue_upload:
         batch.process_results(skip_combine=True, continue_upload=True)
+    elif args.replace_existing:
+        batch.process_results(skip_combine=False, replace_existing=True)
     else:
         batch.process_results()
 

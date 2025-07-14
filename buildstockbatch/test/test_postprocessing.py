@@ -5,7 +5,6 @@ import logging
 import os
 import pathlib
 import re
-import tarfile
 import pytest
 import shutil
 import sys
@@ -197,3 +196,73 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
         upgrade_id = int(upgrade_folder.name.split("=")[1])
         expected_file = upgrade_folder / f"results_up{upgrade_id:02d}.parquet"
         assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        {"replace_existing": True, "continue_upload": False, "should_raise_error": False},
+        {"replace_existing": False, "continue_upload": False, "should_raise_error": True},
+        {"replace_existing": False, "continue_upload": True, "should_raise_error": False},
+    ],
+)
+def test_replace_existing(basic_residential_project_file, mocker, scenario):
+    """Test the replace_existing functionality."""
+    # Set up a mock S3 environment
+    mocker.patch("s3fs.S3FileSystem", new=mocker.MagicMock())
+    mocker.patch("boto3.resource", new=mocker.MagicMock())
+
+    # Create a basic residential project file
+    project_filename, results_dir = basic_residential_project_file(
+        {"postprocessing": {"aws": {"s3": {"bucket": "dummy", "prefix": "dummy"}}}}
+    )
+
+    # Mock the necessary objects
+    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
+    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
+    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
+
+    # Create an instance of BuildStockBatchBase
+    bsb = BuildStockBatchBase(project_filename)
+
+    # Create some dummy result files
+    results_path = pathlib.Path(results_dir)
+    sim_out_dir = results_path / "simulation_output"
+    sim_out_dir.mkdir(parents=True, exist_ok=True)
+    (sim_out_dir / "results_job0.json.gz").touch()
+    parquet_dir = results_path / "parquet"
+    parquet_dir.mkdir(parents=True, exist_ok=True)
+
+    # Mock the S3 filesystem and existing files
+    mock_s3_resource = mocker.patch("boto3.resource").return_value
+    mock_bucket = mock_s3_resource.Bucket.return_value
+    mock_objects_filter_return_value = mocker.MagicMock()
+    mock_objects_filter_return_value.delete.return_value = None
+    mock_bucket.objects.filter.return_value = mock_objects_filter_return_value
+    mock_objects_filter_return_value.__iter__.return_value = [mocker.MagicMock(key="dummy/path/results.csv.gz")]
+
+    if scenario["should_raise_error"]:
+        with pytest.raises(FileExistsError):
+            bsb.upload_results(
+                aws_conf=bsb.cfg.get("postprocessing", {}).get("aws", {}),
+                output_dir=results_dir,
+                results_dir=results_dir,
+                buildstock_csv_filename=None,
+                replace_existing=scenario["replace_existing"],
+                continue_upload=scenario["continue_upload"],
+            )
+    else:
+        bsb.upload_results(
+            aws_conf=bsb.cfg.get("postprocessing", {}).get("aws", {}),
+            output_dir=results_dir,
+            results_dir=results_dir,
+            buildstock_csv_filename=None,
+            replace_existing=scenario["replace_existing"],
+            continue_upload=scenario["continue_upload"],
+        )
+        if scenario["replace_existing"]:
+            # Assert that the mock S3's rm method was called, which means files are being replaced
+            mock_bucket.objects.filter.return_value.delete.assert_called()
+        else:
+            # Assert that the mock S3's rm method was not called
+            mock_bucket.objects.filter.return_value.delete.assert_not_called()
