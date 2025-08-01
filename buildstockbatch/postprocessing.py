@@ -236,6 +236,8 @@ def read_results_json(fs, filename, all_cols=None):
             dpouts = json.load(f2)
     if "eplusout_err" in dpouts:  # temporary fix because of too many errors overflowing pyarrow
         del dpouts["eplusout_err"]
+    if "step_failures" in dpouts:  # temporary fix because of too many errors overflowing pyarrow
+        del dpouts["step_failures"]
     df = pd.DataFrame(dpouts)
     df["job_id"] = int(re.search(r"results_job(\d+)\.json\.gz", filename).group(1))
     if all_cols is not None:
