@@ -35,6 +35,7 @@ from buildstockbatch.utils import get_annual_publishing_functions
 import polars as pl
 
 logger = logging.getLogger(__name__)
+print("BSB Patch Aug 2025")
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
 
