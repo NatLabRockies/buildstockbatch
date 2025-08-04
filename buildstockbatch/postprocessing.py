@@ -35,7 +35,7 @@ from buildstockbatch.utils import get_annual_publishing_functions
 import polars as pl
 
 logger = logging.getLogger(__name__)
-print("BSB Patch Aug 2025")
+print("BSB Final Patch Aug 2025")
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
 
@@ -235,10 +235,11 @@ def read_results_json(fs, filename, all_cols=None):
     with fs.open(filename, "rb") as f1:
         with gzip.open(f1, "rt", encoding="utf-8") as f2:
             dpouts = json.load(f2)
-    if "eplusout_err" in dpouts:  # temporary fix because of too many errors overflowing pyarrow
-        del dpouts["eplusout_err"]
-    if "step_failures" in dpouts:  # temporary fix because of too many errors overflowing pyarrow
-        del dpouts["step_failures"]
+    for dpout in dpouts:
+        if "eplusout_err" in dpout:  # temporary fix because of too many errors overflowing pyarrow
+            del dpout["eplusout_err"]
+        if "step_failures" in dpout:  # temporary fix because of too many errors overflowing pyarrow
+            del dpout["step_failures"]
     df = pd.DataFrame(dpouts)
     df["job_id"] = int(re.search(r"results_job(\d+)\.json\.gz", filename).group(1))
     if all_cols is not None:
