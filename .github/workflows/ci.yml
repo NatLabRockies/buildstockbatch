@@ -29,6 +29,10 @@ jobs:
           repository: NREL/resstock
           path: resstock
           ref: develop
+      - name: Remove AWS from resstock yaml
+        run: |
+          cd resstock
+          python .github/scripts/remove_aws_from_yaml.py project_national/sdr_upgrades_tmy3.yml
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
