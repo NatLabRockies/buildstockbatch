@@ -270,9 +270,7 @@ def read_enduse_timeseries_parquet(fs, all_cols, src_path, bldg_id):
     with fs.open(src_filename, "rb") as f:
         df = pd.read_parquet(f, engine="pyarrow")
     df["building_id"] = bldg_id
-    for col in set(all_cols).difference(df.columns.values):
-        df[col] = np.nan
-    df = df[all_cols]
+    df = df.reindex(columns=all_cols)  # fills missing cols with nan
     df.set_index("building_id", inplace=True)
     return df
 
