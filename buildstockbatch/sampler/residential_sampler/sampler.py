@@ -27,9 +27,15 @@ def get_topological_param_list(param2dep: dict[str, list[str]]) -> list[str]:
     return topo_params
 
 
-def get_topological_generations(param2dep: dict[str, list[str]]) -> list[tuple[int, list[str]]]:
+def get_topological_generations(param2dep: dict[str, list[str]], segment_vars: set[str] | None = None) -> list[tuple[int, list[str]]]:
     param2dep_graph = get_param_graph(param2dep)
-    return list(sorted(enumerate(nx.topological_generations(param2dep_graph))))
+    if segment_vars:
+        ancestors = set()
+        for tsv_name in segment_vars:
+            ancestors.update(nx.ancestors(param2dep_graph, tsv_name))
+        ancestors.update(segment_vars)
+        param2dep_graph = param2dep_graph.subgraph(ancestors)  # type: ignore
+    return list(sorted(enumerate(nx.topological_generations(param2dep_graph))))  # type: ignore
 
 
 def sample_param(param_tuple: TSVTuple, sample_df: pd.DataFrame, param: str, num_samples: int,
@@ -62,26 +68,40 @@ def sample_param(param_tuple: TSVTuple, sample_df: pd.DataFrame, param: str, num
     return samples
 
 
-def sample_all(project_path, num_samples) -> pd.DataFrame:
+def sample_all(project_path, num_samples, segment_vars: set[str] | None = None, initial_samples_df: pd.DataFrame | None = None) -> pd.DataFrame:
     param2tsv = get_param2tsv(project_path)
     param2dep = {param: tsv_tuple[1] for (param, tsv_tuple) in param2tsv.items()}
-    sample_df = pd.DataFrame()
-    sample_df.loc[:, "Building"] = list(range(1, num_samples+1))
+
+    if initial_samples_df is not None:
+        sample_df = initial_samples_df
+        already_available_columns = set(sample_df.columns.values)
+        assert num_samples == len(sample_df)
+    else:
+        sample_df = pd.DataFrame()
+        sample_df.loc[:, "Building"] = list(range(1, num_samples+1))
+        already_available_columns = set()
+
     s_time = time.time()
     with multiprocessing.Pool(processes=max(multiprocessing.cpu_count() - 2, 1)) as pool:
-        for level, params in get_topological_generations(param2dep):
+        for level, params in get_topological_generations(param2dep, segment_vars):
             print(f"Sampling {len(params)} params in a batch at level {level}")
             results = []
-            for param in params:
+            already_sampled = already_available_columns.intersection(params)
+            remaining_params = set(params) - already_sampled
+            if already_sampled:
+                print(f"Skipping {len(already_sampled)} params as they are already available")
+            if not remaining_params:
+                continue
+            for param in remaining_params:
                 _, dep_cols, _ = param2tsv[param]
                 seed = random.randint(0, 10**10)
                 res = pool.apply_async(sample_param,
                                        (param2tsv[param], sample_df[dep_cols], param, num_samples, seed))
                 results.append(res)
             st = time.time()
-            samples_dict = {param: res_val.get() for param, res_val in zip(params, results)}
+            samples_dict = {param: res_val.get() for param, res_val in zip(remaining_params, results)}
             print(f"Got results for {len(samples_dict)} params in {time.time()-st:.2f}s")
-            assert len(samples_dict) == len(params)
+            assert len(samples_dict) == len(remaining_params)
             new_df = pd.DataFrame(samples_dict)
             sample_df = pd.concat([sample_df, new_df], axis=1)
     print(f"Sampled in {time.time()-s_time:.2f} seconds")
@@ -105,13 +125,15 @@ def cli():
 @click.option("-o", "--output", type=str, required=True,
               help="The output filename for samples.")
 def sample(project: str, num_datapoints: int, output: str) -> None:
-    """Performs sampling for project and writes output csv file.
+    """Performs sampling for project and writes output parquet file.
     """
+    segment_vars = ["Federal Poverty Level", "Geometry Floor Area Bin", "Geometry Building Type RECS", "Vintage", "Heating Fuel", "Sampling Region"]
+    initial_samples_df = read_csv('/Users/radhikar/Documents/buildstock2025/geographic sampling/starter_samples.csv')
     start_time = time.time()
     print(project, num_datapoints, output)
-    sample_df = sample_all(pathlib.Path(project), num_datapoints)
-    click.echo("Writing CSV")
-    sample_df.to_csv(output, index=False)
+    sample_df = sample_all(pathlib.Path(project), num_datapoints, initial_samples_df=initial_samples_df)
+    click.echo("Writing Parquet")
+    sample_df.to_parquet(output)
     click.echo(f"Completed sampling in {time.time() - start_time:.2f} seconds")
 
 

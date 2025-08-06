@@ -58,8 +58,8 @@ def get_param2tsv(project_dir: pathlib.Path) -> dict[str, TSVTuple]:
 
 
 def get_samples(probs: list[float], options: list[str], num_samples: int) -> list[str]:
-    """Returns a list of samples chosen from the options list as per the probability distribution in probs using quota
-       sampling algorithm.
+    """Returns a list of samples chosen from the options list as per the probability distribution in probs using
+       simple random sampling.
     Args:
         probs (list[float]): The probabilities for the options.
         options (list[str]): The options to sample from.
@@ -68,25 +68,7 @@ def get_samples(probs: list[float], options: list[str], num_samples: int) -> lis
     Returns:
         list[str]: The list of samples.
     """
-    prob_options = list(sorted(zip(probs, options), key=lambda x: x[0], reverse=True))
-    if num_samples < len(prob_options):
-        prob_options = prob_options[:num_samples]
-    new_probs, new_options = zip(*prob_options)
-    probs_arr = np.array(new_probs)
-    sample_dist = probs_arr * num_samples / sum(probs_arr)
-    allocations = np.floor(sample_dist).astype(int)  # Assign integer number of samples at first
-    remaining_samples = num_samples - int(sum(allocations))
-    remaining_allocation = sample_dist - allocations
-    extra_opts = sorted(enumerate(remaining_allocation), key=lambda x: (x[1], x[0]), reverse=True)[:remaining_samples]
-
-    for indx, _ in extra_opts:
-        allocations[indx] += 1
-
-    samples = []
-    for (indx, count) in enumerate(allocations):
-        samples.extend([new_options[indx]] * count)
-    random.shuffle(samples)
-    return samples
+    return random.choices(options, weights=probs[:-1], k=num_samples)
 
 
 def get_marginal_prob(initial_prob: float, count: int) -> float:
