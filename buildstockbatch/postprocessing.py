@@ -502,7 +502,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     base_df_lazy = None
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
-        df = dask.compute(results_df_groups.get_group(upgrade_id))[0]
+        df = results_df[results_df["upgrade"] == upgrade_id].compute()
         logger.info(f"Obtained results_df for {upgrade_id} with {len(df)} datapoints. ")
         df.rename(columns=to_camelcase, inplace=True)
         df = clean_up_results_df(df, cfg, keep_upgrade_id=True)
