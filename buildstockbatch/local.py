@@ -28,10 +28,11 @@ import shutil
 import subprocess
 import tarfile
 import time
+import polars as pl
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch import postprocessing
-from buildstockbatch.utils import log_error_details, ContainerRuntime, read_csv
+from buildstockbatch.utils import log_error_details, ContainerRuntime, read_csv, get_data_dict_schema
 from buildstockbatch.__version__ import __version__ as bsb_version
 
 logger = logging.getLogger(__name__)
@@ -46,10 +47,11 @@ class LocalBatch(BuildStockBatchBase):
         self._weather_dir = None
 
         # Create simulation_output dir
-        sim_out_ts_dir = os.path.join(self.results_dir, "simulation_output", "timeseries")
-        os.makedirs(sim_out_ts_dir, exist_ok=True)
-        for i in range(0, self.num_upgrades + 1):
-            os.makedirs(os.path.join(sim_out_ts_dir, f"up{i:02d}"), exist_ok=True)
+        for dir in ["timeseries", "annual", "annual_json"]:
+            sim_out_dir = os.path.join(self.results_dir, "simulation_output", dir)
+            os.makedirs(sim_out_dir, exist_ok=True)
+            for i in range(0, self.num_upgrades + 1):
+                os.makedirs(os.path.join(sim_out_dir, f"up{i:02d}"), exist_ok=True)
 
         # Install custom gems to a volume that will be used by all workers
         # FIXME: Get working without docker
@@ -254,7 +256,13 @@ class LocalBatch(BuildStockBatchBase):
                     i,
                     low_disk=low_disk,
                 )
-                return dpout
+                dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
+                dp_df = pl.from_dict(dpout)
+                stock_type = cfg.get("stock_type", "residential")
+                full_schema = get_data_dict_schema(stock_type, dp_df.columns)
+                dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
+                dp_df.write_parquet(f"{results_dir}/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet")
+                return (upgrade_id, i)
 
     def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=False):
         buildstock_csv_filename = self.sampler.run_sampling()
@@ -301,7 +309,7 @@ class LocalBatch(BuildStockBatchBase):
             all_sims = itertools.chain(*upgrade_sims)
         if n_jobs is None:
             n_jobs = -1
-        dpouts = Parallel(n_jobs=n_jobs, verbose=10)(all_sims)
+        completed_jobs = Parallel(n_jobs=n_jobs, verbose=10)(all_sims)
 
         time.sleep(10)
         shutil.rmtree(lib_path)
@@ -310,8 +318,8 @@ class LocalBatch(BuildStockBatchBase):
 
         results_job_json_filename = sim_out_path / "results_job0.json.gz"
         with gzip.open(results_job_json_filename, "wt", encoding="utf-8") as f:
-            json.dump(dpouts, f)
-        del dpouts
+            json.dump(completed_jobs, f)
+        del completed_jobs
 
         if low_disk:
             return

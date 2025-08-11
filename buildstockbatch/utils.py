@@ -8,7 +8,8 @@ import pandas as pd
 import shutil
 import traceback
 import yaml
-
+import polars as pl
+import msgpack
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,19 @@ def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
         **kwargs,
     )
     return df
+
+
+def read_to_polars_df(file_path) -> pl.DataFrame:
+    if file_path.endswith(".parquet"):
+        return pl.read_parquet(file_path)
+    elif file_path.endswith(".csv"):
+        return pl.read_csv(file_path)
+    elif file_path.endswith(".msgpack"):
+        with open(file_path, "rb") as f:
+            msg = msgpack.unpack(f)
+        return pl.from_dict(msg)
+    else:
+        raise ValueError(f"Unsupported file type: {file_path}")
 
 
 def path_rel_to_file(startfile, x):
@@ -153,3 +167,12 @@ def get_annual_publishing_functions(stock_type):
         return publish_baseline_annual_results, publish_upgrade_annual_results
     else:
         raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
+
+
+def get_data_dict_schema(stock_type, all_cols):
+    if stock_type == "residential":
+        from resstockpostproc import get_polars_schema_from_data_dictionary
+
+        return get_polars_schema_from_data_dictionary(all_cols)
+    else:
+        return {}

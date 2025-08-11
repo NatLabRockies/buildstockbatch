@@ -107,11 +107,18 @@ class BuildStockBatchBase(object):
 
     def _get_weather_files(self):
         if "weather_files_path" in self.cfg:
-            logger.debug("Copying weather files")
             weather_file_path = self.cfg["weather_files_path"]
-            with zipfile.ZipFile(weather_file_path, "r") as zf:
-                logger.debug("Extracting weather files to: {}".format(self.weather_dir))
-                zf.extractall(self.weather_dir)
+            if os.path.isdir(weather_file_path):
+                if os.path.isdir(self.weather_dir) and os.path.samefile(self.weather_dir, weather_file_path):
+                    logger.debug(f"Weather files already exist at {self.weather_dir}")
+                    return
+                else:
+                    logger.debug(f"Copying weather files from directory: {weather_file_path} to {self.weather_dir}")
+                    shutil.copytree(weather_file_path, self.weather_dir, dirs_exist_ok=True)
+            else:
+                with zipfile.ZipFile(weather_file_path, "r") as zf:
+                    logger.debug(f"Extracting weather files to: {self.weather_dir}")
+                    zf.extractall(self.weather_dir)
         else:
             logger.debug("Downloading weather files")
             r = requests.get(self.cfg["weather_files_url"], stream=True)
@@ -982,4 +989,6 @@ class BuildStockBatchBase(object):
                 self.cleanup_dask()
 
         keep_individual_timeseries = self.cfg.get("postprocessing", {}).get("keep_individual_timeseries", False)
-        postprocessing.remove_intermediate_files(fs, self.results_dir, keep_individual_timeseries)
+        keep_intermediate_files = self.cfg.get("postprocessing", {}).get("keep_intermediate_files", True)
+        if not keep_intermediate_files:
+            postprocessing.remove_intermediate_files(fs, self.results_dir, keep_individual_timeseries)
