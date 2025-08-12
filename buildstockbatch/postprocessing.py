@@ -189,7 +189,8 @@ def write_dataframe_as_parquet(df, fs, filename, schema=None):
         parquet.write_table(tbl, f)
 
 
-def clean_up_results_df(df: pl.LazyFrame, cfg, arrow_schema: dict[str, pa.DataType], keep_upgrade_id=False):
+def clean_up_results_df(df: pl.LazyFrame, cfg, schema: dict[str, pl.DataType], keep_upgrade_id=False):
+    schema = schema.copy()  # avoid modifying the original schema
     cols_to_remove = (
         "build_existing_model.weight",
         "simulation_output_report.weight",
@@ -239,21 +240,18 @@ def clean_up_results_df(df: pl.LazyFrame, cfg, arrow_schema: dict[str, pa.DataTy
     remaining_cols = sorted(set(all_cols).difference(sorted_cols))
     sorted_cols += remaining_cols
 
-    # extract polars schema from passed arrow schema
-    empty_df: pl.DataFrame = pl.from_arrow(pa.Table.from_batches([], schema=pa.schema(arrow_schema)))
-    polars_schema = dict(empty_df.schema)
     # these columns are freshly created/updated so can't use passed schema
     for col in ["started_at", "completed_at", "apply_upgrade.reference_scenario"]:
-        polars_schema[col] = current_schema[col]
-    print(f"This is the polars schema {polars_schema} being applied.")
-    if missing_cols := set(polars_schema.keys()).difference(sorted_cols):
-        string_missing_cols = [col for col in missing_cols if polars_schema[col] == pl.String]
-        other_missing_cols = [col for col in missing_cols if polars_schema[col] != pl.String]
+        schema[col] = current_schema[col]
+    print(f"This is the polars schema {schema} being applied.")
+    if missing_cols := set(schema.keys()).difference(sorted_cols):
+        string_missing_cols = [col for col in missing_cols if schema[col] == pl.String]
+        other_missing_cols = [col for col in missing_cols if schema[col] != pl.String]
         logger.info(f"Missing columns {string_missing_cols} filled with ''")
         logger.info(f"Missing columns {other_missing_cols} filled with None")
         df = df.with_columns([pl.lit("").alias(col) for col in string_missing_cols])
         df = df.with_columns([pl.lit(None).alias(col) for col in other_missing_cols])
-    df = df.with_columns([pl.col(c).cast(polars_schema[c]) for c in sorted_cols])
+    df = df.with_columns([pl.col(c).cast(schema[c]) for c in sorted_cols])
     return df
 
 
@@ -455,12 +453,14 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         raise ValueError("No simulation results found to post-process.")
 
     logger.info("Collecting all the columns and datatypes in results_job*.json.gz parquet files.")
-    all_schema_dict = (
+    arrow_schema_dict = (
         db.from_sequence(annual_results_files)
         .map(partial(get_schema_dict, fs))
         .fold(lambda x, y: merge_schema_dicts(x, y))
         .compute()
     )
+    empty_df: pl.DataFrame = pl.from_arrow(pa.Table.from_batches([], schema=pa.schema(arrow_schema_dict)))
+    all_schema_dict = dict(empty_df.schema)
     logger.info(f"Got {len(all_schema_dict)} columns")
     all_results_cols = list(all_schema_dict.keys())
     logger.info(f"Got this schema: {all_schema_dict}\n")
@@ -528,8 +528,10 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     for upgrade_id in upgrade_list:
         print(f"Before upgrade {upgrade_id} memory: {get_memory()}")
         logger.info(f"Processing upgrade {upgrade_id}. ")
-        df = pl.scan_parquet(f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert")
-        df = clean_up_results_df(df, cfg, keep_upgrade_id=True, arrow_schema=all_schema_dict)
+        df = pl.scan_parquet(
+            f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert", schema=all_schema_dict
+        )
+        df = clean_up_results_df(df, cfg, keep_upgrade_id=True, schema=all_schema_dict)
         df = df.drop("upgrade")  # upgrade column is created using hive partitioning
         df = df.sort("building_id")
         partition_df = df.select(["building_id", *df_partition_columns])
