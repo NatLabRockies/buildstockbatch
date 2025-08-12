@@ -535,9 +535,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
         if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(
-                    failed_bldgs, pl.from_pandas(df, include_index=True).lazy()
-                )
+                pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
                 base_df_lazy = pub_df_lazy
             else:
                 pub_df_lazy = publish_upgrade(
