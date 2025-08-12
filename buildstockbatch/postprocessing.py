@@ -15,7 +15,6 @@ import dask.bag as db
 from dask.distributed import performance_report
 import dask
 import dask.dataframe as dd
-from dask.dataframe.io.parquet import create_metadata_file
 from functools import partial
 import gzip
 import json
@@ -33,23 +32,7 @@ import time
 import sys
 from buildstockbatch.utils import get_annual_publishing_functions
 import polars as pl
-import os, psutil, ctypes, platform
-import pyarrow
-import json
-
-
-def get_memory():
-    proc = psutil.Process(os.getpid())
-    process_memory = proc.memory_info().rss / (1024**2)
-    rss_all = process_memory + sum((c.memory_info().rss for c in proc.children(recursive=True)), 0) / (1024**2)
-    arrow_memory = pyarrow.total_allocated_bytes() / (1024**2)
-    arrow_default_pool = pyarrow.default_memory_pool()
-    arrow_max = arrow_default_pool.max_memory() / (1024**2)
-    arrow_used = arrow_default_pool.bytes_allocated() / (1024**2)
-    return (
-        f"Process memory: {process_memory:.2f} MB, Process and children memory: {rss_all:.2f} MB, \n"
-        f"Arrow memory: {arrow_memory:.2f} MB, Arrow max: {arrow_max:.2f} MB, Arrow used: {arrow_used:.2f} MB"
-    )
+from collections import defaultdict
 
 
 logger = logging.getLogger(__name__)
@@ -243,7 +226,6 @@ def clean_up_results_df(df: pl.LazyFrame, cfg, schema: dict[str, pl.DataType], k
     # these columns are freshly created/updated so can't use passed schema
     for col in ["started_at", "completed_at", "apply_upgrade.reference_scenario"]:
         schema[col] = current_schema[col]
-    print(f"This is the polars schema {schema} being applied.")
     if missing_cols := set(schema.keys()).difference(sorted_cols):
         string_missing_cols = [col for col in missing_cols if schema[col] == pl.String]
         other_missing_cols = [col for col in missing_cols if schema[col] != pl.String]
@@ -422,7 +404,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     :param do_timeseries: process timeseries results, defaults to True
     :type do_timeseries: bool, optional
     """
-    print(f"START MEMORY: {get_memory()} MB")
     sim_output_dir = f"{results_dir}/simulation_output"
     ts_in_dir = f"{sim_output_dir}/timeseries"
     results_csvs_dir = f"{results_dir}/results_csvs"
@@ -452,7 +433,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     if not annual_results_files:
         raise ValueError("No simulation results found to post-process.")
 
-    logger.info("Collecting all the columns and datatypes in results_job*.json.gz parquet files.")
+    logger.info("Collecting all the columns and datatypes in annual results files.")
     arrow_schema_dict = (
         db.from_sequence(annual_results_files)
         .map(partial(get_schema_dict, fs))
@@ -472,17 +453,26 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         def get_failed_bldg_ids(filename):
             df = pl.scan_parquet(filename)
             failed_df = (
-                df.filter(pl.col("completed_status").is_in(["Success", "Invalid"])).select("building_id").collect()
+                df.filter(~pl.col("completed_status").is_in(["Success", "Invalid"])).select("building_id").collect()
             )
+            upgrade_id = Path(filename).parent.name
             if len(failed_df) == 0:
-                return None
-            return failed_df["building_id"].item()
+                return (upgrade_id, [])
+            failed_bldg = failed_df["building_id"].item()
+            return (upgrade_id, [failed_bldg])
 
-        failed_bldgs = db.from_sequence(annual_results_files).map(get_failed_bldg_ids).compute()
-
-        failed_bldgs = set([int(bldg_id) for bldg_id in failed_bldgs if bldg_id is not None])
+        upgrade_and_failed_bldgs = db.from_sequence(annual_results_files).map(get_failed_bldg_ids).compute()
+        failed_bldgs = set()
+        failure_dict = defaultdict(list)
+        for upgrade_id, bldgs in upgrade_and_failed_bldgs:
+            if not bldgs:
+                continue
+            failed_bldgs.update(bldgs)
+            failure_dict[upgrade_id].extend(bldgs)
         logger.info(
             f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from published annual results."
+            f"These many buildings failed in each upgrade: {', '.join(f'{k}: {len(v)}' for k, v in failure_dict.items())}."
+            f"These are the failed building ids: {', '.join(f'{k}: {v}' for k, v in failure_dict.items())}"
         )
 
     if do_timeseries:
@@ -524,13 +514,14 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
 
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
     base_df_lazy = pl.LazyFrame()
-    print(f"Before loop memory: {get_memory()}")
     for upgrade_id in upgrade_list:
-        print(f"Before upgrade {upgrade_id} memory: {get_memory()}")
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = pl.scan_parquet(
             f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert", schema=all_schema_dict
         )
+        # find the length of the df
+        df_len = df.select(pl.len()).collect().item()
+        logger.info(f"Found {df_len} rows for upgrade {upgrade_id}.")
         df = clean_up_results_df(df, cfg, keep_upgrade_id=True, schema=all_schema_dict)
         df = df.drop("upgrade")  # upgrade column is created using hive partitioning
         df = df.sort("building_id")
@@ -544,7 +535,8 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                 base_df_lazy = pub_df_lazy
             else:
                 pub_df_lazy = publish_upgrade(failed_bldgs, base_df_lazy, df, upgrade_num=upgrade_id)
-
+            pub_df_len = pub_df_lazy.select(pl.len()).collect().item()
+            logger.info(f"Got {pub_df_len} pub_df rows for upgrade {upgrade_id}.")
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
             logger.info(f"Writing {csv_filename}")
             with fs.open(csv_filename, "wb") as f:
@@ -561,7 +553,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         csv_filename = f"{results_csvs_dir}/results_up{upgrade_id:02d}.csv.gz"
         logger.info(f"Writing {csv_filename}")
         with fs.open(csv_filename, "wb") as f:
-            with gzip.open(f, "wt", encoding="utf-8") as gf:
+            with gzip.open(f, "wb") as gf:
                 df.sink_csv(gf, line_terminator="\n")
 
         # Write Parquet
@@ -658,7 +650,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     )
 
             logger.info(f"Finished combining and saving timeseries for upgrade{upgrade_id}.")
-        print(f"After upgrade {upgrade_id} memory: {get_memory()}")
     logger.info("All aggregation completed. ")
     if do_timeseries:
         logger.info("Writing timeseries metadata files")
