@@ -446,18 +446,22 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         logger.info("Collecting all the failed simulations buildings")
 
-        def get_failed_bldg_ids(filename):
+        def get_failed_baseline_bldg_ids(filename):
             with fs.open(filename, "rb") as f1:
                 with gzip.open(f1, "rt", encoding="utf-8") as f2:
                     dpouts = json.load(f2)
-            df = pd.DataFrame(dpouts)
-            return df[~df["completed_status"].isin(["Success", "Invalid"])]["building_id"].tolist()
+            failed_bldgs = []
+            for dpout in dpouts:
+                if dpout.get("upgrade") == 0 and dpout.get("completed_status") != "Success":
+                    failed_bldgs.append(dpout["building_id"])
+            return failed_bldgs
 
-        failed_bldgs = db.from_sequence(results_json_files).map(get_failed_bldg_ids).compute()
+        failed_bldgs = db.from_sequence(results_json_files).map(get_failed_baseline_bldg_ids).compute()
 
         failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
         logger.info(
-            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from published annual results."
+            f"Found {len(failed_bldgs)} failed baseline simulations. Excluding them from all upgrades. "
+            f"The buildings are: {failed_bldgs}"
         )
 
     if do_timeseries:
@@ -531,9 +535,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
         if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(
-                    failed_bldgs, pl.from_pandas(df, include_index=True).lazy()
-                )
+                pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
                 base_df_lazy = pub_df_lazy
             else:
                 pub_df_lazy = publish_upgrade(
