@@ -7,6 +7,7 @@ import subprocess
 import re
 import tempfile
 import os
+import polars as pl
 
 from buildstockbatch.local import LocalBatch
 from buildstockbatch.utils import get_project_configuration
@@ -57,14 +58,21 @@ def test_resstock_local_batch(project_filename):
     if local_weather_file.exists():
         del batch.cfg["weather_files_url"]
         batch.cfg["weather_files_path"] = str(local_weather_file)
+    low_disk = True if project_filename.stem == "sdr_upgrades_tmy3" else False
 
-    batch.run_batch()
+    if "aws" in batch.cfg.get("postprocessing", {}):
+        del batch.cfg["postprocessing"]["aws"]
+
+    batch.run_batch(low_disk=low_disk)
 
     # Make sure all the files are there
     out_path = pathlib.Path(batch.output_dir)
     simout_path = out_path / "simulation_output"
     assert (simout_path / "results_job0.json.gz").exists()
-    assert (simout_path / "simulations_job0.tar.gz").exists()
+    if not low_disk:
+        assert (simout_path / "simulations_job0.tar.gz").exists()
+    else:
+        assert not (simout_path / "simulations_job0.tar.gz").exists()
 
     # Build upgrades2expected_bldgs map by scanning existing files. Not all buildings will be present
     # because the upgrade may not apply to all
@@ -76,19 +84,13 @@ def test_resstock_local_batch(project_filename):
 
     batch.process_results()
 
-    if batch.cfg.get("postprocessing", {}).get("keep_individual_timeseries", False):
-        assert (simout_path / "timeseries").exists()
-    else:
-        assert not (simout_path / "timeseries").exists()
-
-    assert (simout_path / "simulations_job0.tar.gz").exists()
     base_pq = out_path / "parquet" / "baseline" / "results_up00.parquet"
     assert base_pq.exists()
-    base = pd.read_parquet(base_pq, columns=["completed_status", "started_at", "completed_at"])
-    assert (base["completed_status"] == "Success").all()
-    assert base.dtypes["started_at"] == "timestamp[s][pyarrow]"
-    assert base.dtypes["completed_at"] == "timestamp[s][pyarrow]"
-    assert base.shape[0] == n_datapoints
+    base_pl_df = pl.read_parquet(base_pq, columns=["completed_status", "started_at", "completed_at"])
+    assert (base_pl_df["completed_status"] == "Success").all()
+    assert base_pl_df.schema["started_at"] == pl.Datetime(time_unit="ms")
+    assert base_pl_df.schema["completed_at"] == pl.Datetime(time_unit="ms")
+    assert base_pl_df.shape[0] == n_datapoints
     ts_pq_path = out_path / "parquet" / "timeseries"
     ts_time_cols = ["time", "timeutc", "timedst"]
     for upgrade_id in range(0, n_upgrades + 1):
@@ -118,7 +120,7 @@ def test_resstock_local_batch(project_filename):
                 else:
                     assert row["completed_status"] in ["Invalid", "Fail"]
     assert (ts_pq_path / "_common_metadata").exists()
-    shutil.rmtree(out_path)
+    shutil.rmtree(out_path, ignore_errors=True)
 
 
 @resstock_required
@@ -134,6 +136,9 @@ def test_local_simulation_timeout(mocker):
     cfg["max_minutes_per_sim"] = 5
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = pathlib.Path(tmpdir, "simulation_output")
+        pathlib.Path(output_path, "annual", "up00").mkdir(parents=True, exist_ok=True)
+
         LocalBatch.run_building(
             str(resstock_directory),
             str(resstock_directory / "weather"),
@@ -167,38 +172,3 @@ def test_local_simulation_timeout(mocker):
             err_log_re.search(failed_job.read())
 
         sleep_mock.assert_called_once_with(20)
-
-
-@resstock_required
-def test_low_disk_mode():
-    """Test that the low-disk mode correctly skips tarball creation and returns early."""
-    project_filename = resstock_directory / "project_testing" / "testing_baseline.yml"
-    LocalBatch.validate_project(str(project_filename))
-    batch = LocalBatch(str(project_filename))
-
-    # Modify the number of datapoints to reduce simulation time
-    n_datapoints = 2
-    batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
-
-    # Handle weather files
-    local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
-    if local_weather_file.exists():
-        del batch.cfg["weather_files_url"]
-        batch.cfg["weather_files_path"] = str(local_weather_file)
-
-    # Run batch with low_disk=True
-    batch.run_batch(low_disk=True)
-
-    # Check that results_job0.json.gz exists
-    out_path = pathlib.Path(batch.output_dir)
-    simout_path = out_path / "simulation_output"
-    assert (simout_path / "results_job0.json.gz").exists()
-
-    # Check that simulations_job0.tar.gz does NOT exist (should be skipped in low_disk mode)
-    assert not (simout_path / "simulations_job0.tar.gz").exists()
-
-    # Check that the timeseries directories still exist (they shouldn't be compressed into a tarball)
-    assert (simout_path / "timeseries").exists()
-
-    # Clean up
-    shutil.rmtree(out_path)

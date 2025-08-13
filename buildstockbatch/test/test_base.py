@@ -245,14 +245,7 @@ def test_skipping_baseline(basic_residential_project_file):
 
     sim_output_path = os.path.join(results_dir, "simulation_output")
     shutil.rmtree(os.path.join(sim_output_path, "timeseries", "up00"))  # remove timeseries results for baseline
-
-    # remove results.csv data for baseline from results_jobx.json.gz
-    results_json_filename = os.path.join(sim_output_path, "results_job0.json.gz")
-    with gzip.open(results_json_filename, "rt", encoding="utf-8") as f:
-        dpouts = json.load(f)
-    dpouts2 = list(filter(lambda x: x["upgrade"] > 0, dpouts))
-    with gzip.open(results_json_filename, "wt", encoding="utf-8") as f:
-        json.dump(dpouts2, f)
+    shutil.rmtree(os.path.join(sim_output_path, "annual", "up00"))  # remove annual results for baseline
 
     # run postprocessing
     with patch.object(BuildStockBatchBase, "weather_dir", None), patch.object(

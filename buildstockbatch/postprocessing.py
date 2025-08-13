@@ -656,18 +656,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         write_metadata_files(fs, ts_dir, partition_columns)
 
 
-def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False):
-    # Remove aggregated files to save space
-    sim_output_dir = f"{results_dir}/simulation_output"
-    results_job_json_glob = f"{sim_output_dir}/results_job*.json.gz"
-    logger.info("Removing results_job*.json.gz")
-    for filename in fs.glob(results_job_json_glob):
-        fs.rm(filename)
-    if not keep_individual_timeseries:
-        ts_in_dir = f"{sim_output_dir}/timeseries"
-        fs.rm(ts_in_dir, recursive=True)
-
-
 def upload_results(
     aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False, replace_existing=False
 ):

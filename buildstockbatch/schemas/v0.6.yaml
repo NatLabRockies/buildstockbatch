@@ -152,7 +152,6 @@ postprocessing-spec:
   partition_columns: list(str(), required=False)
   aws: include('aws-postprocessing-spec', required=False)
   keep_individual_timeseries: bool(required=False)
-  keep_intermediate_files: bool(required=False, default=True)
   publish_annual_results: bool(required=False)  # Polish the results further for publication
 
 aws-postprocessing-spec:

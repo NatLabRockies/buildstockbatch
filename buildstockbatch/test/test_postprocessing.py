@@ -9,10 +9,12 @@ import pytest
 import shutil
 import sys
 from unittest.mock import patch, MagicMock
+import polars as pl
 
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase
 from buildstockbatch.utils import get_project_configuration, read_csv
+from buildstockbatch.utils import get_data_dict_schema
 
 postprocessing.performance_report = MagicMock()
 
@@ -27,6 +29,7 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
 
     results_dir = pathlib.Path(results_dir)
     sim_out_dir = results_dir / "simulation_output"
+    annual_folder = results_dir / "simulation_output/annual"
 
     dpouts2 = []
     for filename in sim_out_dir.rglob("data_point_out.json"):
@@ -43,11 +46,15 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
 
         with filename.open("wt", encoding="utf-8") as f:
             json.dump(dpout, f)
-
-        dpouts2.append(postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, building_id))
-
-    with gzip.open(sim_out_dir / "results_job0.json.gz", "wt", encoding="utf-8") as f:
-        json.dump(dpouts2, f)
+        dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, building_id)
+        dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
+        dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
+        dp_df = pl.from_dict(dpout)
+        full_schema = get_data_dict_schema("residential", dp_df.columns)
+        dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
+        file_folder = annual_folder / f"up{upgrade_id:02d}"
+        file_folder.mkdir(parents=True, exist_ok=True)
+        dp_df.write_parquet(file_folder / f"bldg{building_id:07d}.parquet")
 
     cfg = get_project_configuration(project_filename)
 
@@ -56,7 +63,9 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
     for upgrade_id in (0, 1):
         df = read_csv(str(results_dir / "results_csvs" / f"results_up{upgrade_id:02d}.csv.gz"))
         assert "Measure Failed" in df[df["building_id"] == 3]["step_failures"].iloc[0]
-        assert "EnergyPlus Failed with Error: Building ID is 3" in df[df["building_id"] == 3]["eplusout_err"].iloc[0]
+        assert (
+            "EnergyPlus Terminated with Error: Building ID is 3" in df[df["building_id"] == 3]["eplusout_err"].iloc[0]
+        )
         df = df[df["building_id"] != 3]
         assert (df["reporting_measure1.column_1"] == 1).all()
         assert (df["reporting_measure1.column_2"] == 2).all()
@@ -90,26 +99,6 @@ def test_large_parquet_combine(basic_residential_project_file):
     ):  # set the max memory to just 1MB
         bsb = BuildStockBatchBase(project_filename)
         bsb.process_results()  # this would raise exception if the postprocessing could not handle the situation
-
-
-@pytest.mark.parametrize("keep_individual_timeseries", [True, False])
-def test_keep_individual_timeseries(keep_individual_timeseries, basic_residential_project_file, mocker):
-    project_filename, results_dir = basic_residential_project_file(
-        {"postprocessing": {"keep_individual_timeseries": keep_individual_timeseries}}
-    )
-
-    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
-    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
-    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
-    bsb = BuildStockBatchBase(project_filename)
-    bsb.process_results()
-
-    results_path = pathlib.Path(results_dir)
-    simout_path = results_path / "simulation_output"
-    assert len(list(simout_path.glob("results_job*.json.gz"))) == 0
-
-    ts_path = simout_path / "timeseries"
-    assert ts_path.exists() == keep_individual_timeseries
 
 
 def test_upgrade_missing_ts(basic_residential_project_file, mocker, caplog):

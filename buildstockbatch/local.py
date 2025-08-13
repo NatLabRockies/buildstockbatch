@@ -317,21 +317,9 @@ class LocalBatch(BuildStockBatchBase):
 
         sim_out_path = pathlib.Path(self.results_dir, "simulation_output")
 
-        results_job_json_filename = sim_out_path / "results_job0.json.gz"
-        with gzip.open(results_job_json_filename, "wt", encoding="utf-8") as f:
+        results_job_json_filename = sim_out_path / "completed_jobs.json"
+        with open(results_job_json_filename, "w") as f:
             json.dump(completed_jobs, f)
-        del completed_jobs
-
-        if low_disk:
-            return
-
-        sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
-        logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
-        with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
-            for dirname in os.listdir(sim_out_path):
-                if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
-                    tarf.add(sim_out_path / dirname, arcname=dirname)
-                    shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
 
     @property
     def output_dir(self):

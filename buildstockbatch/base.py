@@ -987,8 +987,3 @@ class BuildStockBatchBase(object):
         finally:
             if use_dask_cluster:
                 self.cleanup_dask()
-
-        keep_individual_timeseries = self.cfg.get("postprocessing", {}).get("keep_individual_timeseries", False)
-        keep_intermediate_files = self.cfg.get("postprocessing", {}).get("keep_intermediate_files", True)
-        if not keep_intermediate_files:
-            postprocessing.remove_intermediate_files(fs, self.results_dir, keep_individual_timeseries)

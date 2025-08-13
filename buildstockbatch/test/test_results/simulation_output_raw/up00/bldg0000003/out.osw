@@ -1,7 +1,7 @@
 {
    "completed_at" : "20241108T185509Z",
    "completed_status" : "Fail",
-   "eplusout_err" : "EnergyPlus Failed with Error: Building ID is 3",
+   "eplusout_err" : "EnergyPlus Terminated with Error: Building ID is 3",
    "created_at" : "2024-11-08T12:55:07.100147",
    "current_step" : 1,
    "file_paths" : 
