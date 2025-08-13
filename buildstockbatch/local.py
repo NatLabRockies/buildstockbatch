@@ -257,6 +257,7 @@ class LocalBatch(BuildStockBatchBase):
                     low_disk=low_disk,
                 )
                 dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
+                dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
                 dp_df = pl.from_dict(dpout)
                 stock_type = cfg.get("stock_type", "residential")
                 full_schema = get_data_dict_schema(stock_type, dp_df.columns)
@@ -312,7 +313,7 @@ class LocalBatch(BuildStockBatchBase):
         completed_jobs = Parallel(n_jobs=n_jobs, verbose=10)(all_sims)
 
         time.sleep(10)
-        shutil.rmtree(lib_path)
+        shutil.rmtree(lib_path, ignore_errors=True)
 
         sim_out_path = pathlib.Path(self.results_dir, "simulation_output")
 
