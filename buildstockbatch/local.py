@@ -265,7 +265,7 @@ class LocalBatch(BuildStockBatchBase):
                 dp_df.write_parquet(f"{results_dir}/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet")
                 return (upgrade_id, i)
 
-    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=False):
+    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=""):
         buildstock_csv_filename = self.sampler.run_sampling()
 
         if sampling_only:
@@ -392,11 +392,6 @@ def main():
         action="store_true",
         help="Only apply the measures, but don't run simulations. Useful for debugging.",
     )
-    parser.add_argument(
-        "--low-disk",
-        action="store_true",
-        help="Delete unused simulation result files immediately after processing to save disk space.",
-    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--postprocessonly",
@@ -424,6 +419,19 @@ def main():
         help="Only validate the project YAML file and references. Nothing is executed",
         action="store_true",
     )
+    group.add_argument(
+        "--low-disk",
+        action="store_true",
+        help="Delete unused simulation result files immediately after processing to save disk space.",
+    )
+    group.add_argument(
+        "--ultra-low-disk-no-timeseries",
+        action="store_true",
+        help=(
+            "Don't save timeseries data to save disk space. This is different from disabling timeseries in the yaml"
+            " as it will still process timeseries results (useful for testing) but not save the results."
+        ),
+    )
     group.add_argument("--samplingonly", help="Run the sampling only.", action="store_true")
     args = parser.parse_args()
     if not os.path.isfile(args.project_filename):
@@ -434,12 +442,20 @@ def main():
     if args.validateonly:
         return
     batch = LocalBatch(args.project_filename)
+
+    if args.low_disk:
+        low_disk = "low_disk"
+    elif args.ultra_low_disk_no_timeseries:
+        low_disk = "ultra_low_disk_no_timeseries"
+    else:
+        low_disk = ""
+
     if not (args.postprocessonly or args.uploadonly or args.validateonly or args.continue_upload):
         batch.run_batch(
             n_jobs=args.j,
             measures_only=args.measures_only,
             sampling_only=args.samplingonly,
-            low_disk=args.low_disk,
+            low_disk=low_disk,
         )
     if args.measures_only or args.samplingonly:
         return

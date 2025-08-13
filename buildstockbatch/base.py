@@ -195,7 +195,7 @@ class BuildStockBatchBase(object):
         return sim_id, sim_dir
 
     @staticmethod
-    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id, low_disk=False):
+    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id, low_disk=""):
         """Clean up the output directory for a single simulation.
 
         :param sim_dir: simulation directory
@@ -208,8 +208,10 @@ class BuildStockBatchBase(object):
         :type upgrade_id: int
         :param building_id: building id from buildstock.csv
         :type building_id: int
-        :param low_disk: If true, remove the simulation directory entirely to save disk space
-        :type low_disk: bool
+        :param low_disk: If "low_disk", remove the simulation directory entirely to save disk space.
+                         If "ultra_low_disk_no_timeseries", remove the simulation directory entirely to
+                         save disk space and also delete the timeseries parquet file.
+        :type low_disk: str
         """
 
         # Convert the timeseries data to parquet
@@ -270,6 +272,10 @@ class BuildStockBatchBase(object):
 
         if low_disk:
             shutil.rmtree(sim_dir, ignore_errors=True)
+            if (
+                low_disk == "ultra_low_disk_no_timeseries"
+            ):  # only delete after writing to allow testing of writing workflow
+                os.remove(f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet")
             return
 
         # Remove files already in data_point.zip
