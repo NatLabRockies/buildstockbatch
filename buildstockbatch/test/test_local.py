@@ -68,7 +68,7 @@ def test_resstock_local_batch(project_filename):
     # Make sure all the files are there
     out_path = pathlib.Path(batch.output_dir)
     simout_path = out_path / "simulation_output"
-    assert (simout_path / "results_job0.json.gz").exists()
+    assert (simout_path / "completed_jobs.json").exists()
     if not low_disk:
         assert (simout_path / "simulations_job0.tar.gz").exists()
     else:
