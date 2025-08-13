@@ -47,7 +47,7 @@ class LocalBatch(BuildStockBatchBase):
         self._weather_dir = None
 
         # Create simulation_output dir
-        for dir in ["timeseries", "annual", "annual_json"]:
+        for dir in ["timeseries", "annual"]:
             sim_out_dir = os.path.join(self.results_dir, "simulation_output", dir)
             os.makedirs(sim_out_dir, exist_ok=True)
             for i in range(0, self.num_upgrades + 1):

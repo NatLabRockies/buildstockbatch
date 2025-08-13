@@ -275,7 +275,8 @@ class BuildStockBatchBase(object):
             if (
                 low_disk == "ultra_low_disk_no_timeseries"
             ):  # only delete after writing to allow testing of writing workflow
-                os.remove(f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet")
+                if os.path.exists(f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet"):
+                    os.remove(f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet")
             return
 
         # Remove files already in data_point.zip

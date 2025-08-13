@@ -54,11 +54,18 @@ def test_resstock_local_batch(project_filename):
         buildstock_csv = pd.read_csv(buildstock_path)
         n_datapoints = len(buildstock_csv)
 
-    local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
-    if local_weather_file.exists():
-        del batch.cfg["weather_files_url"]
-        batch.cfg["weather_files_path"] = str(local_weather_file)
-    low_disk = True if project_filename.stem == "sdr_upgrades_tmy3" else False
+    if "weather_files_url" in batch.cfg:
+        local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
+        if local_weather_file.exists():
+            del batch.cfg["weather_files_url"]
+            batch.cfg["weather_files_path"] = str(local_weather_file)
+
+    if project_filename.stem == "testing_baseline":
+        low_disk = "ultra_low_disk_no_timeseries"
+    elif project_filename.stem == "sdr_upgrades_tmy3":
+        low_disk = "low_disk"
+    else:
+        low_disk = ""
 
     if "aws" in batch.cfg.get("postprocessing", {}):
         del batch.cfg["postprocessing"]["aws"]
@@ -70,19 +77,26 @@ def test_resstock_local_batch(project_filename):
     simout_path = out_path / "simulation_output"
     assert (simout_path / "completed_jobs.json").exists()
     if not low_disk:
-        assert (simout_path / "simulations_job0.tar.gz").exists()
-    else:
-        assert not (simout_path / "simulations_job0.tar.gz").exists()
+        assert len(list((simout_path / "up00").glob("*"))) > 0
+        assert len(list((simout_path / "timeseries" / "up00").glob("*"))) > 0
+        assert len(list((simout_path / "annual" / "up00").glob("*"))) > 0
+    elif low_disk == "low_disk":
+        assert len(list((simout_path / "up00").glob("*"))) == 0
+        assert len(list((simout_path / "timeseries" / "up00").glob("*"))) > 0
+        assert len(list((simout_path / "annual" / "up00").glob("*"))) > 0
+    elif low_disk == "ultra_low_disk_no_timeseries":
+        assert len(list((simout_path / "up00").glob("*"))) == 0
+        assert len(list((simout_path / "timeseries" / "up00").glob("*"))) == 0
+        assert len(list((simout_path / "annual" / "up00").glob("*"))) > 0
+        batch.run_batch(low_disk="low_disk")  # run again to get timeseries so test below works
 
-    # Build upgrades2expected_bldgs map by scanning existing files. Not all buildings will be present
-    # because the upgrade may not apply to all
+    batch.process_results()
+
     upgrades2expected_bldgs = {}  # key: upgrade_id, value: list of building_ids
     for upgrade_dir in (simout_path / "timeseries").glob("up*"):
         upgrade_id = int(upgrade_dir.name[2:])  # Extract ID from 'up##'
         bldg_files = list(upgrade_dir.glob("bldg*.parquet"))
         upgrades2expected_bldgs[upgrade_id] = [int(f.stem[4:]) for f in bldg_files]  # Extract ID from 'bldg#######'
-
-    batch.process_results()
 
     base_pq = out_path / "parquet" / "baseline" / "results_up00.parquet"
     assert base_pq.exists()
