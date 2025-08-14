@@ -136,7 +136,7 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
     # Create a simple mock module and add it to sys.modules
     class MockResstockpostproc:
         @staticmethod
-        def publish_baseline_annual_results(failed_bldgs, base):
+        def publish_baseline_annual_results(base):
             # Simply rename columns with pub_ prefix
             cols = base.collect_schema().names()
             rename_map = {col: f"pub_{col}" for col in cols}

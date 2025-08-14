@@ -449,6 +449,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     logger.info(f"Got this schema: {all_schema_dict}\n")
 
     failed_bldgs = set()
+    baseline_failed_bldgs = set()
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         logger.info("Collecting all the failed simulations buildings")
 
@@ -471,8 +472,10 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                 continue
             failed_bldgs.update(bldgs)
             failure_dict[upgrade_id].extend(bldgs)
+        baseline_failed_bldgs = failure_dict["up00"]
         logger.info(
-            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding from published annual results."
+            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding baseline failures."
+            f"Replacing upgrade failures with baseline (i.e. treating them as upgrade not applied)."
             f"These many buildings failed in each upgrade: {', '.join(f'{k}: {len(v)}' for k, v in failure_dict.items())}."
             f"These are the failed building ids: {', '.join(f'{k}: {v}' for k, v in failure_dict.items())}"
         )
@@ -532,10 +535,10 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         )
         if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(failed_bldgs, df)
+                pub_df_lazy: pl.LazyFrame = publish_baseline(df)
                 base_df_lazy = pub_df_lazy
             else:
-                pub_df_lazy = publish_upgrade(failed_bldgs, base_df_lazy, df, upgrade_num=upgrade_id)
+                pub_df_lazy = publish_upgrade(baseline_failed_bldgs, base_df_lazy, df, upgrade_num=upgrade_id)
             pub_df_len = pub_df_lazy.select(pl.len()).collect().item()
             logger.info(f"Got {pub_df_len} pub_df rows for upgrade {upgrade_id}.")
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
