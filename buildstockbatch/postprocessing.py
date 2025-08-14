@@ -120,6 +120,8 @@ def read_out_osw(fs, filename):
             out_d[key] = d.get(key, None)
         if "eplusout_err" in d and "EnergyPlus Terminated" in d["eplusout_err"]:
             out_d["eplusout_err"] = d["eplusout_err"]
+        else:
+            out_d["eplusout_err"] = ""
         step_errors = []
         for step in d.get("steps", []):
             measure_dir_name = step["measure_dir_name"]
@@ -523,7 +525,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         df_len = df.select(pl.len()).collect().item()
         logger.info(f"Found {df_len} rows for upgrade {upgrade_id}.")
         df = clean_up_results_df(df, cfg, keep_upgrade_id=True, schema=all_schema_dict)
-        df = df.drop("upgrade")  # upgrade column is created using hive partitioning
         df = df.sort("building_id")
         partition_df = df.select(["building_id", *df_partition_columns])
         partition_df = partition_df.rename(
@@ -561,7 +562,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             results_parquet_dir = f"{parquet_dir}/baseline"
         else:
             results_parquet_dir = f"{parquet_dir}/upgrades/upgrade={upgrade_id}"
-
+        df = df.drop("upgrade")  # upgrade column is created using hive partitioning
         fs.makedirs(results_parquet_dir)
         parquet_filename = f"{results_parquet_dir}/results_up{upgrade_id:02d}.parquet"
         logger.info(f"Writing {parquet_filename}")
