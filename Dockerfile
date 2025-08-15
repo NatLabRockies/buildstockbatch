@@ -1,14 +1,18 @@
 ARG OS_VER
 FROM --platform=linux/amd64 nrel/openstudio:$OS_VER as buildstockbatch
 ARG CLOUD_PLATFORM=aws
-
-RUN sudo apt update && sudo apt install -y python3-pip
-RUN sudo -H pip install --upgrade pip
+ENV DEBIAN_FRONTEND=noninteractive
 COPY . /buildstock-batch/
-RUN python3 -m pip install "/buildstock-batch[${CLOUD_PLATFORM}]"
+COPY nrel_root_ca.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
+RUN uv python install 3.11
+RUN uv venv --python 3.11 && uv pip install "/buildstock-batch[${CLOUD_PLATFORM}]"
 
 # Base plus custom gems
-FROM buildstockbatch as buildstockbatch-custom-gems
+FROM --platform=linux/amd64 buildstockbatch as buildstockbatch-custom-gems
 RUN sudo cp /buildstock-batch/Gemfile /var/oscli/
 # OpenStudio's docker image sets ENV BUNDLE_WITHOUT=native_ext
 # https://github.com/NREL/docker-openstudio/blob/3.2.1/Dockerfile#L12
