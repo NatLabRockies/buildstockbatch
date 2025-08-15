@@ -286,6 +286,22 @@ class SlurmBatch(BuildStockBatchBase):
         tick = time.time() - tick
         logger.info("Simulation time: {:.2f} minutes".format(tick / 60.0))
 
+        # Send pkill to any lingering EnergyPlus processes
+        logger.info("Running pkill -9 -f energyplus to force lingering EnergyPlus processes to exit")
+        subprocess.run(["pkill", "-9", "-f", "energyplus"])
+
+        # Wait 60s
+        logger.info("Waiting 60s to allow pkill to finish and release all files")
+        time.sleep(60)
+
+        # Send pkill to any lingering OpenStudio processes
+        logger.info("Running pkill -9 -f openstudio to force lingering EnergyPlus processes to exit")
+        subprocess.run(["pkill", "-9", "-f", "openstudio"])
+
+        # Wait 60s
+        logger.info("Waiting 60s to allow pkill to finish and release all files")
+        time.sleep(60)
+
         # Save the aggregated dpouts as a json file
         lustre_sim_out_dir = pathlib.Path(self.results_dir) / "simulation_output"
         results_json = lustre_sim_out_dir / f"results_job{job_array_number}.json.gz"
@@ -401,7 +417,7 @@ class SlurmBatch(BuildStockBatchBase):
                 if cfg.get("baseline", dict()).get("custom_gems", False):
                     cli_cmd = (
                         "openstudio --bundle /var/oscli/Gemfile --bundle_path /var/oscli/gems "
-                        "--bundle_without native_ext run -w in.osw --debug"
+                        "--bundle_without test run -w in.osw --debug"
                     )
                 if get_bool_env_var("MEASURESONLY"):
                     cli_cmd += " --measures_only"
@@ -409,7 +425,7 @@ class SlurmBatch(BuildStockBatchBase):
                 args.extend([str(cls.local_apptainer_img), "bash", "-x"])
                 env_vars = dict(os.environ)
                 env_vars["SINGULARITYENV_BUILDSTOCKBATCH_VERSION"] = bsb_version
-                logger.debug("\n".join(map(str, args)))
+                # logger.debug("\n".join(map(str, args))) # this add too much output to job.out files
                 max_time_min = cfg.get("max_minutes_per_sim")
                 if max_time_min is not None:
                     subprocess_kw = {"timeout": max_time_min * 60}
@@ -563,6 +579,7 @@ class SlurmBatch(BuildStockBatchBase):
             "sbatch",
             "--account={}".format(account),
             "--time={}".format(walltime),
+            "--partition=nvme",
             "--mem={}".format(self.DEFAULT_NODE_MEMORY_MB),
             "--export={}".format(",".join(export_vars)),
             "--array={}".format(array_spec),
@@ -648,6 +665,7 @@ class SlurmBatch(BuildStockBatchBase):
             "sbatch",
             "--tmp=1000000",
             "--account={}".format(account),
+            "--partition=nvme",
             "--time={}".format(walltime),
             "--export={}".format(",".join(env_export.keys())),
             "--job-name=bstkpost",
