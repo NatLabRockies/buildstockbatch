@@ -132,10 +132,10 @@ class SlurmBatch(BuildStockBatchBase):
 
     def run_batch(self, sampling_only=False):
         # Create simulation_output dir
-        sim_out_ts_dir = pathlib.Path(self.output_dir) / "results" / "simulation_output" / "timeseries"
-        os.makedirs(sim_out_ts_dir, exist_ok=True)
-        for i in range(0, self.num_upgrades + 1):
-            os.makedirs(sim_out_ts_dir / f"up{i:02d}")
+        for dir in ["timeseries", "annual"]:
+            sim_out_dir = pathlib.Path(self.output_dir) / "results" / "simulation_output" / dir
+            for i in range(0, self.num_upgrades + 1):
+                (sim_out_dir / f"up{i:02d}").mkdir(parents=True, exist_ok=True)
 
         # create destination_dir and copy housing_characteristics into it
         logger.debug("Copying housing characteristics")
@@ -274,9 +274,11 @@ class SlurmBatch(BuildStockBatchBase):
                 stock_type = self.cfg.get("stock_type", "residential")
                 full_schema = get_data_dict_schema(stock_type, dp_df.columns)
                 dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
-                dp_df.write_parquet(
-                    f"{self.output_dir}/results/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet"
+                outout_dir = (
+                    pathlib.Path(self.output_dir) / "results" / "simulation_output" / "annual" / f"up{upgrade_id:02d}"
                 )
+                outout_dir.mkdir(parents=True, exist_ok=True)
+                dp_df.write_parquet(outout_dir / f"bldg{i:07d}.parquet")
                 return (upgrade_id, i)
 
         # Run the simulations, get the data_point_out.json info from each
@@ -490,7 +492,9 @@ class SlurmBatch(BuildStockBatchBase):
         stock_type = cfg.get("stock_type", "residential")
         full_schema = get_data_dict_schema(stock_type, dp_df.columns)
         dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
-        dp_df.write_parquet(f"{output_dir}/results/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet")
+        sim_out_dir = pathlib.Path(output_dir) / "results" / "simulation_output" / "annual" / f"up{upgrade_id:02d}"
+        sim_out_dir.mkdir(parents=True, exist_ok=True)
+        dp_df.write_parquet(sim_out_dir / f"bldg{i:07d}.parquet")
         return (upgrade_id, i)
 
     @staticmethod
