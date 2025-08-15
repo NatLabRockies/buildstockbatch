@@ -276,7 +276,7 @@ class SlurmBatch(BuildStockBatchBase):
 
         # Send pkill to any lingering EnergyPlus processes
         logger.info("Running pkill -9 -f energyplus to force lingering EnergyPlus processes to exit")
-        subprocess.run(['pkill', '-9', '-f', 'energyplus'])
+        subprocess.run(["pkill", "-9", "-f", "energyplus"])
 
         # Wait 60s
         logger.info("Waiting 60s to allow pkill to finish and release all files")
@@ -284,7 +284,7 @@ class SlurmBatch(BuildStockBatchBase):
 
         # Send pkill to any lingering OpenStudio processes
         logger.info("Running pkill -9 -f openstudio to force lingering EnergyPlus processes to exit")
-        subprocess.run(['pkill', '-9', '-f', 'openstudio'])
+        subprocess.run(["pkill", "-9", "-f", "openstudio"])
 
         # Wait 60s
         logger.info("Waiting 60s to allow pkill to finish and release all files")
@@ -413,7 +413,7 @@ class SlurmBatch(BuildStockBatchBase):
                 args.extend([str(cls.local_apptainer_img), "bash", "-x"])
                 env_vars = dict(os.environ)
                 env_vars["SINGULARITYENV_BUILDSTOCKBATCH_VERSION"] = bsb_version
-                #logger.debug("\n".join(map(str, args))) # this add too much output to job.out files
+                # logger.debug("\n".join(map(str, args))) # this add too much output to job.out files
                 max_time_min = cfg.get("max_minutes_per_sim")
                 if max_time_min is not None:
                     subprocess_kw = {"timeout": max_time_min * 60}
