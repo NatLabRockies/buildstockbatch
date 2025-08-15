@@ -367,17 +367,29 @@ def test_logic_validation_pass(project_file):
 
 
 @resstock_required
-def test_number_of_options_apply_upgrade():
-    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
+@pytest.mark.parametrize(
+    "opt_count,cost_count,should_raise",
+    [
+        (100, 100, True),
+        (100, 1, True),
+        (1, 100, True),
+        (1, 1, False),
+    ],
+)
+def test_number_of_options_apply_upgrade(opt_count, cost_count, should_raise):
+    proj_filename = os.path.join(example_yml_dir, "complete-schema.yml")
     cfg = get_project_configuration(str(proj_filename))
-    cfg["upgrades"][-1]["options"] = cfg["upgrades"][-1]["options"] * 10
-    cfg["upgrades"][0]["options"][0]["costs"] = cfg["upgrades"][0]["options"][0]["costs"] * 5
+    cfg["upgrades"][-1]["options"] = cfg["upgrades"][-1]["options"] * opt_count
+    cfg["upgrades"][0]["options"][0]["costs"] = cfg["upgrades"][0]["options"][0]["costs"] * cost_count
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = pathlib.Path(tmpdir)
         new_proj_filename = tmppath / "project.yml"
         with open(new_proj_filename, "w") as f:
             json.dump(cfg, f)
-        with pytest.raises(ValidationError):
+        if should_raise:
+            with pytest.raises(ValidationError):
+                LocalBatch.validate_number_of_options(str(new_proj_filename))
+        else:
             LocalBatch.validate_number_of_options(str(new_proj_filename))
 
 

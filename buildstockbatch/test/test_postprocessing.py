@@ -5,9 +5,9 @@ import logging
 import os
 import pathlib
 import re
-import tarfile
 import pytest
 import shutil
+import sys
 from unittest.mock import patch, MagicMock
 
 from buildstockbatch import postprocessing
@@ -56,6 +56,7 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
     for upgrade_id in (0, 1):
         df = read_csv(str(results_dir / "results_csvs" / f"results_up{upgrade_id:02d}.csv.gz"))
         assert "Measure Failed" in df[df["building_id"] == 3]["step_failures"].iloc[0]
+        assert "EnergyPlus Failed with Error: Building ID is 3" in df[df["building_id"] == 3]["eplusout_err"].iloc[0]
         df = df[df["building_id"] != 3]
         assert (df["reporting_measure1.column_1"] == 1).all()
         assert (df["reporting_measure1.column_2"] == 2).all()
@@ -129,3 +130,139 @@ def test_upgrade_missing_ts(basic_residential_project_file, mocker, caplog):
     record = caplog.records[0]
     assert record.levelname == "WARNING"
     assert record.message == "There are no timeseries files for upgrade1."
+
+
+def test_publish_annual_results(basic_residential_project_file, mocker):
+    """Test that when publish_annual_results is True, the expected folders and files are created."""
+    # Create project with schema v0.6 and publish_annual_results set to True
+    project_filename, results_dir = basic_residential_project_file(
+        {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
+    )
+
+    # Mock necessary objects for testing
+    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
+    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
+    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
+
+    # Create a simple mock module and add it to sys.modules
+    class MockResstockpostproc:
+        @staticmethod
+        def publish_baseline_annual_results(base):
+            # Simply rename columns with pub_ prefix
+            cols = base.collect_schema().names()
+            rename_map = {col: f"pub_{col}" for col in cols}
+            return base.rename(rename_map)
+
+        @staticmethod
+        def publish_upgrade_annual_results(failed_bldgs, base, upgrade, upgrade_num):
+            # Simply rename columns with pub_ prefix
+            cols = upgrade.collect_schema().names()
+            rename_map = {col: f"pub_{col}" for col in cols}
+            return upgrade.rename(rename_map)
+
+    # Add the mock module to sys.modules
+    original_resstockpostproc = sys.modules.get("resstockpostproc")
+    sys.modules["resstockpostproc"] = MockResstockpostproc
+    try:
+        # Create and run the BuildStockBatchBase instance
+        bsb = BuildStockBatchBase(project_filename)
+        bsb.process_results()
+
+        # Check that the expected directories and files exist
+        results_path = pathlib.Path(results_dir)
+    finally:
+        # Restore the original state of sys.modules
+        if original_resstockpostproc is not None:
+            sys.modules["resstockpostproc"] = original_resstockpostproc
+        else:
+            del sys.modules["resstockpostproc"]
+    # Check for results_csvs_pub folder with CSV files
+    results_csvs_pub_path = results_path / "results_csvs_pub"
+    assert results_csvs_pub_path.exists(), "results_csvs_pub folder should exist"
+    assert len(list(results_csvs_pub_path.glob("*.csv.gz"))) > 0, "results_csvs_pub should contain CSV files"
+
+    # Check for pub_annual folder inside parquet_dir with files
+    parquet_dir = results_path / "parquet"
+    pub_annual_path = parquet_dir / "pub_annual"
+    assert pub_annual_path.exists(), "pub_annual folder should exist inside parquet_dir"
+    assert len(list(pub_annual_path.rglob("*.parquet"))) > 0, "pub_annual should contain parquet files"
+
+    # Verify the structure - there should be upgrade=X folders inside pub_annual
+    upgrade_folders = list(pub_annual_path.glob("upgrade=*"))
+    assert len(upgrade_folders) > 0, "pub_annual should contain upgrade folders"
+
+    # Check each upgrade folder has the expected parquet files
+    for upgrade_folder in upgrade_folders:
+        upgrade_id = int(upgrade_folder.name.split("=")[1])
+        expected_file = upgrade_folder / f"results_up{upgrade_id:02d}.parquet"
+        assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        {"replace_existing": True, "continue_upload": False, "should_raise_error": False},
+        {"replace_existing": False, "continue_upload": False, "should_raise_error": True},
+        {"replace_existing": False, "continue_upload": True, "should_raise_error": False},
+    ],
+)
+def test_replace_existing(basic_residential_project_file, mocker, scenario):
+    """Test the replace_existing functionality."""
+    # Set up a mock S3 environment
+    mocker.patch("s3fs.S3FileSystem", new=mocker.MagicMock())
+    mocker.patch("boto3.resource", new=mocker.MagicMock())
+
+    # Create a basic residential project file
+    project_filename, results_dir = basic_residential_project_file(
+        {"postprocessing": {"aws": {"s3": {"bucket": "dummy", "prefix": "dummy"}}}}
+    )
+
+    # Mock the necessary objects
+    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
+    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
+    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
+
+    # Create an instance of BuildStockBatchBase
+    bsb = BuildStockBatchBase(project_filename)
+
+    # Create some dummy result files
+    results_path = pathlib.Path(results_dir)
+    sim_out_dir = results_path / "simulation_output"
+    sim_out_dir.mkdir(parents=True, exist_ok=True)
+    (sim_out_dir / "results_job0.json.gz").touch()
+    parquet_dir = results_path / "parquet"
+    parquet_dir.mkdir(parents=True, exist_ok=True)
+
+    # Mock the S3 filesystem and existing files
+    mock_s3_resource = mocker.patch("boto3.resource").return_value
+    mock_bucket = mock_s3_resource.Bucket.return_value
+    mock_objects_filter_return_value = mocker.MagicMock()
+    mock_objects_filter_return_value.delete.return_value = None
+    mock_bucket.objects.filter.return_value = mock_objects_filter_return_value
+    mock_objects_filter_return_value.__iter__.return_value = [mocker.MagicMock(key="dummy/path/results.csv.gz")]
+
+    if scenario["should_raise_error"]:
+        with pytest.raises(FileExistsError):
+            bsb.upload_results(
+                aws_conf=bsb.cfg.get("postprocessing", {}).get("aws", {}),
+                output_dir=results_dir,
+                results_dir=results_dir,
+                buildstock_csv_filename=None,
+                replace_existing=scenario["replace_existing"],
+                continue_upload=scenario["continue_upload"],
+            )
+    else:
+        bsb.upload_results(
+            aws_conf=bsb.cfg.get("postprocessing", {}).get("aws", {}),
+            output_dir=results_dir,
+            results_dir=results_dir,
+            buildstock_csv_filename=None,
+            replace_existing=scenario["replace_existing"],
+            continue_upload=scenario["continue_upload"],
+        )
+        if scenario["replace_existing"]:
+            # Assert that the mock S3's rm method was called, which means files are being replaced
+            mock_bucket.objects.filter.return_value.delete.assert_called()
+        else:
+            # Assert that the mock S3's rm method was not called
+            mock_bucket.objects.filter.return_value.delete.assert_not_called()

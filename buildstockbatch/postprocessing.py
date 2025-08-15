@@ -31,10 +31,16 @@ import re
 import tempfile
 import time
 import sys
+from buildstockbatch.utils import get_annual_publishing_functions
+import polars as pl
 
 logger = logging.getLogger(__name__)
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
+MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using --replace_existing. We don't
+# want to automatically delete large number of files using current API for two reasons:
+# 1. It is inefficient
+# 2. It is easy to make mistakes and wipe out a significant run
 
 
 def read_data_point_out_json(fs, reporting_measures, filename):
@@ -111,7 +117,8 @@ def read_out_osw(fs, filename):
         keys_to_copy = ["started_at", "completed_at", "completed_status"]
         for key in keys_to_copy:
             out_d[key] = d.get(key, None)
-
+        if "eplusout_err" in d:
+            out_d["eplusout_err"] = d["eplusout_err"]
         step_errors = []
         for step in d.get("steps", []):
             measure_dir_name = step["measure_dir_name"]
@@ -263,9 +270,7 @@ def read_enduse_timeseries_parquet(fs, all_cols, src_path, bldg_id):
     with fs.open(src_filename, "rb") as f:
         df = pd.read_parquet(f, engine="pyarrow")
     df["building_id"] = bldg_id
-    for col in set(all_cols).difference(df.columns.values):
-        df[col] = np.nan
-    df = df[all_cols]
+    df = df.reindex(columns=all_cols)  # fills missing cols with nan
     df.set_index("building_id", inplace=True)
     return df
 
@@ -395,11 +400,22 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     sim_output_dir = f"{results_dir}/simulation_output"
     ts_in_dir = f"{sim_output_dir}/timeseries"
     results_csvs_dir = f"{results_dir}/results_csvs"
+    results_csvs_pub_dir = None
+    parquet_pub_dir = None
+    publish_baseline, publish_upgrade = None, None  # metadata transform
     parquet_dir = f"{results_dir}/parquet"
     ts_dir = f"{results_dir}/parquet/timeseries"
     dirs = [results_csvs_dir, parquet_dir]
     if do_timeseries:
         dirs.append(ts_dir)
+
+    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+        results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
+        parquet_pub_dir = f"{parquet_dir}/pub_annual"
+        dirs.append(results_csvs_pub_dir)
+        dirs.append(parquet_pub_dir)
+        stock_type = cfg.get("stock_type", "residential")
+        publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
 
     # create the postprocessing results directories
     for dr in dirs:
@@ -426,6 +442,28 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         dask.delayed(partial(read_results_json, fs, all_cols=all_results_cols))(x) for x in results_json_files
     ]
     results_df = dd.from_delayed(delayed_results_dfs, verify_meta=False)
+
+    failed_bldgs = []
+    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+        logger.info("Collecting all the failed simulations buildings")
+
+        def get_failed_baseline_bldg_ids(filename):
+            with fs.open(filename, "rb") as f1:
+                with gzip.open(f1, "rt", encoding="utf-8") as f2:
+                    dpouts = json.load(f2)
+            failed_bldgs = []
+            for dpout in dpouts:
+                if dpout.get("upgrade") == 0 and dpout.get("completed_status") != "Success":
+                    failed_bldgs.append(dpout["building_id"])
+            return failed_bldgs
+
+        failed_bldgs = db.from_sequence(results_json_files).map(get_failed_baseline_bldg_ids).compute()
+
+        failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
+        logger.info(
+            f"Found {len(failed_bldgs)} failed baseline simulations. Excluding them from all upgrades. "
+            f"The buildings are: {failed_bldgs}"
+        )
 
     if do_timeseries:
         # Look at all the parquet files to see what columns are in all of them.
@@ -466,6 +504,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         logger.info(f"The timeseries files will be partitioned by {partition_columns}.")
 
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
+    base_df_lazy = None
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = dask.compute(results_df_groups.get_group(upgrade_id))[0]
@@ -495,6 +534,28 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info(f"The types for {unresolved} columns couldn't be determined.")
                 else:
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
+        if (publish_baseline is not None) and (publish_upgrade is not None):
+            if upgrade_id == 0:
+                pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
+                base_df_lazy = pub_df_lazy
+            else:
+                pub_df_lazy = publish_upgrade(
+                    failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id
+                )
+
+            pub_df = pub_df_lazy.collect()
+            csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
+            logger.info(f"Writing {csv_filename}")
+            with fs.open(csv_filename, "wb") as f:
+                with gzip.open(f, "wb") as gf:  # Use wb here because polars writes in binary mode to file
+                    pub_df.write_csv(file=gf, line_terminator="\n")
+
+            dir = f"{parquet_pub_dir}/upgrade={upgrade_id}"
+            fs.makedirs(dir)
+            parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
+            logger.info(f"Writing {parquet_filename}")
+            pub_df.write_parquet(parquet_filename)
+
         # Write CSV
         csv_filename = f"{results_csvs_dir}/results_up{upgrade_id:02d}.csv.gz"
         logger.info(f"Writing {csv_filename}")
@@ -613,7 +674,9 @@ def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False)
         fs.rm(ts_in_dir, recursive=True)
 
 
-def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False):
+def upload_results(
+    aws_conf, output_dir, results_dir, buildstock_csv_filename, continue_upload=False, replace_existing=False
+):
     logger.info("Uploading the parquet files to s3")
 
     output_folder_name = Path(output_dir).name
@@ -642,10 +705,20 @@ def upload_results(aws_conf, output_dir, results_dir, buildstock_csv_filename, c
 
     if len(existing_files) > 0:
         logger.info(f"There are already {len(existing_files)} files in the s3 folder {s3_bucket}/{s3_prefix_output}.")
-        if not continue_upload:
-            raise FileExistsError("Either use --continue_upload or delete files from s3")
-        all_files = [file for file in all_files if str(file) not in existing_files]
-        logger.info(f"Only uploading the rest of the {len(all_files)} files")
+        if not continue_upload and not replace_existing:
+            raise FileExistsError("Either use --continue_upload or --replace_existing or delete files from s3")
+        if replace_existing and len(existing_files) > MAX_REPLACE_FILES:
+            raise FileExistsError(
+                f"{len(existing_files)} files exist in s3://{s3_bucket}/{s3_prefix_output} folder."
+                f"Can't replace more than {MAX_REPLACE_FILES} files."
+            )
+        if replace_existing:
+            bucket.objects.filter(Prefix=s3_prefix_output).delete()
+            logger.info(f"Deleted {len(existing_files)} files from s3://{s3_bucket}/{s3_prefix_output} folder.")
+            logger.info(f"Now uploading all {len(all_files)} files.")
+        else:
+            all_files = [file for file in all_files if str(file) not in existing_files]
+            logger.info(f"Only uploading the rest of the {len(all_files)} files")
 
     def upload_file(filepath, s3key=None):
         full_path = filepath if filepath.is_absolute() else parquet_dir.joinpath(filepath)

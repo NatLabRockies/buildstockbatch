@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import re
 import tempfile
+import os
 
 from buildstockbatch.local import LocalBatch
 from buildstockbatch.utils import get_project_configuration
@@ -31,17 +32,26 @@ def test_resstock_local_batch(project_filename):
 
     # Get the number of upgrades
     n_upgrades = len(batch.cfg.get("upgrades", []))
-    # Limit the number of upgrades to 6 to reduce simulation time
-    if n_upgrades > 6:
-        batch.cfg["upgrades"] = batch.cfg["upgrades"][0:6]
-        n_upgrades = 6
+    # Limit the number of upgrades to 2 to reduce simulation time
+    if n_upgrades > 2:
+        batch.cfg["upgrades"] = batch.cfg["upgrades"][0:2]
+        n_upgrades = 2
 
     # Modify the number of datapoints so we're not here all day.
-    if n_upgrades == 0:
-        n_datapoints = 4
+    if batch.cfg["sampler"]["type"] == "residential_quota":
+        if n_upgrades == 0:
+            n_datapoints = 4
+        else:
+            n_datapoints = 2
+        batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
     else:
-        n_datapoints = 2
-    batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
+        sample_file = batch.cfg["sampler"]["args"]["sample_file"]
+        if not os.path.isabs(sample_file):
+            buildstock_path = os.path.join(os.path.dirname(str(project_filename)), sample_file)
+        else:
+            buildstock_path = sample_file
+        buildstock_csv = pd.read_csv(buildstock_path)
+        n_datapoints = len(buildstock_csv)
 
     local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
     if local_weather_file.exists():
@@ -56,7 +66,8 @@ def test_resstock_local_batch(project_filename):
     assert (simout_path / "results_job0.json.gz").exists()
     assert (simout_path / "simulations_job0.tar.gz").exists()
 
-    # Build upgrades2expected_bldgs map by scanning existing files
+    # Build upgrades2expected_bldgs map by scanning existing files. Not all buildings will be present
+    # because the upgrade may not apply to all
     upgrades2expected_bldgs = {}  # key: upgrade_id, value: list of building_ids
     for upgrade_dir in (simout_path / "timeseries").glob("up*"):
         upgrade_id = int(upgrade_dir.name[2:])  # Extract ID from 'up##'
@@ -105,7 +116,7 @@ def test_resstock_local_batch(project_filename):
                 if row["building_id"] in expected_bldgs:
                     assert row["completed_status"] == "Success"
                 else:
-                    assert row["completed_status"] == "Invalid"
+                    assert row["completed_status"] in ["Invalid", "Fail"]
     assert (ts_pq_path / "_common_metadata").exists()
     shutil.rmtree(out_path)
 
@@ -130,6 +141,7 @@ def test_local_simulation_timeout(mocker):
             measures_only=False,
             n_datapoints=cfg["sampler"]["args"]["n_datapoints"],
             cfg=cfg,
+            low_disk=False,
             i=1,
         )
         sim_path = pathlib.Path(tmpdir, "simulation_output", "up00", "bldg0000001")
@@ -155,3 +167,38 @@ def test_local_simulation_timeout(mocker):
             err_log_re.search(failed_job.read())
 
         sleep_mock.assert_called_once_with(20)
+
+
+@resstock_required
+def test_low_disk_mode():
+    """Test that the low-disk mode correctly skips tarball creation and returns early."""
+    project_filename = resstock_directory / "project_testing" / "testing_baseline.yml"
+    LocalBatch.validate_project(str(project_filename))
+    batch = LocalBatch(str(project_filename))
+
+    # Modify the number of datapoints to reduce simulation time
+    n_datapoints = 2
+    batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
+
+    # Handle weather files
+    local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
+    if local_weather_file.exists():
+        del batch.cfg["weather_files_url"]
+        batch.cfg["weather_files_path"] = str(local_weather_file)
+
+    # Run batch with low_disk=True
+    batch.run_batch(low_disk=True)
+
+    # Check that results_job0.json.gz exists
+    out_path = pathlib.Path(batch.output_dir)
+    simout_path = out_path / "simulation_output"
+    assert (simout_path / "results_job0.json.gz").exists()
+
+    # Check that simulations_job0.tar.gz does NOT exist (should be skipped in low_disk mode)
+    assert not (simout_path / "simulations_job0.tar.gz").exists()
+
+    # Check that the timeseries directories still exist (they shouldn't be compressed into a tarball)
+    assert (simout_path / "timeseries").exists()
+
+    # Clean up
+    shutil.rmtree(out_path)

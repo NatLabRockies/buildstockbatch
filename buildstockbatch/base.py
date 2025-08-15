@@ -188,7 +188,7 @@ class BuildStockBatchBase(object):
         return sim_id, sim_dir
 
     @staticmethod
-    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id):
+    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id, low_disk=False):
         """Clean up the output directory for a single simulation.
 
         :param sim_dir: simulation directory
@@ -201,6 +201,8 @@ class BuildStockBatchBase(object):
         :type upgrade_id: int
         :param building_id: building id from buildstock.csv
         :type building_id: int
+        :param low_disk: If true, remove the simulation directory entirely to save disk space
+        :type low_disk: bool
         """
 
         # Convert the timeseries data to parquet
@@ -258,6 +260,10 @@ class BuildStockBatchBase(object):
                 dest_fs,
                 f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet",
             )
+
+        if low_disk:
+            shutil.rmtree(sim_dir, ignore_errors=True)
+            return
 
         # Remove files already in data_point.zip
         zipfilename = os.path.join(sim_dir, "run", "data_point.zip")
@@ -936,7 +942,7 @@ class BuildStockBatchBase(object):
     def upload_results(self, *args, **kwargs):
         return postprocessing.upload_results(*args, **kwargs)
 
-    def process_results(self, skip_combine=False, use_dask_cluster=True, continue_upload=False):
+    def process_results(self, skip_combine=False, use_dask_cluster=True, continue_upload=False, replace_existing=False):
         if use_dask_cluster:
             self.get_dask_client()  # noqa F841
 
@@ -957,7 +963,12 @@ class BuildStockBatchBase(object):
             aws_conf = self.cfg.get("postprocessing", {}).get("aws", {})
             if "s3" in aws_conf or "aws" in self.cfg:
                 s3_bucket, s3_prefix = self.upload_results(
-                    aws_conf, self.output_dir, self.results_dir, self.sampler.csv_path, continue_upload=continue_upload
+                    aws_conf,
+                    self.output_dir,
+                    self.results_dir,
+                    self.sampler.csv_path,
+                    continue_upload=continue_upload,
+                    replace_existing=replace_existing,
                 )
                 if "athena" in aws_conf:
                     postprocessing.create_athena_tables(

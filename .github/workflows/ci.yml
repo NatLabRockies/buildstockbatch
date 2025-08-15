@@ -7,6 +7,11 @@ on:
     types:
       - synchronize
       - opened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   full_tests:
     runs-on: ubuntu-latest
@@ -24,6 +29,10 @@ jobs:
           repository: NREL/resstock
           path: resstock
           ref: develop
+      - name: Remove AWS from resstock yaml
+        run: |
+          cd resstock
+          python .github/scripts/remove_aws_from_yaml.py project_national/sdr_upgrades_tmy3.yml
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -42,11 +51,12 @@ jobs:
           sudo apt install -y "./${OS_INSTALLER_FILENAME}"
           openstudio openstudio_version
           which openstudio
-      - name: Install buildstockbatch
+
+      - name: Install buildstockbatch and ResStock postprocessing
         run: |
           cd buildstockbatch
           python -m pip install --progress-bar off --upgrade pip
-          pip install .[dev,aws] --progress-bar off
+          bash install.sh dev
       - name: Black
         uses: psf/black@stable
         with:

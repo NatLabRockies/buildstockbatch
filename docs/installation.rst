@@ -83,28 +83,22 @@ environment to use Python 3.8 or greater. Then activate your environment.
 .. _python virtual environment: https://docs.python.org/3/library/venv.html
 .. _conda environment: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
 
-Standard Install
-................
+Using the Install Script
+........................
 
-If you are just going to be using buildstockbatch, not working on it, install like so:
-
-::
-
-   cd /path/to/buildstockbatch
-   python -m pip install -e .
-
-Developer Install
-.................
-
-If you are going to be working on and contributing back to buildstockbatch,
-install as follows after cloning the repository and creating and activating a
-new python or conda environment.
+The easiest way to install BuildStockBatch is to use the provided install script, which also installs the required ResStock postprocessing module:
 
 ::
 
    cd /path/to/buildstockbatch
-   python -m pip install -e ".[dev]"
-   pre-commit install
+   bash install.sh
+
+The script accepts optional arguments for different installation types:
+
+* Standard install (no argument): ``bash install.sh``
+* Developer install: ``bash install.sh dev`` (also installs pre-commit hooks)
+* AWS support: ``bash install.sh aws``
+* GCP support: ``bash install.sh gcp``
 
 .. _aws-user-config-local:
 
@@ -192,23 +186,20 @@ Install either `Docker Desktop <https://docs.docker.com/get-docker/>`_ of
 BuildStockBatch Python Library
 ..............................
 
-Install the buildstockbatch python library as described in :ref:`bsb-python` for
-the local installation. You'll need to install with the ``aws`` extra as follows.
-
-For a standard installation
+Install the buildstockbatch python library using the install script with the AWS option:
 
 ::
 
    cd /path/to/buildstockbatch
-   python -m pip install -e ".[aws]"
+   bash install.sh aws
 
-For developer installation
+For developer installation with AWS support:
 
 ::
 
+   # Use the install script (recommended)
    cd /path/to/buildstockbatch
-   python -m pip install -e ".[dev,aws]"
-   pre-commit install
+   bash install.sh dev
 
 AWS User Configuration
 ......................
@@ -276,16 +267,14 @@ One-time setup that each user needs to do on the workstation from which they'll 
 manage BuildStockBatch runs.
 
 1. Install `Docker`_. This is needed by the script to manage Docker images (pull, push, etc).
-2. Get BuildStockBatch and set up a Python environment for it using the :ref:`bsb-python` instructions
-   above. (i.e., create a Python virtual environment, activate the venv, and install buildstockbatch
-   with the command below.)
+2. Get BuildStockBatch and set up a Python environment for it:
 
-   * Install with the ``[gcp]`` option to include GCP-specific dependencies:
+   * Create a Python virtual environment (Python 3.8 or greater), activate it, and install buildstockbatch using the install script with the GCP option:
 
     ::
 
         cd /path/to/buildstockbatch
-        python -m pip install -e ".[gcp]"
+        bash install.sh gcp
 
 3. Download/Clone ResStock or ComStock.
 4. Set up GCP authentication.

@@ -30,7 +30,7 @@ source "$MY_PYTHON_ENV/bin/activate"
 which pip
 if [ $DEV -eq 1 ]
 then
-    pip install --no-cache-dir -e ".[dev]"
+    bash install.sh dev
 else
-    pip install --no-cache-dir .
+    bash install.sh
 fi
