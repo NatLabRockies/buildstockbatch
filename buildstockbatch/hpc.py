@@ -32,6 +32,7 @@ import sys
 import tempfile
 import time
 import csv
+import polars as pl
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch.utils import (
@@ -42,6 +43,7 @@ from buildstockbatch.utils import (
     get_project_configuration,
     read_csv,
     get_bool_env_var,
+    get_data_dict_schema,
 )
 from buildstockbatch import postprocessing
 from buildstockbatch.__version__ import __version__ as bsb_version
@@ -257,7 +259,9 @@ class SlurmBatch(BuildStockBatchBase):
         @delayed
         def run_building_d(i, upgrade_idx):
             try:
-                return self.run_building(self.output_dir, self.cfg, args["n_datapoints"], i, upgrade_idx)
+                return self.run_building(
+                    self.output_dir, self.cfg, args["n_datapoints"], i, upgrade_idx, job_array_number
+                )
             except Exception:
                 with open(traceback_file_path, "a") as f:
                     txt = get_error_details()
@@ -265,7 +269,15 @@ class SlurmBatch(BuildStockBatchBase):
                     f.write(txt)
                     del txt
                 upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
-                return {"building_id": i, "upgrade": upgrade_id}
+                dpout = {"building_id": i, "upgrade": upgrade_id, "job_id": job_array_number}
+                dp_df = pl.from_dict(dpout)
+                stock_type = self.cfg.get("stock_type", "residential")
+                full_schema = get_data_dict_schema(stock_type, dp_df.columns)
+                dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
+                dp_df.write_parquet(
+                    f"{self.output_dir}/results/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet"
+                )
+                return (upgrade_id, i)
 
         # Run the simulations, get the data_point_out.json info from each
         tick = time.time()
@@ -326,7 +338,7 @@ class SlurmBatch(BuildStockBatchBase):
         self.local_apptainer_img.unlink(missing_ok=True)
 
     @classmethod
-    def run_building(cls, output_dir, cfg, n_datapoints, i, upgrade_idx=None):
+    def run_building(cls, output_dir, cfg, n_datapoints, i, upgrade_idx=None, job_array_number=0):
         fs = LocalFileSystem()
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
 
@@ -456,7 +468,14 @@ class SlurmBatch(BuildStockBatchBase):
 
         reporting_measures = cls.get_reporting_measures(cfg)
         dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, i)
-        return dpout
+        dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
+        dpout["job_id"] = job_array_number  # Used by downstream code. For local run, job_id is always zero.
+        dp_df = pl.from_dict(dpout)
+        stock_type = cfg.get("stock_type", "residential")
+        full_schema = get_data_dict_schema(stock_type, dp_df.columns)
+        dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
+        dp_df.write_parquet(f"{output_dir}/results/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet")
+        return (upgrade_id, i)
 
     @staticmethod
     def _queue_jobs_env_vars() -> dict:
