@@ -311,7 +311,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
     assert simulation_output_step["arguments"]["include_timeseries_weather"] is False
     assert simulation_output_step["arguments"]["include_timeseries_resilience"] is False
     assert simulation_output_step["arguments"]["timeseries_timestamp_convention"] == "end"
-    assert simulation_output_step["arguments"]["timeseries_num_decimal_places"] == 3
+    assert simulation_output_step["arguments"]["timeseries_num_decimal_places"] == 5
     assert simulation_output_step["arguments"]["add_timeseries_dst_column"] is True
     assert simulation_output_step["arguments"]["add_timeseries_utc_column"] is True
     index += 1

@@ -64,7 +64,7 @@ DEFAULT_MEASURE_ARGS = {
         "include_timeseries_system_use_consumptions": False,
         "include_timeseries_unmet_hours": False,
         "include_timeseries_resilience": False,
-        "timeseries_num_decimal_places": 3,
+        "timeseries_num_decimal_places": 5,
         "user_output_variables": "",
         "user_output_meters": "",
     },
