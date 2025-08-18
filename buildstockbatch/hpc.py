@@ -676,6 +676,7 @@ class SlurmBatch(BuildStockBatchBase):
             "--output=postprocessing.out",
             "--nodes=1",
             ":",
+            "--partition=nvme",
             "--tmp=1000000",
             "--mem={}".format(memory),
             "--output=dask_workers.out",
