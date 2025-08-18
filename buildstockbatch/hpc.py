@@ -278,7 +278,7 @@ class SlurmBatch(BuildStockBatchBase):
                     pathlib.Path(self.output_dir) / "results" / "simulation_output" / "annual" / f"up{upgrade_id:02d}"
                 )
                 outout_dir.mkdir(parents=True, exist_ok=True)
-                dp_df.write_parquet(outout_dir / f"bldg{i:07d}.parquet")
+                dp_df.write_parquet(outout_dir / f"bldg{i:07d}.parquet", statistics=False)
                 return (upgrade_id, i)
 
         # Run the simulations, get the data_point_out.json info from each
@@ -494,7 +494,7 @@ class SlurmBatch(BuildStockBatchBase):
         dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
         sim_out_dir = pathlib.Path(output_dir) / "results" / "simulation_output" / "annual" / f"up{upgrade_id:02d}"
         sim_out_dir.mkdir(parents=True, exist_ok=True)
-        dp_df.write_parquet(sim_out_dir / f"bldg{i:07d}.parquet")
+        dp_df.write_parquet(sim_out_dir / f"bldg{i:07d}.parquet", statistics=False)
         return (upgrade_id, i)
 
     @staticmethod

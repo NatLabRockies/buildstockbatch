@@ -227,7 +227,9 @@ class LocalBatch(BuildStockBatchBase):
                 stock_type = cfg.get("stock_type", "residential")
                 full_schema = get_data_dict_schema(stock_type, dp_df.columns)
                 dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
-                dp_df.write_parquet(f"{results_dir}/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet")
+                dp_df.write_parquet(
+                    f"{results_dir}/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet", statistics=False
+                )
                 return (upgrade_id, i)
 
     def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=""):

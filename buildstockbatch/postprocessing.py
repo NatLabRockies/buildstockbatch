@@ -552,7 +552,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             fs.makedirs(dir)
             parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
             logger.info(f"Writing {parquet_filename}")
-            pub_df_lazy.sink_parquet(parquet_filename)
+            pub_df_lazy.sink_parquet(parquet_filename, statistics=False)
 
         # Write CSV
         csv_filename = f"{results_csvs_dir}/results_up{upgrade_id:02d}.csv.gz"
@@ -570,7 +570,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         fs.makedirs(results_parquet_dir)
         parquet_filename = f"{results_parquet_dir}/results_up{upgrade_id:02d}.parquet"
         logger.info(f"Writing {parquet_filename}")
-        df.sink_parquet(parquet_filename)
+        df.sink_parquet(parquet_filename, statistics=False)
 
         if do_timeseries:
             # Get the names of the timeseries file for each simulation in this upgrade
