@@ -290,7 +290,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
     assert simulation_output_step["arguments"]["include_annual_system_use_consumptions"] is False
     assert simulation_output_step["arguments"]["include_annual_emissions"] is True
     assert simulation_output_step["arguments"]["include_annual_emission_fuels"] is True
-    assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is True
+    assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is False
     assert simulation_output_step["arguments"]["include_annual_total_loads"] is True
     assert simulation_output_step["arguments"]["include_annual_unmet_hours"] is True
     assert simulation_output_step["arguments"]["include_annual_peak_fuels"] is True
