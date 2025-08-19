@@ -52,7 +52,7 @@ DEFAULT_MEASURE_ARGS = {
         "include_annual_system_use_consumptions": False,
         "include_annual_emissions": True,
         "include_annual_emission_fuels": True,
-        "include_annual_emission_end_uses": True,
+        "include_annual_emission_end_uses": False,
         "include_annual_total_loads": True,
         "include_annual_unmet_hours": True,
         "include_annual_peak_fuels": True,
