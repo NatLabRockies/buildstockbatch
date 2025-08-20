@@ -450,7 +450,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     all_results_cols = list(all_schema_dict.keys())
     logger.info(f"Got this schema: {all_schema_dict}\n")
 
-    failed_bldgs = set()
     baseline_failed_bldgs = set()
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         logger.info("Collecting all the failed simulations buildings")
@@ -460,26 +459,18 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             failed_df = (
                 df.filter(~pl.col("completed_status").is_in(["Success", "Invalid"])).select("building_id").collect()
             )
-            upgrade_id = Path(filename).parent.name
             if len(failed_df) == 0:
-                return (upgrade_id, [])
+                return None
             failed_bldg = failed_df["building_id"].item()
-            return (upgrade_id, [failed_bldg])
+            return failed_bldg
 
-        upgrade_and_failed_bldgs = db.from_sequence(annual_results_files).map(get_failed_bldg_ids).compute()
-        failed_bldgs = set()
-        failure_dict = defaultdict(list)
-        for upgrade_id, bldgs in upgrade_and_failed_bldgs:
-            if not bldgs:
-                continue
-            failed_bldgs.update(bldgs)
-            failure_dict[upgrade_id].extend(bldgs)
-        baseline_failed_bldgs = failure_dict["up00"]
+        baseline_files = fs.glob(f"{sim_output_dir}/annual/up00/*.parquet")
+        baseline_failed_bldgs = db.from_sequence(baseline_files).map(get_failed_bldg_ids).compute()
+        baseline_failed_bldgs = {bldg for bldg in baseline_failed_bldgs if bldg is not None}
         logger.info(
-            f"Found {len(failed_bldgs)} failed simulations across all upgrades. Excluding baseline failures."
+            f"Found {len(baseline_failed_bldgs)} failed simulations in baseline."
             f"Replacing upgrade failures with baseline (i.e. treating them as upgrade not applied)."
-            f"These many buildings failed in each upgrade: {', '.join(f'{k}: {len(v)}' for k, v in failure_dict.items())}."
-            f"These are the failed building ids: {', '.join(f'{k}: {v}' for k, v in failure_dict.items())}"
+            f"These are the failed building ids: {', '.join(f'{k}' for k in baseline_failed_bldgs)}"
         )
 
     if do_timeseries:
@@ -523,21 +514,21 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     base_df_lazy = pl.LazyFrame()
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
-        df = pl.scan_parquet(
+        df = pl.read_parquet(
             f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert", schema=all_schema_dict
-        )
+        )  # use eager read to avoid hitting file system multiple times
         # find the length of the df
-        df_len = df.select(pl.len()).collect().item()
+        df_len = df.select(pl.len()).item()
         logger.info(f"Found {df_len} rows for upgrade {upgrade_id}.")
-        df = clean_up_results_df(df, cfg, keep_upgrade_id=True, schema=all_schema_dict)
-        df = df.sort("building_id")
+        lazy_df = clean_up_results_df(df.lazy(), cfg, keep_upgrade_id=True, schema=all_schema_dict)
+        df = lazy_df.sort("building_id").collect()
         partition_df = df.select(["building_id", *df_partition_columns])
         partition_df = partition_df.rename(
             mapping={df_c: c for df_c, c in zip(df_partition_columns, partition_columns)}
         )
         if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(df)
+                pub_df_lazy: pl.LazyFrame = publish_baseline(df.lazy())
                 base_df_lazy = pub_df_lazy
             else:
                 pub_df_lazy = publish_upgrade(baseline_failed_bldgs, base_df_lazy, df, upgrade_num=upgrade_id)
@@ -560,7 +551,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         logger.info(f"Writing {csv_filename}")
         with fs.open(csv_filename, "wb") as f:
             with gzip.open(f, "wb") as gf:
-                df.sink_csv(gf, line_terminator="\n")
+                df.write_csv(gf, line_terminator="\n")
 
         # Write Parquet
         if upgrade_id == 0:
@@ -571,7 +562,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         fs.makedirs(results_parquet_dir)
         parquet_filename = f"{results_parquet_dir}/results_up{upgrade_id:02d}.parquet"
         logger.info(f"Writing {parquet_filename}")
-        df.sink_parquet(parquet_filename, statistics=False)
+        df.write_parquet(parquet_filename, statistics=False)
 
         if do_timeseries:
             # Get the names of the timeseries file for each simulation in this upgrade
@@ -602,7 +593,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             )
             logger.info(f"Max parquet memory: {parquet_memory} MB")
             max_files_per_partition = max(1, math.floor(parquet_memory / (mean_mem / 1e6)))
-            partition_df = partition_df.filter(pl.col("building_id").is_in(ts_bldg_ids)).collect()
+            partition_df = partition_df.filter(pl.col("building_id").is_in(ts_bldg_ids))
             partition_df_pandas = partition_df.sort("building_id").to_pandas().set_index("building_id")
             logger.info(f"partition_df for the upgrade has {len(partition_df_pandas)} rows.")
             bldg_id_groups, bldg_id_list, ngroup = get_partitioned_bldg_groups(
