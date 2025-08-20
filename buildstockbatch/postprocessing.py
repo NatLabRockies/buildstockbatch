@@ -531,7 +531,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                 pub_df_lazy: pl.LazyFrame = publish_baseline(df.lazy())
                 base_df_lazy = pub_df_lazy
             else:
-                pub_df_lazy = publish_upgrade(baseline_failed_bldgs, base_df_lazy, df, upgrade_num=upgrade_id)
+                pub_df_lazy = publish_upgrade(baseline_failed_bldgs, base_df_lazy, df.lazy(), upgrade_num=upgrade_id)
             pub_df_len = pub_df_lazy.select(pl.len()).collect().item()
             logger.info(f"Got {pub_df_len} pub_df rows for upgrade {upgrade_id}.")
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
