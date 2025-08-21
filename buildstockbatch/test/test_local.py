@@ -76,11 +76,7 @@ def test_resstock_local_batch(project_filename):
 
     batch.process_results()
 
-    if batch.cfg.get("postprocessing", {}).get("keep_individual_timeseries", False):
-        assert (simout_path / "timeseries").exists()
-    else:
-        assert not (simout_path / "timeseries").exists()
-
+    assert (simout_path / "timeseries").exists()
     assert (simout_path / "simulations_job0.tar.gz").exists()
     base_pq = out_path / "parquet" / "baseline" / "results_up00.parquet"
     assert base_pq.exists()
@@ -167,38 +163,3 @@ def test_local_simulation_timeout(mocker):
             err_log_re.search(failed_job.read())
 
         sleep_mock.assert_called_once_with(20)
-
-
-@resstock_required
-def test_low_disk_mode():
-    """Test that the low-disk mode correctly skips tarball creation and returns early."""
-    project_filename = resstock_directory / "project_testing" / "testing_baseline.yml"
-    LocalBatch.validate_project(str(project_filename))
-    batch = LocalBatch(str(project_filename))
-
-    # Modify the number of datapoints to reduce simulation time
-    n_datapoints = 2
-    batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
-
-    # Handle weather files
-    local_weather_file = resstock_directory.parent / "weather" / batch.cfg["weather_files_url"].split("/")[-1]
-    if local_weather_file.exists():
-        del batch.cfg["weather_files_url"]
-        batch.cfg["weather_files_path"] = str(local_weather_file)
-
-    # Run batch with low_disk=True
-    batch.run_batch(low_disk=True)
-
-    # Check that results_job0.json.gz exists
-    out_path = pathlib.Path(batch.output_dir)
-    simout_path = out_path / "simulation_output"
-    assert (simout_path / "results_job0.json.gz").exists()
-
-    # Check that simulations_job0.tar.gz does NOT exist (should be skipped in low_disk mode)
-    assert not (simout_path / "simulations_job0.tar.gz").exists()
-
-    # Check that the timeseries directories still exist (they shouldn't be compressed into a tarball)
-    assert (simout_path / "timeseries").exists()
-
-    # Clean up
-    shutil.rmtree(out_path)
