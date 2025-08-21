@@ -41,6 +41,7 @@ MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using 
 # want to automatically delete large number of files using current API for two reasons:
 # 1. It is inefficient
 # 2. It is easy to make mistakes and wipe out a significant run
+MAX_STR_LEN = 100000  # some strings such as eplusout_err and step_errors can be very long, truncate to this length
 
 
 def read_data_point_out_json(fs, reporting_measures, filename):
@@ -52,9 +53,9 @@ def read_data_point_out_json(fs, reporting_measures, filename):
     except (FileNotFoundError, json.JSONDecodeError):
         return None
     else:
-        sim_out_report = "SimulationOutputReport"
-        if "ReportSimulationOutput" in d:
-            sim_out_report = "ReportSimulationOutput"
+        sim_out_report = "ReportSimulationOutput"
+        if "SimulationOutputReport" in d:
+            sim_out_report = "SimulationOutputReport"
 
         if sim_out_report not in d:
             d[sim_out_report] = {"applicable": False}
@@ -117,8 +118,10 @@ def read_out_osw(fs, filename):
         keys_to_copy = ["started_at", "completed_at", "completed_status"]
         for key in keys_to_copy:
             out_d[key] = d.get(key, None)
-        if "eplusout_err" in d:
-            out_d["eplusout_err"] = d["eplusout_err"]
+        if "eplusout_err" in d and "EnergyPlus Terminated" in d["eplusout_err"]:
+            out_d["eplusout_err"] = d["eplusout_err"][:MAX_STR_LEN]
+        else:
+            out_d["eplusout_err"] = ""
         step_errors = []
         for step in d.get("steps", []):
             measure_dir_name = step["measure_dir_name"]
@@ -131,7 +134,7 @@ def read_out_osw(fs, filename):
                     step_errors.append({"measure_dir_name": measure_dir_name, "step_errors": result.get("step_errors")})
 
         if step_errors:
-            out_d["step_failures"] = step_errors
+            out_d["step_failures"] = json.dumps(step_errors)[:MAX_STR_LEN]
 
         return out_d
 
