@@ -479,6 +479,7 @@ def combine_results(fs, results_dir, cfg):
                     pub_df_lazy.sink_csv(gf, line_terminator="\n")
 
             dir = f"{parquet_pub_dir}/upgrade={upgrade_id}"
+            pub_df_lazy = pub_df_lazy.drop("upgrade")
             fs.makedirs(dir, exist_ok=True)
             parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
             logger.info(f"Writing {parquet_filename}")
