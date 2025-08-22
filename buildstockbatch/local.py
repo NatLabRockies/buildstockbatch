@@ -49,12 +49,6 @@ class LocalBatch(BuildStockBatchBase):
 
         self._weather_dir = None
 
-        # Create simulation_output dir
-        for dir in ["timeseries", "annual", "timeseries_individual_buildings"]:
-            sim_out_dir = pathlib.Path(self.results_dir, "simulation_output", dir)
-            for i in range(0, self.num_upgrades + 1):
-                (sim_out_dir / f"up{i:02d}").mkdir(exist_ok=True, parents=True)
-
         # Install custom gems if requested
         if self.cfg.get("baseline", dict()).get("custom_gems", False):
             self.install_custom_gems()
