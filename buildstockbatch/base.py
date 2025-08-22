@@ -30,6 +30,7 @@ import zipfile
 import csv
 from collections import defaultdict, Counter
 import pprint
+import pathlib
 
 from buildstockbatch.__version__ import __schema_version__
 from buildstockbatch import sampler, workflow_generator, postprocessing
@@ -269,7 +270,7 @@ class BuildStockBatchBase(object):
 
             tsdf.rename(columns=get_clean_column_name, inplace=True)
             if not skip_write:
-                dest_fs.makedirs(simout_ts_dir, exist_ok=True, parents=True)
+                pathlib.Path(simout_ts_dir).mkdir(exist_ok=True, parents=True)
                 postprocessing.write_dataframe_as_parquet(
                     tsdf,
                     dest_fs,
