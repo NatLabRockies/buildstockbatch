@@ -50,7 +50,7 @@ class LocalBatch(BuildStockBatchBase):
         self._weather_dir = None
 
         # Create simulation_output dir
-        for dir in ["timeseries", "annual", "timeseries_individual"]:
+        for dir in ["timeseries", "annual", "timeseries_individual_buildings"]:
             sim_out_dir = pathlib.Path(self.results_dir, "simulation_output", dir)
             for i in range(0, self.num_upgrades + 1):
                 (sim_out_dir / f"up{i:02d}").mkdir(exist_ok=True, parents=True)
@@ -221,7 +221,7 @@ class LocalBatch(BuildStockBatchBase):
                 pd_ts_df = cls.get_timeseries_df(
                     sim_dir,
                     fs,
-                    f"{results_dir}/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}/",
+                    f"{results_dir}/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}",
                     upgrade_id,
                     i,
                     low_disk=low_disk,

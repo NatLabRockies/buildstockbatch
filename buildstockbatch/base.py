@@ -269,10 +269,11 @@ class BuildStockBatchBase(object):
 
             tsdf.rename(columns=get_clean_column_name, inplace=True)
             if not skip_write:
+                dest_fs.makedirs(simout_ts_dir, exist_ok=True, parents=True)
                 postprocessing.write_dataframe_as_parquet(
                     tsdf,
                     dest_fs,
-                    f"{simout_ts_dir}/up{upgrade_id:02d}/{building_id}-{upgrade_id}.parquet",
+                    f"{simout_ts_dir}/{building_id}-{upgrade_id}.parquet",
                 )
 
         if low_disk:

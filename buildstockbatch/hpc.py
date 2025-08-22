@@ -510,7 +510,7 @@ class SlurmBatch(BuildStockBatchBase):
         pd_ts_df = cls.get_timeseries_df(
             sim_dir,
             fs,
-            f"{output_dir}/results/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}/",
+            f"{output_dir}/results/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}",
             upgrade_id,
             i,
             skip_write=False,
