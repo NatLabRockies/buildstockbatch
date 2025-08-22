@@ -272,7 +272,7 @@ class BuildStockBatchBase(object):
                 postprocessing.write_dataframe_as_parquet(
                     tsdf,
                     dest_fs,
-                    f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet",
+                    f"{simout_ts_dir}/up{upgrade_id:02d}/{building_id}-{upgrade_id}.parquet",
                 )
 
         if low_disk:

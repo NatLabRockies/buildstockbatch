@@ -98,7 +98,7 @@ class LocalBatch(BuildStockBatchBase):
         upgrade_idx=None,
     ):
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
-        state = "NA"
+        state = "N/A"
         dp_df = None
         ts_df = None
         try:
@@ -221,11 +221,11 @@ class LocalBatch(BuildStockBatchBase):
                 pd_ts_df = cls.get_timeseries_df(
                     sim_dir,
                     fs,
-                    f"{results_dir}/simulation_output/timeseries_individual/upgrade={upgrade_id:02d}/state={state}",
+                    f"{results_dir}/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}/",
                     upgrade_id,
                     i,
                     low_disk=low_disk,
-                    skip_write=True,
+                    skip_write=False,
                 )
                 dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
                 dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
