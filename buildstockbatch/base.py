@@ -195,7 +195,9 @@ class BuildStockBatchBase(object):
         return sim_id, sim_dir
 
     @staticmethod
-    def cleanup_sim_dir(sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id, low_disk=""):
+    def get_timeseries_df(
+        sim_dir, dest_fs, simout_ts_dir, upgrade_id, building_id, low_disk="", skip_write: bool = False
+    ):
         """Clean up the output directory for a single simulation.
 
         :param sim_dir: simulation directory
@@ -212,12 +214,14 @@ class BuildStockBatchBase(object):
                          If "ultra_low_disk_no_timeseries", remove the simulation directory entirely to
                          save disk space and also delete the timeseries parquet file.
         :type low_disk: str
+        :param skip_write: If True, skip writing the timeseries parquet file to dest_fs. Return only.
         """
 
         # Convert the timeseries data to parquet
-        # and copy it to the results directory
+        # and copy it to the results directory if skip_write is False
         output_dir = os.path.join(sim_dir, "run")
         timeseries_filepath = os.path.join(output_dir, "results_timeseries.csv")
+        tsdf = None
         # FIXME: Allowing both names here for compatibility. Should consolidate on one timeseries filename.
         if os.path.isfile(timeseries_filepath):
             units_dict = read_csv(timeseries_filepath, nrows=1).transpose().to_dict()[0]
@@ -264,11 +268,12 @@ class BuildStockBatchBase(object):
                 return x.lower()
 
             tsdf.rename(columns=get_clean_column_name, inplace=True)
-            postprocessing.write_dataframe_as_parquet(
-                tsdf,
-                dest_fs,
-                f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet",
-            )
+            if not skip_write:
+                postprocessing.write_dataframe_as_parquet(
+                    tsdf,
+                    dest_fs,
+                    f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet",
+                )
 
         if low_disk:
             shutil.rmtree(sim_dir, ignore_errors=True)
@@ -277,7 +282,7 @@ class BuildStockBatchBase(object):
             ):  # only delete after writing to allow testing of writing workflow
                 if os.path.exists(f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet"):
                     os.remove(f"{simout_ts_dir}/up{upgrade_id:02d}/bldg{building_id:07d}.parquet")
-            return
+            return tsdf
 
         # Remove files already in data_point.zip
         zipfilename = os.path.join(sim_dir, "run", "data_point.zip")
@@ -295,6 +300,7 @@ class BuildStockBatchBase(object):
         reports_dir = os.path.join(sim_dir, "reports")
         if os.path.isdir(reports_dir):
             shutil.rmtree(reports_dir, ignore_errors=True)
+        return tsdf
 
     @classmethod
     def validate_project(cls, project_file):
@@ -972,7 +978,7 @@ class BuildStockBatchBase(object):
 
             fs = self.get_fs()
             if not skip_combine:
-                postprocessing.combine_results(fs, self.results_dir, self.cfg, do_timeseries=do_timeseries)
+                postprocessing.combine_results(fs, self.results_dir, self.cfg)
 
             aws_conf = self.cfg.get("postprocessing", {}).get("aws", {})
             if "s3" in aws_conf or "aws" in self.cfg:

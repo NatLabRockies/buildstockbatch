@@ -160,7 +160,8 @@ def get_bool_env_var(varname):
     return os.environ.get(varname, "0").lower() in ("true", "t", "1", "y", "yes")
 
 
-def get_annual_publishing_functions(stock_type):
+def get_annual_publishing_functions(cfg):
+    stock_type = cfg.get("stock_type", "residential")
     if stock_type == "residential":
         from resstockpostproc import publish_baseline_annual_results, publish_upgrade_annual_results
 
@@ -169,10 +170,11 @@ def get_annual_publishing_functions(stock_type):
         raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
 
 
-def get_data_dict_schema(stock_type, all_cols):
+def get_data_dict_annual_ts_schema(cfg):
+    stock_type = cfg.get("stock_type", "residential")
     if stock_type == "residential":
-        from resstockpostproc import get_polars_schema_from_data_dictionary
+        from resstockpostproc import get_annual_results_schema, get_bsb_timeseries_schema
 
-        return get_polars_schema_from_data_dictionary(all_cols)
+        return get_annual_results_schema(cfg), get_bsb_timeseries_schema(cfg)
     else:
-        return {}
+        return {}, {}

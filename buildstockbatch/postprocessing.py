@@ -30,7 +30,7 @@ import re
 import tempfile
 import time
 import sys
-from buildstockbatch.utils import get_annual_publishing_functions
+from buildstockbatch.utils import get_annual_publishing_functions, get_data_dict_annual_ts_schema
 import polars as pl
 from collections import defaultdict
 
@@ -395,7 +395,7 @@ def write_metadata_files(fs, parquet_root_dir, partition_columns):
     logger.info(f"Written _common_metadata to {parquet_root_dir}")
 
 
-def combine_results(fs, results_dir, cfg, do_timeseries=True):
+def combine_results(fs, results_dir, cfg):
     """Combine the results of the batch simulations.
 
     :param fs: fsspec filesystem (currently supports local, s3, gcs)
@@ -404,51 +404,29 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     :type results_dir: str
     :param cfg: project configuration (contents of yaml file)
     :type cfg: dict
-    :param do_timeseries: process timeseries results, defaults to True
-    :type do_timeseries: bool, optional
     """
     sim_output_dir = f"{results_dir}/simulation_output"
-    ts_in_dir = f"{sim_output_dir}/timeseries"
     results_csvs_dir = f"{results_dir}/results_csvs"
-    results_csvs_pub_dir = None
-    parquet_pub_dir = None
-    publish_baseline, publish_upgrade = None, None  # metadata transform
     parquet_dir = f"{results_dir}/parquet"
-    ts_dir = f"{results_dir}/parquet/timeseries"
-    dirs = [results_csvs_dir, parquet_dir]
-    if do_timeseries:
-        dirs.append(ts_dir)
-
+    results_csvs_pub_dir = None
+    parquet_pub_dir = f"{parquet_dir}/pub_annual"
+    publish_baseline, publish_upgrade = None, None  # metadata transform
+    dirs = [results_csvs_dir]
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
-        parquet_pub_dir = f"{parquet_dir}/pub_annual"
         dirs.append(results_csvs_pub_dir)
-        dirs.append(parquet_pub_dir)
-        stock_type = cfg.get("stock_type", "residential")
-        publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
+        publish_baseline, publish_upgrade = get_annual_publishing_functions(cfg)
 
     # create the postprocessing results directories
     for dr in dirs:
         if not fs.exists(dr):
-            fs.makedirs(dr)
+            fs.makedirs(dr, exist_ok=True)
 
+    annual_schema, ts_schema = get_data_dict_annual_ts_schema(cfg)
     # Results "CSV"
     annual_results_files = fs.glob(f"{sim_output_dir}/annual/*/*.parquet")
     if not annual_results_files:
-        raise ValueError("No simulation results found to post-process.")
-
-    logger.info("Collecting all the columns and datatypes in annual results files.")
-    arrow_schema_dict = (
-        db.from_sequence(annual_results_files)
-        .map(partial(get_schema_dict, fs))
-        .fold(lambda x, y: merge_schema_dicts(x, y))
-        .compute()
-    )
-    empty_df: pl.DataFrame = pl.from_arrow(pa.Table.from_batches([], schema=pa.schema(arrow_schema_dict)))
-    all_schema_dict = dict(empty_df.schema)
-    logger.info(f"Got {len(all_schema_dict)} columns")
-    all_results_cols = list(all_schema_dict.keys())
-    logger.info(f"Got this schema: {all_schema_dict}\n")
+        raise ValueError(f"No simulation results found to post-process in {sim_output_dir}")
 
     baseline_failed_bldgs = set()
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
@@ -473,59 +451,19 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             f"These are the failed building ids: {', '.join(f'{k}' for k in baseline_failed_bldgs)}"
         )
 
-    if do_timeseries:
-        # Look at all the parquet files to see what columns are in all of them.
-        logger.info("Collecting all the columns in timeseries parquet files.")
-        do_timeseries = False
-        all_ts_cols = set()
-        for upgrade_folder in fs.glob(f"{ts_in_dir}/up*"):
-            ts_filenames = fs.ls(upgrade_folder)
-            if ts_filenames:
-                do_timeseries = True
-                logger.info(f"Found {len(ts_filenames)} files for upgrade {Path(upgrade_folder).name}.")
-                files_bag = db.from_sequence(ts_filenames, partition_size=100)
-                all_ts_cols |= files_bag.map(partial(get_cols, fs)).fold(lambda x, y: x.union(y)).compute()
-                logger.info("Collected all the columns")
-            else:
-                logger.info(f"There are no timeseries files for upgrade {Path(upgrade_folder).name}.")
-
-        # Sort the columns
-        all_ts_cols_sorted = ["building_id"] + sorted(x for x in all_ts_cols if x.startswith("time"))
-        all_ts_cols.difference_update(all_ts_cols_sorted)
-        all_ts_cols_sorted.extend(sorted(x for x in all_ts_cols if not x.endswith("]")))
-        all_ts_cols.difference_update(all_ts_cols_sorted)
-        all_ts_cols_sorted.extend(sorted(all_ts_cols))
-        logger.info(f"Got {len(all_ts_cols_sorted)} columns in total")
-        logger.info(f"The columns are: {all_ts_cols_sorted}")
-    else:
-        logger.warning("There are no timeseries files for any upgrades.")
-
     upgrade_list = get_upgrade_list(cfg)
-    partition_columns = cfg.get("postprocessing", {}).get("partition_columns", [])
-    partition_columns = [c.lower() for c in partition_columns]
-    df_partition_columns = [f"build_existing_model.{c}" for c in partition_columns]
-    missing_cols = set(df_partition_columns) - set(all_schema_dict.keys())
-    if missing_cols:
-        raise ValueError(f"The following partitioning columns are not found in results.json: {missing_cols}")
-    if partition_columns:
-        logger.info(f"The timeseries files will be partitioned by {partition_columns}.")
-
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
     base_df_lazy = pl.LazyFrame()
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = pl.read_parquet(
-            f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert", schema=all_schema_dict
+            f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert", schema=annual_schema
         )  # use eager read to avoid hitting file system multiple times
         # find the length of the df
         df_len = df.select(pl.len()).item()
         logger.info(f"Found {df_len} rows for upgrade {upgrade_id}.")
-        lazy_df = clean_up_results_df(df.lazy(), cfg, keep_upgrade_id=True, schema=all_schema_dict)
+        lazy_df = clean_up_results_df(df.lazy(), cfg, keep_upgrade_id=True, schema=annual_schema)
         df = lazy_df.sort("building_id").collect()
-        partition_df = df.select(["building_id", *df_partition_columns])
-        partition_df = partition_df.rename(
-            mapping={df_c: c for df_c, c in zip(df_partition_columns, partition_columns)}
-        )
         if (publish_baseline is not None) and (publish_upgrade is not None):
             if upgrade_id == 0:
                 pub_df_lazy: pl.LazyFrame = publish_baseline(df.lazy())
@@ -541,7 +479,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     pub_df_lazy.sink_csv(gf, line_terminator="\n")
 
             dir = f"{parquet_pub_dir}/upgrade={upgrade_id}"
-            fs.makedirs(dir)
+            fs.makedirs(dir, exist_ok=True)
             parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
             logger.info(f"Writing {parquet_filename}")
             pub_df_lazy.sink_parquet(parquet_filename, statistics=False)
@@ -559,98 +497,12 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         else:
             results_parquet_dir = f"{parquet_dir}/upgrades/upgrade={upgrade_id}"
         df = df.drop("upgrade")  # upgrade column is created using hive partitioning
-        fs.makedirs(results_parquet_dir)
+        fs.makedirs(results_parquet_dir, exist_ok=True)
         parquet_filename = f"{results_parquet_dir}/results_up{upgrade_id:02d}.parquet"
         logger.info(f"Writing {parquet_filename}")
         df.write_parquet(parquet_filename, statistics=False)
 
-        if do_timeseries:
-            # Get the names of the timeseries file for each simulation in this upgrade
-            ts_upgrade_path = f"{ts_in_dir}/up{upgrade_id:02d}"
-            try:
-                ts_filenames = [ts_upgrade_path + ts_filename for ts_filename in fs.ls(ts_upgrade_path)]
-            except FileNotFoundError:
-                # Upgrade directories may be empty if the upgrade is invalid. In some cloud
-                # filesystems, there aren't actual directories, and trying to list a directory with
-                # no files in it can fail. Just continue post-processing (other upgrades).
-                logger.warning(f"Listing '{ts_upgrade_path}' failed. Skipping this upgrade.")
-                continue
-            ts_bldg_ids = [int(re.search(r"bldg(\d+).parquet", flname).group(1)) for flname in ts_filenames]
-            if not ts_filenames:
-                logger.warning(f"There are no timeseries files for upgrade{upgrade_id}.")
-                continue
-            logger.info(f"There are {len(ts_filenames)} timeseries files for upgrade{upgrade_id}.")
-
-            # Calculate the mean and estimate the total memory usage
-            read_ts_parquet = partial(read_enduse_timeseries_parquet, fs, all_ts_cols_sorted, ts_upgrade_path)
-            get_ts_mem_usage_d = dask.delayed(lambda x: read_ts_parquet(x).memory_usage(deep=True).sum())
-            sample_size = min(len(ts_bldg_ids), 36 * 3)
-            mean_mem = np.mean(dask.compute(map(get_ts_mem_usage_d, random.sample(ts_bldg_ids, sample_size)))[0])
-
-            # Determine how many files should be in each partition and group the files
-            parquet_memory = int(
-                cfg.get("kestrel", {}).get("postprocessing", {}).get("parquet_memory_mb", MAX_PARQUET_MEMORY)
-            )
-            logger.info(f"Max parquet memory: {parquet_memory} MB")
-            max_files_per_partition = max(1, math.floor(parquet_memory / (mean_mem / 1e6)))
-            partition_df = partition_df.filter(pl.col("building_id").is_in(ts_bldg_ids))
-            partition_df_pandas = partition_df.sort("building_id").to_pandas().set_index("building_id")
-            logger.info(f"partition_df for the upgrade has {len(partition_df_pandas)} rows.")
-            bldg_id_groups, bldg_id_list, ngroup = get_partitioned_bldg_groups(
-                partition_df_pandas, partition_columns, max_files_per_partition
-            )
-            logger.info(
-                f"Processing {len(bldg_id_list)} building timeseries by combining max of "
-                f"{max_files_per_partition} parquets together. This will create {len(bldg_id_groups)} parquet "
-                f"partitions which go into {ngroup} column group(s) of {partition_columns}"
-            )
-
-            ts_out_loc = f"{ts_dir}/upgrade={upgrade_id}"
-
-            fs.makedirs(ts_out_loc)
-            logger.info(f"Created directory {ts_out_loc} for writing. Now concatenating ...")
-
-            src_path = f"{ts_in_dir}/up{upgrade_id:02d}"
-            concat_partial = dask.delayed(
-                partial(
-                    concat_and_normalize,
-                    fs,
-                    all_ts_cols_sorted,
-                    src_path,
-                    ts_out_loc,
-                    partition_columns,
-                )
-            )
-            partition_vals_list = [
-                (list(partition_df_pandas.loc[bldg_id_list[0]].values) if partition_columns else [])
-                for bldg_id_list in bldg_id_groups
-            ]
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmpfilepath = Path(tmpdir, "dask-report.html")
-                with performance_report(filename=str(tmpfilepath)):
-                    try:
-                        dask.compute(
-                            map(
-                                concat_partial,
-                                *zip(*enumerate(bldg_id_groups)),
-                                partition_vals_list,
-                            )
-                        )
-                    except:
-                        logger.warning("Exception `dask.compute(map(concat_partial, ...` exception", exc_info=True)
-                        sys.exit(1)
-                if tmpfilepath.exists():
-                    fs.put_file(
-                        str(tmpfilepath),
-                        f"{results_dir}/dask_combine_report{upgrade_id}.html",
-                    )
-
-            logger.info(f"Finished combining and saving timeseries for upgrade{upgrade_id}.")
     logger.info("All aggregation completed. ")
-    if do_timeseries:
-        logger.info("Writing timeseries metadata files")
-        write_metadata_files(fs, ts_dir, partition_columns)
 
 
 def upload_results(

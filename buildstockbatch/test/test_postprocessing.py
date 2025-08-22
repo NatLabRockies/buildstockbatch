@@ -14,7 +14,7 @@ import polars as pl
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase
 from buildstockbatch.utils import get_project_configuration, read_csv
-from buildstockbatch.utils import get_data_dict_schema
+from buildstockbatch.utils import get_data_dict_annual_ts_schema
 
 postprocessing.performance_report = MagicMock()
 
@@ -50,7 +50,7 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
         dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
         dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
         dp_df = pl.from_dict(dpout)
-        full_schema = get_data_dict_schema("residential", dp_df.columns)
+        full_schema = get_data_dict_annual_ts_schema("residential", dp_df.columns)
         dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
         file_folder = annual_folder / f"up{upgrade_id:02d}"
         file_folder.mkdir(parents=True, exist_ok=True)
@@ -58,7 +58,7 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
 
     cfg = get_project_configuration(project_filename)
 
-    postprocessing.combine_results(fs, results_dir, cfg, do_timeseries=False)
+    postprocessing.combine_results(fs, results_dir, cfg)
 
     for upgrade_id in (0, 1):
         df = read_csv(str(results_dir / "results_csvs" / f"results_up{upgrade_id:02d}.csv.gz"))
@@ -83,7 +83,7 @@ def test_empty_results_assertion(basic_residential_project_file, capsys):
     cfg = get_project_configuration(project_filename)
 
     with pytest.raises(ValueError, match=r"No simulation results found to post-process"):
-        assert postprocessing.combine_results(fs, results_dir, cfg, do_timeseries=False)
+        assert postprocessing.combine_results(fs, results_dir, cfg)
 
 
 def test_large_parquet_combine(basic_residential_project_file):

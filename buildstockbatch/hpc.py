@@ -43,7 +43,7 @@ from buildstockbatch.utils import (
     get_project_configuration,
     read_csv,
     get_bool_env_var,
-    get_data_dict_schema,
+    get_data_dict_annual_ts_schema,
 )
 from buildstockbatch import postprocessing
 from buildstockbatch.__version__ import __version__ as bsb_version
@@ -132,7 +132,7 @@ class SlurmBatch(BuildStockBatchBase):
 
     def run_batch(self, sampling_only=False):
         # Create simulation_output dir
-        for dir in ["timeseries", "annual"]:
+        for dir in ["timeseries", "annual", "timeseries_individual"]:
             sim_out_dir = pathlib.Path(self.output_dir) / "results" / "simulation_output" / dir
             for i in range(0, self.num_upgrades + 1):
                 (sim_out_dir / f"up{i:02d}").mkdir(parents=True, exist_ok=True)
@@ -272,7 +272,7 @@ class SlurmBatch(BuildStockBatchBase):
                 dpout = {"building_id": i, "upgrade": upgrade_id, "job_id": job_array_number}
                 dp_df = pl.from_dict(dpout)
                 stock_type = self.cfg.get("stock_type", "residential")
-                full_schema = get_data_dict_schema(stock_type, dp_df.columns)
+                full_schema = get_data_dict_annual_ts_schema(stock_type, dp_df.columns)
                 dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
                 outout_dir = (
                     pathlib.Path(self.output_dir) / "results" / "simulation_output" / "annual" / f"up{upgrade_id:02d}"
@@ -476,7 +476,7 @@ class SlurmBatch(BuildStockBatchBase):
                                 pass
 
                         # Clean up simulation directory
-                        cls.cleanup_sim_dir(
+                        cls.get_timeseries_df(
                             sim_dir,
                             fs,
                             f"{output_dir}/results/simulation_output/timeseries",
@@ -490,7 +490,7 @@ class SlurmBatch(BuildStockBatchBase):
         dpout["job_id"] = job_array_number  # Used by downstream code. For local run, job_id is always zero.
         dp_df = pl.from_dict(dpout)
         stock_type = cfg.get("stock_type", "residential")
-        full_schema = get_data_dict_schema(stock_type, dp_df.columns)
+        full_schema = get_data_dict_annual_ts_schema(stock_type, dp_df.columns)
         dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
         sim_out_dir = pathlib.Path(output_dir) / "results" / "simulation_output" / "annual" / f"up{upgrade_id:02d}"
         sim_out_dir.mkdir(parents=True, exist_ok=True)

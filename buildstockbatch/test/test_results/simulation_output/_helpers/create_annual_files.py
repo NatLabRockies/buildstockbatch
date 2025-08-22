@@ -2,7 +2,7 @@
 import json
 import polars as pl
 from buildstockbatch import postprocessing
-from buildstockbatch.utils import get_data_dict_schema
+from buildstockbatch.utils import get_data_dict_annual_ts_schema
 import pathlib
 
 with open("results_job0.json", "r") as f:
@@ -15,8 +15,8 @@ for dpout in dpouts:
     upgrade_id = dpout["upgrade"]
     building_id = dpout["building_id"]
     dp_df = pl.from_dict(dpout)
-    full_schema = get_data_dict_schema("residential", dp_df.columns)
-    dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
+    annual_schema, ts_schema = get_data_dict_annual_ts_schema({"stock_type": "residential"})
+    dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in annual_schema.items()])
     pathlib.Path(f"../annual/up{upgrade_id:02d}").mkdir(parents=True, exist_ok=True)
     dp_df.write_parquet(f"../annual/up{upgrade_id:02d}/bldg{building_id:07d}.parquet")
     print(f"Wrote annual/up{upgrade_id:02d}/bldg{building_id:07d}.parquet")

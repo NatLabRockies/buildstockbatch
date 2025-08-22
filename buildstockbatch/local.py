@@ -33,8 +33,9 @@ import polars as pl
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch import postprocessing
-from buildstockbatch.utils import log_error_details, ContainerRuntime, read_csv, get_data_dict_schema
+from buildstockbatch.utils import log_error_details, ContainerRuntime, read_csv, get_data_dict_annual_ts_schema
 from buildstockbatch.__version__ import __version__ as bsb_version
+from buildstockbatch.streaming_parquet_writer import StreamingParquetWriters
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class LocalBatch(BuildStockBatchBase):
         self._weather_dir = None
 
         # Create simulation_output dir
-        for dir in ["timeseries", "annual"]:
+        for dir in ["timeseries", "annual", "timeseries_individual"]:
             sim_out_dir = pathlib.Path(self.results_dir, "simulation_output", dir)
             for i in range(0, self.num_upgrades + 1):
                 (sim_out_dir / f"up{i:02d}").mkdir(exist_ok=True, parents=True)
@@ -97,11 +98,14 @@ class LocalBatch(BuildStockBatchBase):
         upgrade_idx=None,
     ):
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
-
+        state = "NA"
+        dp_df = None
+        ts_df = None
         try:
             sim_id, sim_dir = cls.make_sim_dir(i, upgrade_idx, os.path.join(results_dir, "simulation_output"))
         except SimulationExists:
-            return
+            return upgrade_id, i, state, dp_df, ts_df
+
         sim_path = pathlib.Path(sim_dir)
         buildstock_path = pathlib.Path(buildstock_dir)
 
@@ -213,24 +217,30 @@ class LocalBatch(BuildStockBatchBase):
                 # Read data_point_out.json
                 reporting_measures = cls.get_reporting_measures(cfg)
                 dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, i)
-                cls.cleanup_sim_dir(
+                state = dpout.get("BuildExistingModel.state", "N/A")
+                pd_ts_df = cls.get_timeseries_df(
                     sim_dir,
                     fs,
-                    f"{results_dir}/simulation_output/timeseries",
+                    f"{results_dir}/simulation_output/timeseries_individual/upgrade={upgrade_id:02d}/state={state}",
                     upgrade_id,
                     i,
                     low_disk=low_disk,
+                    skip_write=True,
                 )
                 dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
                 dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
-                dp_df = pl.from_dict(dpout)
-                stock_type = cfg.get("stock_type", "residential")
-                full_schema = get_data_dict_schema(stock_type, dp_df.columns)
-                dp_df = dp_df.with_columns([pl.col(col).cast(dtype) for col, dtype in full_schema.items()])
-                dp_df.write_parquet(
-                    f"{results_dir}/simulation_output/annual/up{upgrade_id:02d}/bldg{i:07d}.parquet", statistics=False
-                )
-                return (upgrade_id, i)
+                annual_schema, ts_schema = get_data_dict_annual_ts_schema(cfg)
+                dp_df = pl.from_dicts([dpout], schema=annual_schema, strict=False)
+                if pd_ts_df is not None:
+                    sch_overrides = {col: dtype for col, dtype in ts_schema.items() if col in set(pd_ts_df.columns)}
+                    ts_df = pl.from_pandas(pd_ts_df, schema_overrides=sch_overrides)
+                    missing_cols = set(ts_schema.keys()) - set(ts_df.columns)
+                    available_cols = [col for col in ts_schema.keys() if col in set(ts_df.columns)]
+                    ts_df = ts_df.select(available_cols).with_columns(
+                        [pl.lit(None).cast(dtype).alias(col) for col, dtype in ts_schema.items() if col in missing_cols]
+                    )
+                    ts_df = ts_df.select(ts_schema.keys())
+            return (upgrade_id, i, state, dp_df, ts_df)
 
     def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=""):
         buildstock_csv_filename = self.sampler.run_sampling()
@@ -277,8 +287,41 @@ class LocalBatch(BuildStockBatchBase):
             all_sims = itertools.chain(*upgrade_sims)
         if n_jobs is None:
             n_jobs = -1
-        completed_jobs = Parallel(n_jobs=n_jobs, verbose=10)(all_sims)
+        parallel = Parallel(
+            n_jobs=-1,
+            verbose=10,
+            backend="threading",
+            return_as="generator_unordered",
+        )
+        results_generator = parallel(all_sims)
 
+        annual_schema, ts_schema = get_data_dict_annual_ts_schema(self.cfg)
+        baseline_writers = StreamingParquetWriters(
+            base_path=pathlib.Path(self.results_dir) / "simulation_output" / "annual",
+            number_of_dataframes_per_file=567000,
+            base_name="job0",
+            batch_size=50000,
+            polars_schema=annual_schema,
+        )
+        ts_writers = StreamingParquetWriters(
+            base_path=pathlib.Path(self.results_dir) / "parquet" / "timeseries",
+            number_of_dataframes_per_file=20,
+            base_name="job0",
+            batch_size=1,
+            polars_schema=ts_schema,
+        )
+        completed_jobs = []
+        for result in results_generator:
+            if result is None:
+                continue
+            upgrade_id, i, state, dp_df, ts_df = result
+            completed_jobs.append((upgrade_id, i))
+            if dp_df is not None:
+                baseline_writers.write(f"upgrade={upgrade_id}/", dp_df)
+            if ts_df is not None:
+                ts_writers.write(f"upgrade={upgrade_id}/state={state}", ts_df)
+        baseline_writers.close_all()
+        ts_writers.close_all()
         time.sleep(10)
         shutil.rmtree(lib_path, ignore_errors=True)
 
