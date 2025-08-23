@@ -28,7 +28,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: better-minimal-buildstock
       - name: Remove AWS from resstock yaml
         run: |
           cd resstock

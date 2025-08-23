@@ -29,11 +29,13 @@ import shutil
 import subprocess
 import tarfile
 import time
+import polars as pl
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch import postprocessing
-from buildstockbatch.utils import log_error_details, ContainerRuntime, read_csv
+from buildstockbatch.utils import log_error_details, ContainerRuntime, read_csv, get_data_dict_annual_ts_schema
 from buildstockbatch.__version__ import __version__ as bsb_version
+from buildstockbatch.streaming_parquet_writer import StreamingParquetWriters
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +48,6 @@ class LocalBatch(BuildStockBatchBase):
         super().__init__(project_filename)
 
         self._weather_dir = None
-
-        # Create simulation_output dir
-        sim_out_ts_dir = pathlib.Path(self.results_dir, "simulation_output", "timeseries")
-        for i in range(0, len(self.cfg.get("upgrades", [])) + 1):
-            (sim_out_ts_dir / f"up{i:02d}").mkdir(exist_ok=True, parents=True)
 
         # Install custom gems if requested
         if self.cfg.get("baseline", dict()).get("custom_gems", False):
@@ -95,11 +92,14 @@ class LocalBatch(BuildStockBatchBase):
         upgrade_idx=None,
     ):
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
-
+        state = "N/A"
+        dp_df = None
+        ts_df = None
         try:
             sim_id, sim_dir = cls.make_sim_dir(i, upgrade_idx, os.path.join(results_dir, "simulation_output"))
         except SimulationExists:
-            return
+            return upgrade_id, i, state, dp_df, ts_df
+
         sim_path = pathlib.Path(sim_dir)
         buildstock_path = pathlib.Path(buildstock_dir)
 
@@ -211,17 +211,32 @@ class LocalBatch(BuildStockBatchBase):
                 # Read data_point_out.json
                 reporting_measures = cls.get_reporting_measures(cfg)
                 dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, i)
-                cls.cleanup_sim_dir(
+                state = dpout.get("BuildExistingModel.state", "N/A")
+                pd_ts_df = cls.get_timeseries_df(
                     sim_dir,
                     fs,
-                    f"{results_dir}/simulation_output/timeseries",
+                    f"{results_dir}/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}",
                     upgrade_id,
                     i,
                     low_disk=low_disk,
+                    skip_write=True,
                 )
-                return dpout
+                dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
+                dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
+                annual_schema, ts_schema = get_data_dict_annual_ts_schema(cfg)
+                dp_df = pl.from_dicts([dpout], schema=annual_schema, strict=False)
+                if pd_ts_df is not None:
+                    sch_overrides = {col: dtype for col, dtype in ts_schema.items() if col in set(pd_ts_df.columns)}
+                    ts_df = pl.from_pandas(pd_ts_df, schema_overrides=sch_overrides)
+                    missing_cols = set(ts_schema.keys()) - set(ts_df.columns)
+                    available_cols = [col for col in ts_schema.keys() if col in set(ts_df.columns)]
+                    ts_df = ts_df.select(available_cols).with_columns(
+                        [pl.lit(None).cast(dtype).alias(col) for col, dtype in ts_schema.items() if col in missing_cols]
+                    )
+                    ts_df = ts_df.select(ts_schema.keys())
+            return (upgrade_id, i, state, dp_df, ts_df)
 
-    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=False):
+    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=""):
         buildstock_csv_filename = self.sampler.run_sampling()
 
         if sampling_only:
@@ -266,28 +281,58 @@ class LocalBatch(BuildStockBatchBase):
             all_sims = itertools.chain(*upgrade_sims)
         if n_jobs is None:
             n_jobs = -1
-        dpouts = Parallel(n_jobs=n_jobs, verbose=10)(all_sims)
+        parallel = Parallel(
+            n_jobs=-1,
+            verbose=10,
+            backend="threading",
+            return_as="generator_unordered",
+        )
+        results_generator = parallel(all_sims)
 
+        annual_schema, ts_schema = get_data_dict_annual_ts_schema(self.cfg)
+        baseline_writers = StreamingParquetWriters(
+            base_path=pathlib.Path(self.results_dir) / "simulation_output" / "annual",
+            number_of_dataframes_per_file=567000,
+            base_name="job0",
+            batch_size=50000,
+            polars_schema=annual_schema,
+        )
+        ts_base_path = pathlib.Path(self.results_dir) / "parquet" / "timeseries"
+        ts_writers = StreamingParquetWriters(
+            base_path=ts_base_path,
+            number_of_dataframes_per_file=20,
+            base_name="job0",
+            batch_size=1,
+            polars_schema=ts_schema,
+        )
+        completed_jobs = []
+        for result in results_generator:
+            if result is None:
+                continue
+            upgrade_id, i, state, dp_df, ts_df = result
+            completed_jobs.append((upgrade_id, i))
+            if dp_df is not None:
+                baseline_writers.write(f"upgrade={upgrade_id}/", dp_df)
+            if ts_df is not None:
+                if low_disk == "ultra_low_disk_no_timeseries":
+                    # Write only one file per upgrade to save space
+                    file_dir = ts_base_path / f"upgrade={upgrade_id}"
+                    file_dir.mkdir(exist_ok=True, parents=True)
+                    file_path = file_dir / "one_file.parquet"
+                    if not file_path.exists():
+                        ts_df.write_parquet(file_path)
+                else:
+                    ts_writers.write(f"upgrade={upgrade_id}/state={state}", ts_df)
+        baseline_writers.close_all()
+        ts_writers.close_all()
         time.sleep(10)
-        shutil.rmtree(lib_path)
+        shutil.rmtree(lib_path, ignore_errors=True)
 
         sim_out_path = pathlib.Path(self.results_dir, "simulation_output")
 
-        results_job_json_filename = sim_out_path / "results_job0.json.gz"
-        with gzip.open(results_job_json_filename, "wt", encoding="utf-8") as f:
-            json.dump(dpouts, f)
-        del dpouts
-
-        if low_disk:
-            return
-
-        sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
-        logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
-        with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
-            for dirname in os.listdir(sim_out_path):
-                if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
-                    tarf.add(sim_out_path / dirname, arcname=dirname)
-                    shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
+        results_job_json_filename = sim_out_path / "completed_jobs.json"
+        with open(results_job_json_filename, "w") as f:
+            json.dump(completed_jobs, f)
 
     @property
     def output_dir(self):
@@ -456,11 +501,6 @@ def main():
         action="store_true",
         help="Only apply the measures, but don't run simulations. Useful for debugging.",
     )
-    parser.add_argument(
-        "--low-disk",
-        action="store_true",
-        help="Delete unused simulation result files immediately after processing to save disk space.",
-    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--postprocessonly",
@@ -488,6 +528,19 @@ def main():
         help="Only validate the project YAML file and references. Nothing is executed",
         action="store_true",
     )
+    group.add_argument(
+        "--low-disk",
+        action="store_true",
+        help="Delete unused simulation result files immediately after processing to save disk space.",
+    )
+    group.add_argument(
+        "--ultra-low-disk-no-timeseries",
+        action="store_true",
+        help=(
+            "Don't save timeseries data to save disk space. This is different from disabling timeseries in the yaml"
+            " as it will still process timeseries results (useful for testing) but not save the results."
+        ),
+    )
     group.add_argument("--samplingonly", help="Run the sampling only.", action="store_true")
     args = parser.parse_args()
     if not os.path.isfile(args.project_filename):
@@ -498,12 +551,20 @@ def main():
     if args.validateonly:
         return
     batch = LocalBatch(args.project_filename)
+
+    if args.low_disk:
+        low_disk = "low_disk"
+    elif args.ultra_low_disk_no_timeseries:
+        low_disk = "ultra_low_disk_no_timeseries"
+    else:
+        low_disk = ""
+
     if not (args.postprocessonly or args.uploadonly or args.validateonly or args.continue_upload):
         batch.run_batch(
             n_jobs=args.j,
             measures_only=args.measures_only,
             sampling_only=args.samplingonly,
-            low_disk=args.low_disk,
+            low_disk=low_disk,
         )
     if args.measures_only or args.samplingonly:
         return

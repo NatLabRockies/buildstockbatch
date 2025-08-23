@@ -218,7 +218,7 @@ def test_log_summary(basic_residential_project_file, mocker, caplog):
     dbb = DockerBatchBase(project_filename)
     cfg = get_project_configuration(project_filename)
 
-    postprocessing.combine_results(fs, results_dir, cfg, do_timeseries=False)
+    postprocessing.combine_results(fs, results_dir, cfg)
 
     with caplog.at_level(logging.INFO):
         dbb.log_summary()

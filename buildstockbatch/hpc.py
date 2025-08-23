@@ -32,6 +32,7 @@ import sys
 import tempfile
 import time
 import csv
+import polars as pl
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch.utils import (
@@ -42,10 +43,12 @@ from buildstockbatch.utils import (
     get_project_configuration,
     read_csv,
     get_bool_env_var,
+    get_data_dict_annual_ts_schema,
 )
 from buildstockbatch import postprocessing
 from buildstockbatch.__version__ import __version__ as bsb_version
 from buildstockbatch.exc import ValidationError
+from buildstockbatch.streaming_parquet_writer import StreamingParquetWriters
 
 logger = logging.getLogger(__name__)
 
@@ -130,10 +133,10 @@ class SlurmBatch(BuildStockBatchBase):
 
     def run_batch(self, sampling_only=False):
         # Create simulation_output dir
-        sim_out_ts_dir = pathlib.Path(self.output_dir) / "results" / "simulation_output" / "timeseries"
-        os.makedirs(sim_out_ts_dir, exist_ok=True)
-        for i in range(0, self.num_upgrades + 1):
-            os.makedirs(sim_out_ts_dir / f"up{i:02d}")
+        for dir in ["timeseries", "annual", "timeseries_individual"]:
+            sim_out_dir = pathlib.Path(self.output_dir) / "results" / "simulation_output" / dir
+            for i in range(0, self.num_upgrades + 1):
+                (sim_out_dir / f"up{i:02d}").mkdir(parents=True, exist_ok=True)
 
         # create destination_dir and copy housing_characteristics into it
         logger.debug("Copying housing characteristics")
@@ -257,7 +260,9 @@ class SlurmBatch(BuildStockBatchBase):
         @delayed
         def run_building_d(i, upgrade_idx):
             try:
-                return self.run_building(self.output_dir, self.cfg, args["n_datapoints"], i, upgrade_idx)
+                return self.run_building(
+                    self.output_dir, self.cfg, args["n_datapoints"], i, upgrade_idx, job_array_number
+                )
             except Exception:
                 with open(traceback_file_path, "a") as f:
                     txt = get_error_details()
@@ -265,12 +270,48 @@ class SlurmBatch(BuildStockBatchBase):
                     f.write(txt)
                     del txt
                 upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
-                return {"building_id": i, "upgrade": upgrade_id}
+                annual_schema, ts_schema = get_data_dict_annual_ts_schema(self.cfg)
+                dpout = {"building_id": i, "upgrade": upgrade_id, "job_id": job_array_number}
+                dp_df = pl.from_dicts([dpout], schema=annual_schema, strict=False)
+                return (upgrade_id, i, "N/A", dp_df, None)
 
         # Run the simulations, get the data_point_out.json info from each
         tick = time.time()
-        with Parallel(n_jobs=-1, verbose=9) as parallel:
-            dpouts = parallel(itertools.starmap(run_building_d, args["batch"]))
+        parallel = Parallel(
+            n_jobs=-1,
+            verbose=9,
+            backend="threading",
+            return_as="generator_unordered",
+        )
+        results_generator = parallel(itertools.starmap(run_building_d, args["batch"]))
+
+        annual_schema, ts_schema = get_data_dict_annual_ts_schema(self.cfg)
+        baseline_writers = StreamingParquetWriters(
+            base_path=pathlib.Path(self.output_dir) / "results" / "simulation_output" / "annual",
+            number_of_dataframes_per_file=567000,
+            base_name="job{job_array_number}",
+            batch_size=50000,
+            polars_schema=annual_schema,
+        )
+        ts_writers = StreamingParquetWriters(
+            base_path=pathlib.Path(self.output_dir) / "results" / "parquet" / "timeseries",
+            number_of_dataframes_per_file=20,
+            base_name="job{job_array_number}",
+            batch_size=1,
+            polars_schema=ts_schema,
+        )
+        completed_jobs = []
+        for result in results_generator:
+            if result is None:
+                continue
+            upgrade_id, i, state, dp_df, ts_df = result
+            completed_jobs.append((upgrade_id, i))
+            if dp_df is not None:
+                baseline_writers.write(f"upgrade={upgrade_id}/", dp_df)
+            if ts_df is not None:
+                ts_writers.write(f"upgrade={upgrade_id}/state={state}", ts_df)
+        baseline_writers.close_all()
+        ts_writers.close_all()
         tick = time.time() - tick
         logger.info("Simulation time: {:.2f} minutes".format(tick / 60.0))
 
@@ -342,10 +383,12 @@ class SlurmBatch(BuildStockBatchBase):
         self.local_apptainer_img.unlink(missing_ok=True)
 
     @classmethod
-    def run_building(cls, output_dir, cfg, n_datapoints, i, upgrade_idx=None):
+    def run_building(cls, output_dir, cfg, n_datapoints, i, upgrade_idx=None, job_array_number=0):
         fs = LocalFileSystem()
         upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
-
+        state = "N/A"
+        dp_df = None
+        ts_df = None
         try:
             sim_id, sim_dir = cls.make_sim_dir(i, upgrade_idx, os.path.join(cls.local_output_dir, "simulation_output"))
         except SimulationExists as ex:
@@ -461,18 +504,31 @@ class SlurmBatch(BuildStockBatchBase):
                             except FileNotFoundError:
                                 pass
 
-                        # Clean up simulation directory
-                        cls.cleanup_sim_dir(
-                            sim_dir,
-                            fs,
-                            f"{output_dir}/results/simulation_output/timeseries",
-                            upgrade_id,
-                            i,
-                        )
-
         reporting_measures = cls.get_reporting_measures(cfg)
         dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, i)
-        return dpout
+        state = dpout.get("BuildExistingModel.state", "N/A")
+        pd_ts_df = cls.get_timeseries_df(
+            sim_dir,
+            fs,
+            f"{output_dir}/results/simulation_output/timeseries_individual_buildings/by_state/upgrade={upgrade_id}/state={state}",
+            upgrade_id,
+            i,
+            skip_write=False,
+        )
+        dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
+        dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
+        annual_schema, ts_schema = get_data_dict_annual_ts_schema(cfg)
+        dp_df = pl.from_dicts([dpout], schema=annual_schema, strict=False)
+        if pd_ts_df is not None:
+            sch_overrides = {col: dtype for col, dtype in ts_schema.items() if col in set(pd_ts_df.columns)}
+            ts_df = pl.from_pandas(pd_ts_df, schema_overrides=sch_overrides)
+            missing_cols = set(ts_schema.keys()) - set(ts_df.columns)
+            available_cols = [col for col in ts_schema.keys() if col in set(ts_df.columns)]
+            ts_df = ts_df.select(available_cols).with_columns(
+                [pl.lit(None).cast(dtype).alias(col) for col, dtype in ts_schema.items() if col in missing_cols]
+            )
+            ts_df = ts_df.select(ts_schema.keys())
+        return (upgrade_id, i, state, dp_df, ts_df)
 
     @staticmethod
     def _queue_jobs_env_vars() -> dict:
@@ -653,6 +709,7 @@ class SlurmBatch(BuildStockBatchBase):
             "--output=postprocessing.out",
             "--nodes=1",
             ":",
+            "--partition=nvme",
             "--tmp=1000000",
             "--mem={}".format(memory),
             "--output=dask_workers.out",

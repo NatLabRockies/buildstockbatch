@@ -8,7 +8,8 @@ import pandas as pd
 import shutil
 import traceback
 import yaml
-
+import polars as pl
+import msgpack
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,19 @@ def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
         **kwargs,
     )
     return df
+
+
+def read_to_polars_df(file_path) -> pl.DataFrame:
+    if file_path.endswith(".parquet"):
+        return pl.read_parquet(file_path)
+    elif file_path.endswith(".csv"):
+        return pl.read_csv(file_path)
+    elif file_path.endswith(".msgpack"):
+        with open(file_path, "rb") as f:
+            msg = msgpack.unpack(f)
+        return pl.from_dict(msg)
+    else:
+        raise ValueError(f"Unsupported file type: {file_path}")
 
 
 def path_rel_to_file(startfile, x):
@@ -146,10 +160,21 @@ def get_bool_env_var(varname):
     return os.environ.get(varname, "0").lower() in ("true", "t", "1", "y", "yes")
 
 
-def get_annual_publishing_functions(stock_type):
+def get_annual_publishing_functions(cfg):
+    stock_type = cfg.get("stock_type", "residential")
     if stock_type == "residential":
         from resstockpostproc import publish_baseline_annual_results, publish_upgrade_annual_results
 
         return publish_baseline_annual_results, publish_upgrade_annual_results
     else:
         raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
+
+
+def get_data_dict_annual_ts_schema(cfg):
+    stock_type = cfg.get("stock_type", "residential")
+    if stock_type == "residential":
+        from resstockpostproc import get_annual_results_schema, get_bsb_timeseries_schema
+
+        return get_annual_results_schema(cfg), get_bsb_timeseries_schema(cfg)
+    else:
+        return {}, {}
