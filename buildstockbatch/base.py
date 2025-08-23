@@ -269,6 +269,7 @@ class BuildStockBatchBase(object):
                 return x.lower()
 
             tsdf.rename(columns=get_clean_column_name, inplace=True)
+            tsdf["building_id"] = building_id
             if not skip_write:
                 pathlib.Path(simout_ts_dir).mkdir(exist_ok=True, parents=True)
                 postprocessing.write_dataframe_as_parquet(
