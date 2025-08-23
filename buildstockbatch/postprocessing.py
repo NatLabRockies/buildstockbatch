@@ -457,7 +457,7 @@ def combine_results(fs, results_dir, cfg):
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = pl.read_parquet(
-            f"{sim_output_dir}/annual/up{upgrade_id:02d}/*.parquet", missing_columns="insert", schema=annual_schema
+            f"{sim_output_dir}/annual/upgrade={upgrade_id}/*.parquet", missing_columns="insert", schema=annual_schema
         )  # use eager read to avoid hitting file system multiple times
         # find the length of the df
         df_len = df.select(pl.len()).item()
