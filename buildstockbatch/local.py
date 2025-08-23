@@ -219,7 +219,7 @@ class LocalBatch(BuildStockBatchBase):
                     upgrade_id,
                     i,
                     low_disk=low_disk,
-                    skip_write=False,
+                    skip_write=True,
                 )
                 dpout = {postprocessing.to_camelcase(key): value for key, value in dpout.items()}
                 dpout["job_id"] = 0  # Used by downstream code. For local run, job_id is always zero.
