@@ -316,9 +316,11 @@ class LocalBatch(BuildStockBatchBase):
             if ts_df is not None:
                 if low_disk == "ultra_low_disk_no_timeseries":
                     # Write only one file per upgrade to save space
-                    one_path = ts_base_path / f"upgrade={upgrade_id}/one_file.parquet"
-                    if not one_path.exists():
-                        ts_df.write_parquet(one_path)
+                    file_dir = ts_base_path / f"upgrade={upgrade_id}"
+                    file_dir.mkdir(exist_ok=True, parents=True)
+                    file_path = file_dir / "one_file.parquet"
+                    if not file_path.exists():
+                        ts_df.write_parquet(file_path)
                 else:
                     ts_writers.write(f"upgrade={upgrade_id}/state={state}", ts_df)
         baseline_writers.close_all()
