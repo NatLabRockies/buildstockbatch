@@ -297,8 +297,9 @@ class LocalBatch(BuildStockBatchBase):
             batch_size=50000,
             polars_schema=annual_schema,
         )
+        ts_base_path = pathlib.Path(self.results_dir) / "parquet" / "timeseries"
         ts_writers = StreamingParquetWriters(
-            base_path=pathlib.Path(self.results_dir) / "parquet" / "timeseries",
+            base_path=ts_base_path,
             number_of_dataframes_per_file=20,
             base_name="job0",
             batch_size=1,
@@ -313,7 +314,13 @@ class LocalBatch(BuildStockBatchBase):
             if dp_df is not None:
                 baseline_writers.write(f"upgrade={upgrade_id}/", dp_df)
             if ts_df is not None:
-                ts_writers.write(f"upgrade={upgrade_id}/state={state}", ts_df)
+                if low_disk == "ultra_low_disk_no_timeseries":
+                    # Write only one file per upgrade to save space
+                    one_path = ts_base_path / f"upgrade={upgrade_id}/one_file.parquet"
+                    if not one_path.exists():
+                        ts_df.write_parquet(one_path)
+                else:
+                    ts_writers.write(f"upgrade={upgrade_id}/state={state}", ts_df)
         baseline_writers.close_all()
         ts_writers.close_all()
         time.sleep(10)
