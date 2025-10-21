@@ -56,7 +56,9 @@ def test_report_additional_results_csv_columns(basic_residential_project_file):
     for upgrade_id in (0, 1):
         df = read_csv(str(results_dir / "results_csvs" / f"results_up{upgrade_id:02d}.csv.gz"))
         assert "Measure Failed" in df[df["building_id"] == 3]["step_failures"].iloc[0]
-        assert "EnergyPlus Failed with Error: Building ID is 3" in df[df["building_id"] == 3]["eplusout_err"].iloc[0]
+        assert (
+            "EnergyPlus Terminated with Error: Building ID is 3" in df[df["building_id"] == 3]["eplusout_err"].iloc[0]
+        )
         df = df[df["building_id"] != 3]
         assert (df["reporting_measure1.column_1"] == 1).all()
         assert (df["reporting_measure1.column_2"] == 2).all()
@@ -90,26 +92,6 @@ def test_large_parquet_combine(basic_residential_project_file):
     ):  # set the max memory to just 1MB
         bsb = BuildStockBatchBase(project_filename)
         bsb.process_results()  # this would raise exception if the postprocessing could not handle the situation
-
-
-@pytest.mark.parametrize("keep_individual_timeseries", [True, False])
-def test_keep_individual_timeseries(keep_individual_timeseries, basic_residential_project_file, mocker):
-    project_filename, results_dir = basic_residential_project_file(
-        {"postprocessing": {"keep_individual_timeseries": keep_individual_timeseries}}
-    )
-
-    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
-    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
-    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
-    bsb = BuildStockBatchBase(project_filename)
-    bsb.process_results()
-
-    results_path = pathlib.Path(results_dir)
-    simout_path = results_path / "simulation_output"
-    assert len(list(simout_path.glob("results_job*.json.gz"))) == 0
-
-    ts_path = simout_path / "timeseries"
-    assert ts_path.exists() == keep_individual_timeseries
 
 
 def test_upgrade_missing_ts(basic_residential_project_file, mocker, caplog):

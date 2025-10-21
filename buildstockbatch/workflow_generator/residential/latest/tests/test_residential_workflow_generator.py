@@ -290,7 +290,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
     assert simulation_output_step["arguments"]["include_annual_system_use_consumptions"] is False
     assert simulation_output_step["arguments"]["include_annual_emissions"] is True
     assert simulation_output_step["arguments"]["include_annual_emission_fuels"] is True
-    assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is True
+    assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is False
     assert simulation_output_step["arguments"]["include_annual_total_loads"] is True
     assert simulation_output_step["arguments"]["include_annual_unmet_hours"] is True
     assert simulation_output_step["arguments"]["include_annual_peak_fuels"] is True
@@ -311,7 +311,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
     assert simulation_output_step["arguments"]["include_timeseries_weather"] is False
     assert simulation_output_step["arguments"]["include_timeseries_resilience"] is False
     assert simulation_output_step["arguments"]["timeseries_timestamp_convention"] == "end"
-    assert simulation_output_step["arguments"]["timeseries_num_decimal_places"] == 3
+    assert simulation_output_step["arguments"]["timeseries_num_decimal_places"] == 5
     assert simulation_output_step["arguments"]["add_timeseries_dst_column"] is True
     assert simulation_output_step["arguments"]["add_timeseries_utc_column"] is True
     index += 1

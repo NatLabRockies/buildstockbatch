@@ -63,3 +63,15 @@ Development Changelog
 
         Added support for replacing existing results in s3 for buildstock_local. When --replace_existing is passed to buildstock_local,
         it will replace existing results in s3.
+
+    .. change::
+        :tags: postprocessing, feature
+        :pullreq: 501
+
+        Introduce a bunch of changes originating from issues in SDR run.
+        1. Indermediate files are not cleaned up after postprocessing. This allows for re-running postprocessing.
+        2. eplusout_err and step_failures are truncted to 100000 chars. eplusout_err is only collected if E+ terminated.
+        3. Default for include_annual_emission_end_uses is changed to False.
+        4. Default for timeseries_num_decimal_places is changed to 5.
+        5. When SimulationOutputReport or ReportSimulationOutput is both missing in data_point_out.json (perhaps due to failure),
+        add a key of for ReportSimulationOutput instead of SimulationOutputReport as the later is outdated.
