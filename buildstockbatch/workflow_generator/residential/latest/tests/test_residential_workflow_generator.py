@@ -54,6 +54,7 @@ test_cfg = {
                 {"scenario_name": "Bills2", "gas_fixed_charge": 12.0, "gas_marginal_rate": 0.15},
             ],
             "simulation_output_report": {
+                "include_annual_emission_end_uses": True,
                 "timeseries_frequency": "hourly",
                 "include_timeseries_total_consumptions": True,
                 "include_timeseries_end_use_consumptions": True,
@@ -260,6 +261,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
     simulation_output_step = osw["steps"][index]
     assert simulation_output_step["measure_dir_name"] == "ReportSimulationOutput"
     if "simulation_output_report" in workflow_args:
+        assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is True
         assert simulation_output_step["arguments"]["timeseries_frequency"] == "hourly"
         assert simulation_output_step["arguments"]["include_timeseries_total_consumptions"] is True
         assert simulation_output_step["arguments"]["include_timeseries_end_use_consumptions"] is True
@@ -275,6 +277,7 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
                 v["name"] for v in workflow_args["simulation_output_report"]["output_meters"]
             )
     else:  # Defaults
+        assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is False
         assert simulation_output_step["arguments"]["timeseries_frequency"] == "none"
         assert simulation_output_step["arguments"]["include_timeseries_total_consumptions"] is False
         assert simulation_output_step["arguments"]["include_timeseries_end_use_consumptions"] is True
@@ -290,7 +293,6 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
     assert simulation_output_step["arguments"]["include_annual_system_use_consumptions"] is False
     assert simulation_output_step["arguments"]["include_annual_emissions"] is True
     assert simulation_output_step["arguments"]["include_annual_emission_fuels"] is True
-    assert simulation_output_step["arguments"]["include_annual_emission_end_uses"] is False
     assert simulation_output_step["arguments"]["include_annual_total_loads"] is True
     assert simulation_output_step["arguments"]["include_annual_unmet_hours"] is True
     assert simulation_output_step["arguments"]["include_annual_peak_fuels"] is True
