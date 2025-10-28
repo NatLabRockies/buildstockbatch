@@ -75,3 +75,9 @@ Development Changelog
         4. Default for timeseries_num_decimal_places is changed to 5.
         5. When SimulationOutputReport or ReportSimulationOutput is both missing in data_point_out.json (perhaps due to failure),
         add a key of for ReportSimulationOutput instead of SimulationOutputReport as the later is outdated.
+
+    .. change::
+        :tags: general, feature
+        :pullreq: 517
+
+        Adds ``include_annual_foo`` arguments to the Residential HPXML Workflow Generator.
