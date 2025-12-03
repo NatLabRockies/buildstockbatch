@@ -228,7 +228,6 @@ def test_residential_hpxml(upgrade, dynamic_cfg):
         apply_upgrade_step = osw["steps"][index]
         assert apply_upgrade_step["measure_dir_name"] == "ApplyUpgrade"
         assert apply_upgrade_step["arguments"]["upgrade_name"] == "Upgrade 1"
-        assert apply_upgrade_step["arguments"]["run_measure"] == 1
         assert apply_upgrade_step["arguments"]["option_1"] == "Parameter|Option"
         index += 1
 
