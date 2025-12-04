@@ -12,7 +12,7 @@ This object contains the code required for execution of local batch simulations
 
 import argparse
 from dask.distributed import Client, LocalCluster
-from distutils.version import StrictVersion
+from packaging.version import Version
 import datetime as dt
 import docker
 import functools
@@ -350,10 +350,10 @@ class LocalBatch(BuildStockBatchBase):
         print(f"Shared bundler versions: {common_bundler_versions}")
         if common_bundler_versions:
             # Use the most recent bundler that is in both
-            common_bundler_version = sorted(common_bundler_versions, key=StrictVersion)[-1]
+            common_bundler_version = sorted(common_bundler_versions, key=Version)[-1]
         else:
             # Install the bundler that's in openstudio
-            common_bundler_version = sorted(openstudio_bundler_versions, key=StrictVersion)[-1]
+            common_bundler_version = sorted(openstudio_bundler_versions, key=Version)[-1]
             subprocess.run([gem_exe, "install", "bundler", "-v", common_bundler_version], check=True)
 
         # Run bundler to install the custom gems
