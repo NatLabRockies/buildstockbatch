@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.12']
     name: Tests - Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
@@ -107,7 +107,7 @@ jobs:
           ref: develop
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: Download weather
         run: |
           mkdir weather
