@@ -130,6 +130,6 @@ jobs:
       - name: Run local validation of project national yml
         run: buildstock_local --validateonly resstock/project_national/national_baseline.yml
       - name: Validate upgrades
-        run: buildstock_local --validateonly resstock/project_national/sdr_upgrades_tmy3.yml
+        run: buildstock_local --validateonly resstock/project_national/sdr_upgrades_amy2018.yml
       - name: Validate testing projects
         run: buildstock_local --validateonly resstock/project_testing/testing_baseline.yml
