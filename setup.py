@@ -62,6 +62,7 @@ setuptools.setup(
         "lxml",
         "semver",
         "tqdm",
+        "boto3",
     ],
     extras_require={
         "dev": [

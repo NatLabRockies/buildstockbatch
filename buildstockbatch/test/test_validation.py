@@ -397,7 +397,7 @@ def test_number_of_options_apply_upgrade(opt_count, cost_count, should_raise):
 def test_validate_resstock_or_comstock_version(mocker):
     # Set the version to a 'really old' one so we trigger the version check error
     mocker.patch("buildstockbatch.base.bsb_version", "1.0.0")
-    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_amy2018.yml"
     with pytest.raises(ValidationError):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
@@ -424,7 +424,7 @@ def test_validate_workflow_gen_version_pass(mocker):
         "buildstockbatch.base.get_project_configuration",
         lambda _: {"workflow_generator": {"version": "3024.12.23", "type": "residential_hpxml", "args": {}}},
     )
-    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_amy2018.yml"
     BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
 
@@ -444,7 +444,7 @@ def test_validate_workflow_gen_version_fail_unavailable(mocker):
         "buildstockbatch.base.get_project_configuration",
         lambda _: {"workflow_generator": {"version": "3024.12.23", "type": "residential_hpxml", "args": {}}},
     )
-    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_amy2018.yml"
     with pytest.raises(ValidationError):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 
@@ -471,7 +471,7 @@ def test_validate_workflow_gen_version_fail_mismatch(mocker):
         "buildstockbatch.base.get_project_configuration",
         lambda _: {"workflow_generator": {"version": "3024.12.24", "type": "residential_hpxml", "args": {}}},
     )
-    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_tmy3.yml"
+    proj_filename = resstock_directory / "project_national" / "sdr_upgrades_amy2018.yml"
     with pytest.raises(ValidationError):
         BuildStockBatchBase.validate_resstock_or_comstock_version(str(proj_filename))
 

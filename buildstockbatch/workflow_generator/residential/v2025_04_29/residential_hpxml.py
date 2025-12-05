@@ -187,7 +187,7 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         measure_d = self.cfg["upgrades"][upgrade_idx]
         apply_upgrade_measure = {
             "measure_dir_name": "ApplyUpgrade",
-            "arguments": {"project_directory": self.cfg["project_directory"]},
+            "arguments": {"run_measure": 1, "project_directory": self.cfg["project_directory"]},
         }
         if "upgrade_name" in measure_d:
             apply_upgrade_measure["arguments"]["upgrade_name"] = measure_d["upgrade_name"]
