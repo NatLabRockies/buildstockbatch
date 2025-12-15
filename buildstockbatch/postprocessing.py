@@ -418,7 +418,8 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         dirs.append(results_csvs_pub_dir)
         dirs.append(parquet_pub_dir)
         stock_type = cfg.get("stock_type", "residential")
-        publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
+        # publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
+        process_simulation_outputs = get_annual_publishing_functions(stock_type)
 
     # create the postprocessing results directories
     for dr in dirs:
@@ -537,14 +538,25 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info(f"The types for {unresolved} columns couldn't be determined.")
                 else:
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
-        if (publish_baseline is not None) and (publish_upgrade is not None):
-            if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
-                base_df_lazy = pub_df_lazy
-            else:
-                pub_df_lazy = publish_upgrade(
-                    failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id
-                )
+        # if (publish_baseline is not None) and (publish_upgrade is not None):
+        if process_simulation_outputs is not None:
+            # if upgrade_id == 0:
+            # pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
+            # base_df_lazy = pub_df_lazy
+            # else:
+            # pub_df_lazy = publish_upgrade(
+            # failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id
+            # )
+            # FIXME: need to correct these arguments
+            pub_df_lazy = process_simulation_outputs(
+                failed_bldgs,
+                pl.from_pandas(df, include_index=True).lazy(),
+                pl.from_pandas(df, include_index=True).lazy(),
+                raw_upgrade_df,
+                upgrade_id,
+                upgrade_renamer,
+                col_schema,
+            )
 
             pub_df = pub_df_lazy.collect()
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
