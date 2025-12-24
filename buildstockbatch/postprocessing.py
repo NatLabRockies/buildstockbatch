@@ -15,7 +15,6 @@ import dask.bag as db
 from dask.distributed import performance_report
 import dask
 import dask.dataframe as dd
-from dask.dataframe.io.parquet import create_metadata_file
 from functools import partial
 import gzip
 import json
@@ -33,6 +32,18 @@ import time
 import sys
 from buildstockbatch.utils import get_annual_publishing_functions
 import polars as pl
+
+try:
+    from resstockpostproc.process_metadata import (
+        get_upgrade_rename_dict,
+        get_schema_superset,
+    )
+    from resstockpostproc.utils import setup_fsspec_filesystem
+except ImportError:
+    # resstockpostproc may not be available in all environments
+    get_upgrade_rename_dict = None
+    get_schema_superset = None
+    setup_fsspec_filesystem = None
 
 logger = logging.getLogger(__name__)
 
@@ -405,7 +416,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     results_csvs_dir = f"{results_dir}/results_csvs"
     results_csvs_pub_dir = None
     parquet_pub_dir = None
-    publish_baseline, publish_upgrade = None, None  # metadata transform
     parquet_dir = f"{results_dir}/parquet"
     ts_dir = f"{results_dir}/parquet/timeseries"
     dirs = [results_csvs_dir, parquet_dir]
@@ -418,7 +428,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         dirs.append(results_csvs_pub_dir)
         dirs.append(parquet_pub_dir)
         stock_type = cfg.get("stock_type", "residential")
-        # publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
         process_simulation_outputs = get_annual_publishing_functions(stock_type)
 
     # create the postprocessing results directories
@@ -508,7 +517,54 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         logger.info(f"The timeseries files will be partitioned by {partition_columns}.")
 
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
-    base_df_lazy = None
+    
+    # Initialize variables for process_simulation_outputs if enabled
+    upgrade_renamer = None
+    col_schema = None
+    baseline_raw_df_lazy = None
+    processed_baseline_df_lazy = None
+    
+    # If process_simulation_outputs is not None we are in resstock and using resstockpostproc to process
+    if process_simulation_outputs is not None:
+        if get_upgrade_rename_dict is None or get_schema_superset is None or setup_fsspec_filesystem is None:
+            raise ImportError(
+                "resstockpostproc functions are required for publish_annual_results but could not be imported"
+            )
+        
+        # Create filesystem dict structure using setup_fsspec_filesystem
+        # Use parquet_dir as the base path for the filesystem
+        filesystem_dict = setup_fsspec_filesystem(parquet_dir)
+        fs_path = filesystem_dict["fs_path"]
+        
+        # Get upgrade renamer dictionary
+        logger.info("Getting upgrade rename dictionary")
+        upgrade_renamer = get_upgrade_rename_dict(filesystem_dict)
+        
+        # Construct list of expected parquet file paths for schema superset
+        # These files will be created in the loop, but we need the paths now
+        expected_parquet_files = []
+        for upgrade_id in upgrade_list:
+            if upgrade_id == 0:
+                parquet_file = f"{fs_path}/baseline/results_up{upgrade_id:02d}.parquet"
+            else:
+                parquet_file = f"{fs_path}/upgrades/upgrade={upgrade_id}/results_up{upgrade_id:02d}.parquet"
+            expected_parquet_files.append(parquet_file)
+        
+        # Get column schema superset
+        logger.info("Getting column schema superset")
+        col_schema = get_schema_superset(expected_parquet_files, filesystem_dict)
+        
+        # Extract baseline dataframe before the loop
+        # We need the raw baseline before any column filtering
+        logger.info("Extracting baseline dataframe for process_simulation_outputs")
+        baseline_df_raw = dask.compute(results_df_groups.get_group(0))[0]
+        baseline_df_raw = baseline_df_raw.copy()
+        baseline_df_raw.rename(columns=to_camelcase, inplace=True)
+        baseline_df_raw = clean_up_results_df(baseline_df_raw, cfg, keep_upgrade_id=False)
+        baseline_df_raw.set_index("building_id", inplace=True)
+        baseline_df_raw.sort_index(inplace=True)
+        baseline_raw_df_lazy = pl.from_pandas(baseline_df_raw, include_index=True).lazy()
+    
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = dask.compute(results_df_groups.get_group(upgrade_id))[0]
@@ -524,6 +580,13 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             columns={df_c: c for df_c, c in zip(df_partition_columns, partition_columns)},
             inplace=True,
         )
+        
+        # Convert current upgrade dataframe to LazyFrame for process_simulation_outputs
+        # This needs to be done before column removal for upgrades
+        upgrade_raw_df_lazy = None
+        if process_simulation_outputs is not None:
+            upgrade_raw_df_lazy = pl.from_pandas(df, include_index=True).lazy()
+        
         if upgrade_id > 0:
             # Remove building characteristics for upgrade scenarios.
             cols_to_keep = list(filter(lambda x: not x.startswith("build_existing_model."), df.columns))
@@ -538,25 +601,20 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info(f"The types for {unresolved} columns couldn't be determined.")
                 else:
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
-        # if (publish_baseline is not None) and (publish_upgrade is not None):
         if process_simulation_outputs is not None:
-            # if upgrade_id == 0:
-            # pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
-            # base_df_lazy = pub_df_lazy
-            # else:
-            # pub_df_lazy = publish_upgrade(
-            # failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id
-            # )
-            # FIXME: need to correct these arguments
             pub_df_lazy = process_simulation_outputs(
                 failed_bldgs,
-                pl.from_pandas(df, include_index=True).lazy(),
-                pl.from_pandas(df, include_index=True).lazy(),
-                raw_upgrade_df,
+                baseline_raw_df_lazy,
+                processed_baseline_df_lazy,
+                upgrade_raw_df_lazy,
                 upgrade_id,
                 upgrade_renamer,
                 col_schema,
             )
+            
+            # Store processed baseline for use in subsequent upgrades
+            if upgrade_id == 0:
+                processed_baseline_df_lazy = pub_df_lazy
 
             pub_df = pub_df_lazy.collect()
             csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
