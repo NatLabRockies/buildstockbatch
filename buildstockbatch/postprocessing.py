@@ -533,26 +533,26 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         
         # Create filesystem dict structure using setup_fsspec_filesystem
         # Use parquet_dir as the base path for the filesystem
-        filesystem_dict = setup_fsspec_filesystem(parquet_dir)
-        fs_path = filesystem_dict["fs_path"]
+        # Pass None for aws_profile_name as it's not used in buildstockbatch
+        filesystem_dict = setup_fsspec_filesystem(parquet_dir, None)
         
         # Get upgrade renamer dictionary
         logger.info("Getting upgrade rename dictionary")
         upgrade_renamer = get_upgrade_rename_dict(filesystem_dict)
         
-        # Construct list of expected parquet file paths for schema superset
-        # These files will be created in the loop, but we need the paths now
-        expected_parquet_files = []
-        for upgrade_id in upgrade_list:
-            if upgrade_id == 0:
-                parquet_file = f"{fs_path}/baseline/results_up{upgrade_id:02d}.parquet"
-            else:
-                parquet_file = f"{fs_path}/upgrades/upgrade={upgrade_id}/results_up{upgrade_id:02d}.parquet"
-            expected_parquet_files.append(parquet_file)
-        
-        # Get column schema superset
-        logger.info("Getting column schema superset")
-        col_schema = get_schema_superset(expected_parquet_files, filesystem_dict)
+        # Convert PyArrow schema to Polars schema
+        # The all_schema_dict contains PyArrow types, but resstockpostproc expects Polars types
+        logger.info("Converting schema from PyArrow to Polars types")
+        col_schema = {}
+        for col_name, pa_type in all_schema_dict.items():
+            try:
+                # Convert PyArrow type to Polars type using polars' from_arrow
+                pl_type = pl.from_arrow(pa.array([], type=pa_type)).dtype
+                col_schema[col_name] = pl_type
+            except Exception as e:
+                logger.warning(f"Could not convert type for column {col_name}: {e}")
+                # Fall back to String type if conversion fails
+                col_schema[col_name] = pl.String
         
         # Extract baseline dataframe before the loop
         # We need the raw baseline before any column filtering
