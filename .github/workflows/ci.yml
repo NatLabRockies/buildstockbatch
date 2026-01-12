@@ -28,7 +28,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: sdr_2025_ochre_support
       - name: Remove AWS from resstock yaml
         run: |
           cd resstock
@@ -104,7 +104,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: sdr_2025_ochre_support
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
