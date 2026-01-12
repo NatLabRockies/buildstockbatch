@@ -28,6 +28,11 @@ DEFAULT_MEASURE_ARGS = {
         "add_component_loads": False,
         "skip_validation": True,
     },
+    "OCHRE": {
+        "hpxml_path": "../../run/home.xml",
+        "output_dir": "../../run",
+        "debug": False,
+    },
     "ReportSimulationOutput": {
         "timeseries_frequency": "none",
         "include_timeseries_total_consumptions": False,

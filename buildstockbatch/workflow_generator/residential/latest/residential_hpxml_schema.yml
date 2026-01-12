@@ -6,6 +6,7 @@ reporting_measures: list(include('measure-spec'), required=False)
 simulation_output_report: include('sim-output-report-spec', required=False)
 server_directory_cleanup: include('server-dir-cleanup-spec', required=False)
 debug: bool(required=False)
+use_ochre: bool(required=False)
 ---
 build-existing-model-spec:
     simulation_control_timestep: enum(60, 30, 20, 15, 12, 10, 6, 5, 4, 3, 2, 1, required=False)

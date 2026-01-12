@@ -113,15 +113,24 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         """
         logger.debug("Generating OSW, sim_id={}".format(sim_id))
         workflow_args = copy.deepcopy(self.workflow_args)
+        use_ochre = workflow_args.get("use_ochre", False)
 
-        workflow_key_to_measure_names = {  # This is the order the osw steps will be in
-            "build_existing_model": "BuildExistingModel",
-            "hpxml_to_openstudio": "HPXMLtoOpenStudio",  # Non-existing Workflow Key is fine
-            "upgrade_costs": "UpgradeCosts",
-            "simulation_output_report": "ReportSimulationOutput",
-            "report_utility_bills": "ReportUtilityBills",
-            "server_directory_cleanup": "ServerDirectoryCleanup",
-        }
+        if use_ochre:
+            # OCHRE workflow: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE
+            workflow_key_to_measure_names = {
+                "build_existing_model": "BuildExistingModel",
+                "ochre": "OCHRE",
+            }
+        else:
+            # Standard workflow
+            workflow_key_to_measure_names = {  # This is the order the osw steps will be in
+                "build_existing_model": "BuildExistingModel",
+                "hpxml_to_openstudio": "HPXMLtoOpenStudio",  # Non-existing Workflow Key is fine
+                "upgrade_costs": "UpgradeCosts",
+                "simulation_output_report": "ReportSimulationOutput",
+                "report_utility_bills": "ReportUtilityBills",
+                "server_directory_cleanup": "ServerDirectoryCleanup",
+            }
 
         steps = []
         measure_args = {}
@@ -167,16 +176,25 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
             "measure_paths": ["measures", "resources/hpxml-measures"],
             "run_options": {"skip_zip_results": True},
         }
-        for measure in reversed(workflow_args.get("measures", [])):
-            osw["steps"].insert(3, measure)  # After UpgradeCosts
+
+        if use_ochre:
+            # For OCHRE workflow: insert custom measures before OCHRE (the last step)
+            for measure in reversed(workflow_args.get("measures", [])):
+                osw["steps"].insert(-1, measure)  # Insert before the last step (OCHRE)
+        else:
+            # For standard workflow: insert custom measures after UpgradeCosts
+            for measure in reversed(workflow_args.get("measures", [])):
+                osw["steps"].insert(3, measure)  # After UpgradeCosts
 
         self.add_upgrade_step_to_osw(upgrade_idx, osw)
 
-        for reporting_measure in self.workflow_args.get("reporting_measures", []):
-            if "arguments" not in reporting_measure:
-                reporting_measure["arguments"] = {}
-            reporting_measure["measure_type"] = "ReportingMeasure"
-            osw["steps"].insert(-1, reporting_measure)  # right before ServerDirectoryCleanup
+        # Only add reporting_measures if NOT using OCHRE
+        if not use_ochre:
+            for reporting_measure in self.workflow_args.get("reporting_measures", []):
+                if "arguments" not in reporting_measure:
+                    reporting_measure["arguments"] = {}
+                reporting_measure["measure_type"] = "ReportingMeasure"
+                osw["steps"].insert(-1, reporting_measure)  # right before ServerDirectoryCleanup
 
         return osw
 
