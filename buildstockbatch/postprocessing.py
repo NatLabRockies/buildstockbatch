@@ -422,6 +422,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     if do_timeseries:
         dirs.append(ts_dir)
 
+    process_simulation_outputs = None
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
         parquet_pub_dir = f"{parquet_dir}/pub_annual"
@@ -517,29 +518,29 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         logger.info(f"The timeseries files will be partitioned by {partition_columns}.")
 
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
-    
+
     # Initialize variables for process_simulation_outputs if enabled
     upgrade_renamer = None
     col_schema = None
     baseline_raw_df_lazy = None
     processed_baseline_df_lazy = None
-    
+
     # If process_simulation_outputs is not None we are in resstock and using resstockpostproc to process
     if process_simulation_outputs is not None:
         if get_upgrade_rename_dict is None or get_schema_superset is None or setup_fsspec_filesystem is None:
             raise ImportError(
                 "resstockpostproc functions are required for publish_annual_results but could not be imported"
             )
-        
+
         # Create filesystem dict structure using setup_fsspec_filesystem
         # Use parquet_dir as the base path for the filesystem
         # Pass None for aws_profile_name as it's not used in buildstockbatch
         filesystem_dict = setup_fsspec_filesystem(parquet_dir, None)
-        
+
         # Get upgrade renamer dictionary
         logger.info("Getting upgrade rename dictionary")
         upgrade_renamer = get_upgrade_rename_dict(filesystem_dict)
-        
+
         # Convert PyArrow schema to Polars schema
         # The all_schema_dict contains PyArrow types, but resstockpostproc expects Polars types
         logger.info("Converting schema from PyArrow to Polars types")
@@ -553,7 +554,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                 logger.warning(f"Could not convert type for column {col_name}: {e}")
                 # Fall back to String type if conversion fails
                 col_schema[col_name] = pl.String
-        
+
         # Extract baseline dataframe before the loop
         # We need the raw baseline before any column filtering
         logger.info("Extracting baseline dataframe for process_simulation_outputs")
@@ -564,7 +565,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         baseline_df_raw.set_index("building_id", inplace=True)
         baseline_df_raw.sort_index(inplace=True)
         baseline_raw_df_lazy = pl.from_pandas(baseline_df_raw, include_index=True).lazy()
-    
+
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = dask.compute(results_df_groups.get_group(upgrade_id))[0]
@@ -580,13 +581,13 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             columns={df_c: c for df_c, c in zip(df_partition_columns, partition_columns)},
             inplace=True,
         )
-        
+
         # Convert current upgrade dataframe to LazyFrame for process_simulation_outputs
         # This needs to be done before column removal for upgrades
         upgrade_raw_df_lazy = None
         if process_simulation_outputs is not None:
             upgrade_raw_df_lazy = pl.from_pandas(df, include_index=True).lazy()
-        
+
         if upgrade_id > 0:
             # Remove building characteristics for upgrade scenarios.
             cols_to_keep = list(filter(lambda x: not x.startswith("build_existing_model."), df.columns))
@@ -611,7 +612,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                 upgrade_renamer,
                 col_schema,
             )
-            
+
             # Store processed baseline for use in subsequent upgrades
             if upgrade_id == 0:
                 processed_baseline_df_lazy = pub_df_lazy
