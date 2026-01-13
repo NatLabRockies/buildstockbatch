@@ -154,6 +154,11 @@ class LocalBatch(BuildStockBatchBase):
             #     run_cmd.insert(8, '--measures_only')
             # else:
             run_cmd.insert(2, "--measures_only")
+        else:
+            # Check if use_ochre is enabled in the workflow_generator config
+            use_ochre = cfg.get("workflow_generator", {}).get("args", {}).get("use_ochre", False)
+            if use_ochre:
+                run_cmd.insert(2, "--measures_only")
 
         env_vars = {}
         env_vars.update(os.environ)

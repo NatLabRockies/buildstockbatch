@@ -119,6 +119,7 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
             # OCHRE workflow: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE
             workflow_key_to_measure_names = {
                 "build_existing_model": "BuildExistingModel",
+                "hpxml_to_openstudio": "HPXMLtoOpenStudio",
                 "ochre": "OCHRE",
             }
         else:

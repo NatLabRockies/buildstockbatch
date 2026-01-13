@@ -407,7 +407,8 @@ class SlurmBatch(BuildStockBatchBase):
                         "openstudio --bundle /var/oscli/Gemfile --bundle_path /var/oscli/gems "
                         "--bundle_without test run -w in.osw --debug"
                     )
-                if get_bool_env_var("MEASURESONLY"):
+                use_ochre = cfg.get("workflow_generator", {}).get("args", {}).get("use_ochre", False)
+                if get_bool_env_var("MEASURESONLY") or use_ochre:
                     cli_cmd += " --measures_only"
                 runscript.append(cli_cmd)
                 args.extend([str(cls.local_apptainer_img), "bash", "-x"])

@@ -29,7 +29,7 @@ DEFAULT_MEASURE_ARGS = {
         "skip_validation": True,
     },
     "OCHRE": {
-        "hpxml_path": "../../run/home.xml",
+        "hpxml_path": "../../run/in.xml",
         "output_dir": "../../run",
         "debug": False,
     },
