@@ -149,6 +149,25 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         for workflow_key, measure_name in workflow_key_to_measure_names.items():
             measure_args[measure_name].update(workflow_args.get(workflow_key, {}).copy())
 
+        # Special handling for OCHRE: calculate duration_days from OCHRE's mapped start/end dates
+        if use_ochre and "OCHRE" in measure_args:
+            ochre_args = measure_args["OCHRE"]
+
+            # The start dates have been mapped from BuildExistingModel
+            # For end dates, we need to get them from BuildExistingModel args (which still have them)
+            bem_args = measure_args.get("BuildExistingModel", {})
+
+            # Extract run period dates from both sources
+            start_month = ochre_args.get("start_month", 1)
+            start_day = ochre_args.get("start_day", 1)
+            end_month = bem_args.get("simulation_control_run_period_end_month", 12)
+            end_day = bem_args.get("simulation_control_run_period_end_day_of_month", 31)
+
+            # Calculate and set duration_days if not already set by user
+            if "duration_days" not in workflow_args.get("ochre", {}):
+                duration = self._calculate_duration_days(start_month, start_day, end_month, end_day)
+                measure_args["OCHRE"]["duration_days"] = duration
+
         # Verify the arguments and add to steps
         for workflow_key, measure_name in workflow_key_to_measure_names.items():
             xml_args = self.get_measure_arguments_from_xml(self.buildstock_dir, measure_name)
@@ -322,6 +341,28 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         for key in all_keys:
             condensed_block[key] = [block.get(key, "") for block in yaml_block]
         return condensed_block
+
+    @staticmethod
+    def _calculate_duration_days(start_month, start_day, end_month, end_day):
+        """
+        Calculate the number of days between start and end dates.
+        Assumes a non-leap year for simplicity (consistent with BuildExistingModel default year 2007).
+
+        :param start_month: Starting month (1-12)
+        :param start_day: Starting day (1-31)
+        :param end_month: Ending month (1-12)
+        :param end_day: Ending day (1-31)
+        :return: Number of days in the simulation period (inclusive)
+        """
+        # Use a non-leap year (2007 matches BuildExistingModel default)
+        year = 2007
+        start_date = dt.date(year, start_month, start_day)
+        end_date = dt.date(year, end_month, end_day)
+
+        # Add 1 because we want to include both start and end days
+        duration = (end_date - start_date).days + 1
+
+        return duration
 
     @staticmethod
     def _get_mapped_args_from_block(block, arg_map: Dict[str, str], default_args) -> Dict[str, Any]:

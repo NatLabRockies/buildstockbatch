@@ -435,6 +435,7 @@ def test_hpmxl_schema_defaults_and_mapping():
     assert_valid_keys("ReportSimulationOutput", "simulation_output_report")
     assert_valid_keys("ReportUtilityBills", None)
     assert_valid_keys("ServerDirectoryCleanup", "server_directory_cleanup")
+    assert_valid_keys("OCHRE", None)
 
 
 def test_block_compression_and_argmap():
@@ -562,8 +563,10 @@ def test_residential_hpxml_ochre(upgrade_idx, include_measures):
     assert "output_dir" in ochre_step["arguments"]
     assert ochre_step["arguments"]["debug"] is True
 
-    # Verify standard workflow measures are NOT present
-    assert "HPXMLtoOpenStudio" not in measure_names
+    # Verify HPXMLtoOpenStudio IS present (added to OCHRE workflow)
+    assert "HPXMLtoOpenStudio" in measure_names
+
+    # Verify standard workflow-only measures are NOT present
     assert "UpgradeCosts" not in measure_names
     assert "ReportSimulationOutput" not in measure_names
     assert "ReportUtilityBills" not in measure_names

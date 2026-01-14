@@ -31,6 +31,11 @@ DEFAULT_MEASURE_ARGS = {
     "OCHRE": {
         "hpxml_path": "../../run/in.xml",
         "output_dir": "../../run",
+        "time_res_minutes": 60,
+        "duration_days": 365,
+        "start_year": 2007,
+        "start_month": 1,
+        "start_day": 1,
         "debug": False,
     },
     "ReportSimulationOutput": {

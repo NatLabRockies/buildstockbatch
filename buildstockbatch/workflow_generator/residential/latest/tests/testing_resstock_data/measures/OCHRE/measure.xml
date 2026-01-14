@@ -46,6 +46,33 @@
       <default_value>365</default_value>
     </argument>
     <argument>
+      <name>start_year</name>
+      <display_name>Simulation Start Year</display_name>
+      <description>Year to start the OCHRE simulation.</description>
+      <type>Integer</type>
+      <required>false</required>
+      <model_dependent>false</model_dependent>
+      <default_value>2018</default_value>
+    </argument>
+    <argument>
+      <name>start_month</name>
+      <display_name>Simulation Start Month</display_name>
+      <description>Month to start the OCHRE simulation (1-12).</description>
+      <type>Integer</type>
+      <required>false</required>
+      <model_dependent>false</model_dependent>
+      <default_value>1</default_value>
+    </argument>
+    <argument>
+      <name>start_day</name>
+      <display_name>Simulation Start Day</display_name>
+      <description>Day to start the OCHRE simulation (1-31).</description>
+      <type>Integer</type>
+      <required>false</required>
+      <model_dependent>false</model_dependent>
+      <default_value>1</default_value>
+    </argument>
+    <argument>
       <name>debug</name>
       <display_name>Debug Mode</display_name>
       <description>If true, generates additional debug output.</description>
