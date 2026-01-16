@@ -36,6 +36,7 @@ DEFAULT_MEASURE_ARGS = {
         "start_year": 2007,
         "start_month": 1,
         "start_day": 1,
+        "export_res": 60,
         "debug": False,
     },
     "ReportSimulationOutput": {

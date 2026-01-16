@@ -286,13 +286,13 @@ class LocalBatch(BuildStockBatchBase):
         if low_disk:
             return
 
-        sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
-        logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
-        with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
-            for dirname in os.listdir(sim_out_path):
-                if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
-                    tarf.add(sim_out_path / dirname, arcname=dirname)
-                    shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
+        # sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
+        # logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
+        # with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
+        #     for dirname in os.listdir(sim_out_path):
+        #         if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
+        #             tarf.add(sim_out_path / dirname, arcname=dirname)
+        #             shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
 
     @property
     def output_dir(self):
