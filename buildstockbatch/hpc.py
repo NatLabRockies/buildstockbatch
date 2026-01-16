@@ -486,6 +486,7 @@ class SlurmBatch(BuildStockBatchBase):
         measures_only: bool,
         sampling_only: bool,
         hipri: bool,
+        debug: bool = False,
     ):
         cfg = get_project_configuration(project_filename)
         hpc_sh = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{cls.HPC_NAME}.sh")
@@ -515,13 +516,15 @@ class SlurmBatch(BuildStockBatchBase):
             "--output=sampling.out",
             hpc_sh,
         ]
-        if hipri:
+        if debug:
+            subargs.insert(-1, "--partition=debug")
+        elif hipri:
             subargs.insert(-1, "--qos=high")
         logger.info("Submitting sampling job to task scheduler")
         subprocess.run(subargs, env=env, cwd=out_dir, check=True)
         logger.info("Run squeue -u $USER to monitor the progress of your jobs")
 
-    def queue_jobs(self, array_ids=None, hipri=False):
+    def queue_jobs(self, array_ids=None, hipri=False, debug=False):
         hpc_cfg = self.cfg[self.HPC_NAME]
         with open(pathlib.Path(self.output_dir, "job001.json"), "r") as f:
             job_json = json.load(f)
@@ -557,11 +560,12 @@ class SlurmBatch(BuildStockBatchBase):
         env.update(extra_env_vars)
         export_vars = ["PROJECTFILE", "MEASURESONLY"]
         export_vars.extend(extra_env_vars.keys())
+        partition = "debug" if debug else "nvme"
         args = [
             "sbatch",
             "--account={}".format(account),
             "--time={}".format(walltime),
-            "--partition=nvme",
+            "--partition={}".format(partition),
             "--mem={}".format(self.DEFAULT_NODE_MEMORY_MB),
             "--export={}".format(",".join(export_vars)),
             "--array={}".format(array_spec),
@@ -597,7 +601,9 @@ class SlurmBatch(BuildStockBatchBase):
         job_id = m.group(1)
         return [job_id]
 
-    def queue_post_processing(self, after_jobids=[], upload_only=False, hipri=False, continue_upload=False):
+    def queue_post_processing(
+        self, after_jobids=[], upload_only=False, hipri=False, debug=False, continue_upload=False
+    ):
         # Configuration values
         hpc_cfg = self.cfg[self.HPC_NAME]
         account = hpc_cfg["account"]
@@ -642,12 +648,12 @@ class SlurmBatch(BuildStockBatchBase):
         env_export.update(self._queue_jobs_env_vars())
         here = os.path.dirname(os.path.abspath(__file__))
         hpc_post_sh = os.path.join(here, f"{self.HPC_NAME}_postprocessing.sh")
-
+        partition = "debug" if debug else "nvme"
         args = [
             "sbatch",
             "--tmp=1000000",
             "--account={}".format(account),
-            "--partition=nvme",
+            "--partition={}".format(partition),
             "--time={}".format(walltime),
             "--export={}".format(",".join(env_export.keys())),
             "--job-name=bstkpost",
@@ -728,7 +734,7 @@ class SlurmBatch(BuildStockBatchBase):
 
         return sorted(failed_job_ids)
 
-    def rerun_failed_jobs(self, hipri=False):
+    def rerun_failed_jobs(self, hipri=False, debug=False):
         # Find the jobs that failed
         failed_job_array_ids = self.get_failed_job_array_ids()
         if not failed_job_array_ids:
@@ -764,8 +770,8 @@ class SlurmBatch(BuildStockBatchBase):
             if x.exists():
                 shutil.rmtree(x)
 
-        job_ids = self.queue_jobs(failed_job_array_ids, hipri=hipri)
-        self.queue_post_processing(job_ids, hipri=hipri)
+        job_ids = self.queue_jobs(failed_job_array_ids, hipri=hipri, debug=debug)
+        self.queue_post_processing(job_ids, hipri=hipri, debug=debug)
 
 
 class KestrelBatch(SlurmBatch):
@@ -845,10 +851,16 @@ def user_cli(Batch: SlurmBatch, argv: list):
     # CLI arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("project_filename")
-    parser.add_argument(
+    priority_group = parser.add_mutually_exclusive_group()
+    priority_group.add_argument(
         "--hipri",
         action="store_true",
         help="Submit this job to the high priority queue. Uses 2x node hours.",
+    )
+    priority_group.add_argument(
+        "--debug",
+        action="store_true",
+        help="Submit this job to the debug partition for faster testing.",
     )
     parser.add_argument(
         "-m",
@@ -897,17 +909,19 @@ def user_cli(Batch: SlurmBatch, argv: list):
     # if the project has already been run, simply queue the correct post-processing step
     if args.postprocessonly or args.uploadonly or args.continue_upload:
         batch = Batch(project_filename)
-        batch.queue_post_processing(upload_only=args.uploadonly, hipri=args.hipri, continue_upload=args.continue_upload)
+        batch.queue_post_processing(
+            upload_only=args.uploadonly, hipri=args.hipri, debug=args.debug, continue_upload=args.continue_upload
+        )
         return
 
     if args.rerun_failed:
         batch = Batch(project_filename)
-        batch.rerun_failed_jobs(hipri=args.hipri)
+        batch.rerun_failed_jobs(hipri=args.hipri, debug=args.debug)
         return
 
     # otherwise, queue up the whole buildstockbatch process
     # the main work of the first job is to run the sampling script ...
-    Batch.queue_sampling(project_filename, args.measuresonly, args.samplingonly, args.hipri)
+    Batch.queue_sampling(project_filename, args.measuresonly, args.samplingonly, args.hipri, args.debug)
 
 
 @log_error_details()
