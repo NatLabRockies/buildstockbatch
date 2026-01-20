@@ -33,6 +33,7 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
     def __init__(self, cfg, n_datapoints):
         super().__init__(cfg, n_datapoints)
         self.buildstock_dir = cfg["buildstock_directory"]
+        self.parent_dir = os.path.dirname(self.buildstock_dir)
         self.measures_dir = os.path.join(self.buildstock_dir, "measures")
         self.workflow_args = self.cfg["workflow_generator"].get("args", {})
         self.default_args = copy.deepcopy(DEFAULT_MEASURE_ARGS)
@@ -167,6 +168,15 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
             if "duration_days" not in workflow_args.get("ochre", {}):
                 duration = self._calculate_duration_days(start_month, start_day, end_month, end_day)
                 measure_args["OCHRE"]["duration_days"] = duration
+
+            # Set ochre_cli path
+            ochre_cli_path = os.path.join(self.parent_dir, "OCHRE", ".venv", "bin", "ochre")
+            if not os.path.isfile(ochre_cli_path):
+                raise ValidationError(
+                    f"OCHRE CLI not found at {ochre_cli_path}. "
+                    f"Please ensure OCHRE is installed at {os.path.join(self.parent_dir, 'OCHRE')}"
+                )
+            measure_args["OCHRE"]["ochre_cli"] = ochre_cli_path
 
         # Verify the arguments and add to steps
         for workflow_key, measure_name in workflow_key_to_measure_names.items():

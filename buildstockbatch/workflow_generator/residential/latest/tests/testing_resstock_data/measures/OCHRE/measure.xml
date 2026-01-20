@@ -81,6 +81,22 @@
       <model_dependent>false</model_dependent>
       <default_value>false</default_value>
     </argument>
+    <argument>
+      <name>export_res</name>
+      <display_name>Export Resolution (minutes)</display_name>
+      <description>Export interval in minutes (exports results periodically to reduce memory). Recommended: 43200 (30 days) for 1-minute resolution, 86400 (60 days) for 5-minute resolution. Leave blank to disable periodic export.</description>
+      <type>Integer</type>
+      <required>false</required>
+      <model_dependent>false</model_dependent>
+    </argument>
+    <argument>
+      <name>ochre_cli</name>
+      <display_name>OCHRE CLI Path</display_name>
+      <description>Absolute path to the OCHRE CLI executable.</description>
+      <type>String</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+    </argument>
   </arguments>
   <outputs />
   <provenances />

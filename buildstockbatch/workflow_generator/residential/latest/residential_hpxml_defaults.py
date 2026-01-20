@@ -38,6 +38,7 @@ DEFAULT_MEASURE_ARGS = {
         "start_day": 1,
         "export_res": 60,
         "debug": False,
+        "ochre_cli": "",
     },
     "ReportSimulationOutput": {
         "timeseries_frequency": "none",
