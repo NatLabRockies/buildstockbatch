@@ -659,8 +659,7 @@ class GcpBatch(DockerBatchBase):
             f"{self.region}/jobs/{self.job_identifier}/details?project={self.gcp_project}"
         )
 
-        logger.info(
-            f"""
+        logger.info(f"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ GCP Batch Job for running simulations has started!                           ║
 ║                                                                              ║
@@ -676,8 +675,7 @@ Job UID:
     {job_url}
 Results output browser (Cloud Console):
     https://console.cloud.google.com/storage/browser/{self.gcs_bucket}/{self.gcs_prefix}/results/simulation_output
-"""
-        )
+""")
 
         # Monitor job status while waiting for the job to complete
         n_completed_last_time = 0
@@ -910,8 +908,7 @@ Results output browser (Cloud Console):
         try:
             op = jobs_client.run_job(name=self.postprocessing_job_name)
 
-            logger.info(
-                f"""
+            logger.info(f"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ Post-processing Cloud Run Job started!                                       ║
 ║                                                                              ║
@@ -923,8 +920,7 @@ Results output browser (Cloud Console):
 Results output browser (Cloud Console):
     https://console.cloud.google.com/storage/browser/{self.gcs_bucket}/{self.gcs_prefix}/results/
 
-Run this script with --clean to clean up the GCP environment after post-processing is complete."""
-            )
+Run this script with --clean to clean up the GCP environment after post-processing is complete.""")
         except:
             logger.warning(
                 "Post-processing Cloud Run job failed to start. "
