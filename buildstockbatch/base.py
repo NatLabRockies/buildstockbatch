@@ -214,23 +214,29 @@ class BuildStockBatchBase(object):
 
         # Convert the timeseries data to parquet
         # and copy it to the results directory
-        output_dir = os.path.join(sim_dir, "run")
-        timeseries_filepath = os.path.join(output_dir, "results_timeseries.csv")
-        # FIXME: Allowing both names here for compatibility. Should consolidate on one timeseries filename.
-        if os.path.isfile(timeseries_filepath):
-            units_dict = read_csv(timeseries_filepath, nrows=1).transpose().to_dict()[0]
-            skiprows = [1]
-        else:
-            timeseries_filepath = os.path.join(sim_dir, "run", "enduse_timeseries.csv")
-            units_dict = {}
-            skiprows = []
 
+        output_dir = os.path.join(sim_dir, "run")
         schedules_filepaths = []
         for file in os.listdir(output_dir):
             if re.match(r"in.schedules.*\.csv", file):
                 schedules_filepaths.append(os.path.join(output_dir, file))
+        timeseries_filepath = None
+        # FIXME: Allowing both names here for compatibility. Should consolidate on one timeseries filename.
+        if os.path.isfile(os.path.join(output_dir, "results_timeseries.csv")):
+            timeseries_filepath = os.path.join(output_dir, "results_timeseries.csv")
+            units_dict = read_csv(timeseries_filepath, nrows=1).transpose().to_dict()[0]
+            skiprows = [1]
+        elif os.path.isfile(os.path.join(sim_dir, "run", "enduse_timeseries.csv")):
+            timeseries_filepath = os.path.join(sim_dir, "run", "enduse_timeseries.csv")
+            units_dict = {}
+            skiprows = []
+        elif os.path.isfile(os.path.join(sim_dir, "run", "ochre.csv")):
+            timeseries_filepath = os.path.join(sim_dir, "run", "ochre.csv")
+            units_dict = {}
+            skiprows = []
+            schedules_filepaths = []  # can't join schedules to ochre.csv
 
-        if os.path.isfile(timeseries_filepath):
+        if timeseries_filepath:
             # Find the time columns present in the enduse_timeseries file
             possible_time_cols = ["time", "Time", "TimeDST", "TimeUTC"]
             cols = read_csv(timeseries_filepath, index_col=False, nrows=0).columns.tolist()
@@ -255,9 +261,12 @@ class BuildStockBatchBase(object):
                 """
                 unit = units_dict.get(x)  # missing units (e.g. for time) gets nan
                 unit = unit if isinstance(unit, str) else ""
+                x = x.replace("therms/hour", "therms_per_hour")
                 sepecial_characters = [":", " ", "/"]
                 for char in sepecial_characters:
                     x = x.replace(char, "_")
+                x = x.replace("(", "")
+                x = x.replace(")", "")
                 x = x + "__" + unit if unit else x
                 return x.lower()
 
