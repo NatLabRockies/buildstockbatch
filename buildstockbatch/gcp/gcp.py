@@ -11,6 +11,7 @@ See the README for an overview of the architecture.
 :copyright: (c) 2023 by The Alliance for Sustainable Energy
 :license: BSD-3
 """
+
 import argparse
 import collections
 from dask.distributed import Client as DaskClient
@@ -44,7 +45,6 @@ from buildstockbatch.utils import (
     get_project_configuration,
     log_error_details,
 )
-
 
 logger = logging.getLogger(__name__)
 

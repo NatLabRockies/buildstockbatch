@@ -33,7 +33,6 @@ from .residential.v2025_04_29.residential_hpxml import (
 )  # noqa F401
 from .residential import v2025_04_29 as residential_v2025_04_29  # noqa F401
 
-
 version2GeneratorClass = {
     "commercial_default": {
         "latest": latestComRenerator,
