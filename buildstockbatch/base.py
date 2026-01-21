@@ -168,6 +168,11 @@ class BuildStockBatchBase(object):
 
     @staticmethod
     def make_sim_dir(building_id, upgrade_idx, base_dir, overwrite_existing=False):
+        # Convert building_id to int if it's a string (from buildstock.csv read with dtype=str)
+        building_id = int(building_id)
+        # Convert upgrade_idx to int if it's a string
+        if upgrade_idx is not None:
+            upgrade_idx = int(upgrade_idx)
         real_upgrade_idx = 0 if upgrade_idx is None else upgrade_idx + 1
         sim_id = "bldg{:07d}up{:02d}".format(building_id, real_upgrade_idx)
 
@@ -211,6 +216,10 @@ class BuildStockBatchBase(object):
         :param low_disk: If true, remove the simulation directory entirely to save disk space
         :type low_disk: bool
         """
+        # Convert building_id to int if it's a string (from buildstock.csv read with dtype=str)
+        building_id = int(building_id)
+        # Convert upgrade_id to int if it's a string
+        upgrade_id = int(upgrade_id)
 
         # Convert the timeseries data to parquet
         # and copy it to the results directory
