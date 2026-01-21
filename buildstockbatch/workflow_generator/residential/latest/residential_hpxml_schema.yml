@@ -7,6 +7,7 @@ simulation_output_report: include('sim-output-report-spec', required=False)
 server_directory_cleanup: include('server-dir-cleanup-spec', required=False)
 debug: bool(required=False)
 use_ochre: bool(required=False)
+ochre: include('ochre-spec', required=False)
 ---
 build-existing-model-spec:
     simulation_control_timestep: enum(60, 30, 20, 15, 12, 10, 6, 5, 4, 3, 2, 1, required=False)
@@ -95,4 +96,15 @@ server-dir-cleanup-spec:
     retain_stdout_energyplus: bool(required=False)
     retain_stdout_expandobject: bool(required=False)
     retain_schedules_csv: bool(required=False)
+    debug: bool(required=False)
+ochre-spec:
+    ochre_cli_path: str(required=False)
+    hpxml_path: str(required=False)
+    output_dir: str(required=False)
+    time_res_minutes: int(required=False)
+    duration_days: int(required=False)
+    start_year: int(required=False)
+    start_month: int(required=False)
+    start_day: int(required=False)
+    export_res: int(required=False)
     debug: bool(required=False)

@@ -170,11 +170,19 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
                 measure_args["OCHRE"]["duration_days"] = duration
 
             # Set ochre_cli path
-            ochre_cli_path = os.path.join(self.parent_dir, "OCHRE", ".venv", "bin", "ochre")
+            # Check if user provided explicit path in ochre config section
+            user_ochre_cli_path = workflow_args.get("ochre", {}).get("ochre_cli_path")
+
+            if user_ochre_cli_path:
+                ochre_cli_path = user_ochre_cli_path
+            else:
+                # Fallback to auto-detection from parent directory
+                ochre_cli_path = os.path.join(self.parent_dir, "OCHRE", ".venv", "bin", "ochre")
+
             if not os.path.isfile(ochre_cli_path):
                 raise ValidationError(
                     f"OCHRE CLI not found at {ochre_cli_path}. "
-                    f"Please ensure OCHRE is installed at {os.path.join(self.parent_dir, 'OCHRE')}"
+                    f"Please ensure OCHRE is installed or provide 'ochre_cli_path' in workflow_generator.args.ochre section"
                 )
             measure_args["OCHRE"]["ochre_cli"] = ochre_cli_path
 

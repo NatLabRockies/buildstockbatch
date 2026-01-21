@@ -506,11 +506,14 @@ def test_block_compression_and_argmap():
 
 @pytest.mark.parametrize("upgrade_idx", [None, 0])
 @pytest.mark.parametrize("include_measures", [True, False])
-def test_residential_hpxml_ochre(upgrade_idx, include_measures):
+def test_residential_hpxml_ochre(upgrade_idx, include_measures, monkeypatch):
     """
     Test that OCHRE workflow generates correct simplified OSW.
     OCHRE workflow should be: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE
     """
+    # Mock the OCHRE CLI path existence check
+    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else os.path.isfile(path))
+
     cfg = {
         "buildstock_directory": resstock_directory,
         "project_directory": "project_testing",
@@ -587,10 +590,13 @@ def test_residential_hpxml_ochre(upgrade_idx, include_measures):
         assert measure_names.index("TestMeasure2") < measure_names.index("OCHRE")
 
 
-def test_residential_hpxml_ochre_no_reporting_measures():
+def test_residential_hpxml_ochre_no_reporting_measures(monkeypatch):
     """
     Test that reporting measures are NOT included when use_ochre is True
     """
+    # Mock the OCHRE CLI path existence check
+    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else os.path.isfile(path))
+
     cfg = {
         "buildstock_directory": resstock_directory,
         "project_directory": "project_testing",
@@ -623,3 +629,43 @@ def test_residential_hpxml_ochre_no_reporting_measures():
 
     # Verify OCHRE is still the last step
     assert measure_names[-1] == "OCHRE"
+
+
+def test_residential_hpxml_ochre_custom_cli_path(monkeypatch):
+    """
+    Test that OCHRE CLI path can be configured via ochre.ochre_cli_path
+    """
+    custom_cli_path = "/custom/path/to/ochre"
+
+    # Mock the OCHRE CLI path existence check
+    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else os.path.isfile(path))
+
+    cfg = {
+        "buildstock_directory": resstock_directory,
+        "project_directory": "project_testing",
+        "baseline": {"n_buildings_represented": 100},
+        "workflow_generator": {
+            "type": "residential_hpxml",
+            "args": {
+                "debug": True,
+                "use_ochre": True,
+                "ochre": {
+                    "ochre_cli_path": custom_cli_path,
+                },
+            },
+        },
+    }
+
+    n_datapoints = 10
+    osw_gen = ResidentialHpxmlWorkflowGenerator(cfg, n_datapoints)
+    osw = osw_gen.create_osw("bldb1up1", 13, None)
+
+    # Find OCHRE step
+    ochre_step = None
+    for step in osw["steps"]:
+        if step["measure_dir_name"] == "OCHRE":
+            ochre_step = step
+            break
+
+    assert ochre_step is not None
+    assert ochre_step["arguments"]["ochre_cli"] == custom_cli_path
