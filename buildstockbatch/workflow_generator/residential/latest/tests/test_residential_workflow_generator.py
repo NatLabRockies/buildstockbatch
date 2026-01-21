@@ -506,14 +506,11 @@ def test_block_compression_and_argmap():
 
 @pytest.mark.parametrize("upgrade_idx", [None, 0])
 @pytest.mark.parametrize("include_measures", [True, False])
-def test_residential_hpxml_ochre(upgrade_idx, include_measures, monkeypatch):
+def test_residential_hpxml_ochre(upgrade_idx, include_measures):
     """
     Test that OCHRE workflow generates correct simplified OSW.
     OCHRE workflow should be: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE
     """
-    # Mock the OCHRE CLI path existence check
-    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else os.path.isfile(path))
-
     cfg = {
         "buildstock_directory": resstock_directory,
         "project_directory": "project_testing",
@@ -523,6 +520,9 @@ def test_residential_hpxml_ochre(upgrade_idx, include_measures, monkeypatch):
             "args": {
                 "debug": True,
                 "use_ochre": True,
+                "ochre": {
+                    "ochre_cli_path": str(resstock_directory / "ochre_cli"),
+                },
             },
         },
     }
@@ -590,13 +590,10 @@ def test_residential_hpxml_ochre(upgrade_idx, include_measures, monkeypatch):
         assert measure_names.index("TestMeasure2") < measure_names.index("OCHRE")
 
 
-def test_residential_hpxml_ochre_no_reporting_measures(monkeypatch):
+def test_residential_hpxml_ochre_no_reporting_measures():
     """
     Test that reporting measures are NOT included when use_ochre is True
     """
-    # Mock the OCHRE CLI path existence check
-    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else os.path.isfile(path))
-
     cfg = {
         "buildstock_directory": resstock_directory,
         "project_directory": "project_testing",
@@ -606,6 +603,9 @@ def test_residential_hpxml_ochre_no_reporting_measures(monkeypatch):
             "args": {
                 "debug": True,
                 "use_ochre": True,
+                "ochre": {
+                    "ochre_cli_path": str(resstock_directory / "ochre_cli"),
+                },
                 "reporting_measures": [
                     {
                         "measure_dir_name": "TestReportingMeasure1",
@@ -638,7 +638,9 @@ def test_residential_hpxml_ochre_custom_cli_path(monkeypatch):
     custom_cli_path = "/custom/path/to/ochre"
 
     # Mock the OCHRE CLI path existence check
-    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else os.path.isfile(path))
+    # Save original function to avoid infinite recursion
+    original_isfile = os.path.isfile
+    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else original_isfile(path))
 
     cfg = {
         "buildstock_directory": resstock_directory,
