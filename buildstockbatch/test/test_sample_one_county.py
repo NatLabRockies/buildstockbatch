@@ -12,6 +12,7 @@ from buildstockbatch.sample_one_county import SampleOnly, residential_quota
 def test_sample_one_county_script(mocker):
     buildstock_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_inputs/test_openstudio_buildstock")
     county = "G0100110"
+    # TODO: also test "all" pumas option
     PUMA = "G01002400"
 
     def check_input_files(project_dir):

@@ -35,7 +35,7 @@ Assumptions:
     In particular, this code assumes:
         - ASHRAE climate zone has no dependencies
         - County and PUMA depends only on the ASHRAE climate zone
-        - Each County+PUMA fall entirely in one climate zone
+        - Each County(+PUMA) falls entirely in one climate zone
 """
 
 import argparse
@@ -89,6 +89,10 @@ class SampleOnly:
             reader = csv.reader(f, delimiter="\t")
             headers = next(reader)
             # Index of the column with the county and PUMA we're looking for.
+            if not PUMA:
+                # Pick any PUMA in the county
+                PUMA = next(x for x in headers if x.startswith(f"Option={county}, ")).split()[-1]
+
             try:
                 location_col = headers.index(f"Option={county}, {PUMA}")
             except ValueError as e:
@@ -120,7 +124,7 @@ class SampleOnly:
             - Renames and copies the resulting building.csv file into the output directory.
 
         :param county: GISJOIN ID of county (e.g. "G1900030")
-        :param PUMA: GISJOIN ID of PUMA (e.g. "G19001800")
+        :param PUMA: GISJOIN ID of PUMA (e.g. "G19001800") or None to include all PUMAs in the county
         :param n_samples: Number of building samples to produce.
         """
 
@@ -161,17 +165,34 @@ class SampleOnly:
                     # just use the others, which list the County+PUMA options.
                     assert headers[0] == "Dependency=ASHRAE IECC Climate Zone 2004"
                     headers = headers[1:]
+
                     for row in reader:
                         # Skip comments
                         if row[0].strip()[0] == "#":
                             continue
 
                         elif row[0] == climate_zone:
-                            # Replace probabilities with 1 for our selected location and 0s everywhere else.
-                            county_header = f"Option={county}, {PUMA}"
-                            writer.writerow(
-                                [row[0]] + ["1" if headers[i] == county_header else "0" for i, v in enumerate(row[1:])]
-                            )
+                            if PUMA:
+                                # Replace probabilities with 1 for our selected location and 0s everywhere else.
+                                county_header = f"Option={county}, {PUMA}"
+                                writer.writerow(
+                                    [row[0]]
+                                    + ["1" if headers[i] == county_header else "0" for i, v in enumerate(row[1:])]
+                                )
+                            else:
+                                # Find the probabilities for the PUMAs in this county
+                                total_p = 0
+                                county_header = f"Option={county}, "
+                                for header, p in zip(headers, row[1:]):
+                                    if header.startswith(county_header):
+                                        total_p += float(p)
+                                writer.writerow(
+                                    [row[0]]
+                                    + [
+                                        float(p) / total_p if header.startswith(county_header) else "0"
+                                        for header, p in zip(headers, row[1:])
+                                    ]
+                                )
 
                         else:
                             # Leave other climate zones unchanged - they won't be used anyway.
@@ -194,7 +215,7 @@ class SampleOnly:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("county", help="County GISJOIN ID - https://www.nhgis.org/geographic-crosswalks#geog-ids")
-    parser.add_argument("PUMA", help="PUMA GISJOIN ID")
+    parser.add_argument("PUMA", help="PUMA GISJOIN ID or 'all'")
     parser.add_argument("n_samples", help="Comma-separated list of samples sizes to generate")
     parser.add_argument("buildstock_dir", help="Path to the ResStock directory (expected to contain project_national)")
     parser.add_argument(
@@ -208,7 +229,10 @@ def main():
     assert (
         len(args.county) == 8 and args.county[0] == "G"
     ), "County should be 8 chars and start with G (e.g. 'G0100010')"
-    assert len(args.PUMA) == 9 and args.PUMA[0] == "G", "PUMA should be 9 chars and start with G (e.g. 'G01002100')"
+    if args.PUMA.lower() == "all":
+        args.PUMA = None
+    else:
+        assert len(args.PUMA) == 9 and args.PUMA[0] == "G", "PUMA should be 9 chars and start with G (e.g. 'G01002100')"
 
     sample_sizes = [int(i) for i in args.n_samples.split(",")]
     s = SampleOnly(args.buildstock_dir, args.output_dir)
