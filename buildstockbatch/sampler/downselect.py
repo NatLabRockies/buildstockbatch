@@ -104,6 +104,7 @@ class DownselectSamplerBase(BuildStockSampler):
             init_sampler = self.SUB_SAMPLER_CLASS(self.parent(), n_datapoints=n_samples_init, **self.sub_kw)
             buildstock_csv_filename = init_sampler.run_sampling()
             df = read_csv(buildstock_csv_filename, index_col=0, dtype=str)
+            df.index = df.index.astype(int)
             df_new = df[self.downselect_logic(df, self.logic)]
             downselected_n_samples_init = df_new.shape[0]
             n_samples = math.ceil(self.n_datapoints * n_samples_init / downselected_n_samples_init)
@@ -117,6 +118,7 @@ class DownselectSamplerBase(BuildStockSampler):
             with open(buildstock_csv_filename, "rb") as f_in:
                 shutil.copyfileobj(f_in, f_out)
         df = read_csv(buildstock_csv_filename, index_col=0, dtype="str")
+        df.index = df.index.astype(int)
         df_new = df[self.downselect_logic(df, self.logic)]
         if len(df_new.index) == 0:
             raise RuntimeError("There are no buildings left after the down select!")
