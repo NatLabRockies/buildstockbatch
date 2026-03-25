@@ -431,6 +431,7 @@ class DockerBatchBase(BuildStockBatchBase):
 
         logger.debug("Validating sampled buildstock...")
         df = read_csv(buildstock_csv_filename, index_col=0, dtype=str)
+        df.index = df.index.astype(int)
         self.validate_buildstock_csv(self.project_filename, df)
         building_ids = df.index.tolist()
         n_datapoints = len(building_ids)
