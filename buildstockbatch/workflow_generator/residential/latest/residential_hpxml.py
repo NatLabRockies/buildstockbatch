@@ -117,11 +117,13 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         use_ochre = workflow_args.get("use_ochre", False)
 
         if use_ochre:
-            # OCHRE workflow: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE
+            # OCHRE workflow: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE -> UpgradeCosts -> Cleanup
             workflow_key_to_measure_names = {
                 "build_existing_model": "BuildExistingModel",
                 "hpxml_to_openstudio": "HPXMLtoOpenStudio",
                 "ochre": "OCHRE",
+                "upgrade_costs": "UpgradeCosts",
+                "server_directory_cleanup": "ServerDirectoryCleanup",
             }
         else:
             # Standard workflow
@@ -185,6 +187,7 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
                     f"Please ensure OCHRE is installed or provide 'ochre_cli_path' in workflow_generator.args.ochre section"
                 )
             measure_args["OCHRE"]["ochre_cli"] = ochre_cli_path
+            measure_args["OCHRE"]["seed"] = building_id
 
         # Verify the arguments and add to steps
         for workflow_key, measure_name in workflow_key_to_measure_names.items():
@@ -216,9 +219,10 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         }
 
         if use_ochre:
-            # For OCHRE workflow: insert custom measures before OCHRE (the last step)
+            # For OCHRE workflow: insert custom measures before OCHRE
+            ochre_index = next(i for i, s in enumerate(osw["steps"]) if s["measure_dir_name"] == "OCHRE")
             for measure in reversed(workflow_args.get("measures", [])):
-                osw["steps"].insert(-1, measure)  # Insert before the last step (OCHRE)
+                osw["steps"].insert(ochre_index, measure)
         else:
             # For standard workflow: insert custom measures after UpgradeCosts
             for measure in reversed(workflow_args.get("measures", [])):

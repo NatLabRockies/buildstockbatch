@@ -58,6 +58,11 @@ def read_data_point_out_json(fs, reporting_measures, filename):
         if "SimulationOutputReport" in d:
             sim_out_report = "SimulationOutputReport"
 
+        # OCHRE workflow: use OCHRE's registerValue output as the simulation report
+        if sim_out_report not in d and "OCHRE" in d:
+            d["ReportSimulationOutput"] = d["OCHRE"]
+            sim_out_report = "ReportSimulationOutput"
+
         if sim_out_report not in d:
             d[sim_out_report] = {"applicable": False}
         for reporting_measure in reporting_measures:
@@ -90,6 +95,9 @@ def flatten_datapoint_json(reporting_measures, d):
     sim_out_report = "SimulationOutputReport"
     if "ReportSimulationOutput" in d:
         sim_out_report = "ReportSimulationOutput"
+    elif "OCHRE" in d and sim_out_report not in d:
+        d["ReportSimulationOutput"] = d["OCHRE"]
+        sim_out_report = "ReportSimulationOutput"
     col2 = sim_out_report
     for k, v in d.get(col2, {}).items():
         new_d[f"{col2}.{k}"] = v
@@ -106,6 +114,100 @@ def flatten_datapoint_json(reporting_measures, d):
     del new_d["BuildExistingModel.building_id"]
 
     return new_d
+
+
+def trim_step_errors(step_errors: list[str]) -> list[str]:
+    """Trim stack traces to error message + last meaningful code frame."""
+    trimmed = []
+    for err in step_errors:
+        if "\n" not in err:
+            trimmed.append(_normalize_ids(err))
+            continue
+
+        lines = err.splitlines()
+
+        if "Traceback (most recent call last)" in err:
+            # Python: error line is at the end
+            error_line = next(
+                (
+                    l.strip()
+                    for l in reversed(lines)
+                    if l.strip() and re.match(r"\w+(Error|Exception|Warning)", l.strip())
+                ),
+                lines[-1].strip() if lines else "UnknownError",
+            )
+            # Last File frame outside site-packages/.venv
+            last_frame = _find_last_frame(lines, r'^\s*File\s+"', is_python=True)
+        else:
+            # Ruby or other: error line is the first line
+            error_line = lines[0].strip()
+            # Last path frame (e.g., /path/file.rb:123:in `method')
+            last_frame = _find_last_frame(lines, r"^/", is_python=False)
+
+        summary = f"{error_line} @ {last_frame}" if last_frame else error_line
+        trimmed.append(_normalize_ids(summary))
+    return trimmed
+
+
+def _shorten_path(filepath: str, keep_parts: int = 3) -> str:
+    """Shorten an absolute path to its last N components.
+
+    e.g., "/long/path/ochre/utils/hpxml.py" -> "ochre/utils/hpxml.py"
+    """
+    parts = filepath.split("/")
+    return "/".join(parts[-keep_parts:]) if len(parts) > keep_parts else filepath
+
+
+def _find_last_frame(lines: list[str], pattern: str, is_python: bool) -> str | None:
+    """Find last meaningful stack frame, preferring frames outside site-packages/.venv.
+
+    Shortens absolute paths to last 3 components for readability in both
+    Python and Ruby frames.
+    """
+    skip = {"site-packages", ".venv"}
+    last_meaningful = None
+    last_any = None
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not re.match(pattern, stripped):
+            continue
+
+        if is_python:
+            # Python: File "/long/path/file.py", line N, in func | code_line
+            path_match = re.match(r'File\s+"([^"]+)"(.*)', stripped)
+            if path_match:
+                short = _shorten_path(path_match.group(1))
+                frame = f'File "{short}"{path_match.group(2)}'
+            else:
+                frame = stripped
+            # Append the code line that follows
+            if i + 1 < len(lines) and not re.match(pattern, lines[i + 1].strip()):
+                frame += " | " + lines[i + 1].strip()
+        else:
+            # Ruby: /long/path/file.rb:line:in `method'
+            path_match = re.match(r"^(/[^:]+)(:.+)", stripped)
+            if path_match:
+                short = _shorten_path(path_match.group(1))
+                frame = short + path_match.group(2)
+            else:
+                frame = stripped
+
+        last_any = frame
+        if not any(s in line for s in skip):
+            last_meaningful = frame
+
+    return last_meaningful or last_any
+
+
+def _normalize_ids(s: str) -> str:
+    """Replace building/upgrade IDs with placeholders for error grouping.
+
+    bldg0003456 -> bldg{ID}, up01 directory segments -> up{NN}.
+    """
+    s = re.sub(r"bldg\d{7}", "bldg{ID}", s)
+    s = re.sub(r"(?<=/|\\)up\d{2}(?=/|\\)", "up{NN}", s)
+    return s
 
 
 def read_out_osw(fs, filename):
@@ -132,7 +234,10 @@ def read_out_osw(fs, filename):
             # Collect error messages from any failed steps.
             if result := step.get("result"):
                 if result.get("step_result", "Success") != "Success":
-                    step_errors.append({"measure_dir_name": measure_dir_name, "step_errors": result.get("step_errors")})
+                    raw_errors = result.get("step_errors", [])
+                    step_errors.append(
+                        {"measure_dir_name": measure_dir_name, "step_errors": trim_step_errors(raw_errors)}
+                    )
 
         if step_errors:
             out_d["step_failures"] = json.dumps(step_errors)[:MAX_STR_LEN]
