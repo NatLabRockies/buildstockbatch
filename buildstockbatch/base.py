@@ -244,7 +244,7 @@ class BuildStockBatchBase(object):
             units_dict = {}
             skiprows = []
             schedules_filepaths = []  # can't join schedules to ochre.csv
-
+        schedules_filepaths = []  # Temporarily disable schedules joining for now
         if timeseries_filepath:
             # Find the time columns present in the enduse_timeseries file
             possible_time_cols = ["time", "Time", "TimeDST", "TimeUTC"]

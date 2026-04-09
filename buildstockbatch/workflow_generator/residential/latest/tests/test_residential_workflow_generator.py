@@ -521,7 +521,7 @@ def test_residential_hpxml_ochre(upgrade_idx, include_measures):
                 "debug": True,
                 "use_ochre": True,
                 "ochre": {
-                    "ochre_cli_path": str(resstock_directory / "ochre_cli"),
+                    "ochre_cli": str(resstock_directory / "ochre_cli"),
                 },
             },
         },
@@ -604,7 +604,7 @@ def test_residential_hpxml_ochre_no_reporting_measures():
                 "debug": True,
                 "use_ochre": True,
                 "ochre": {
-                    "ochre_cli_path": str(resstock_directory / "ochre_cli"),
+                    "ochre_cli": str(resstock_directory / "ochre_cli"),
                 },
                 "reporting_measures": [
                     {
@@ -633,7 +633,7 @@ def test_residential_hpxml_ochre_no_reporting_measures():
 
 def test_residential_hpxml_ochre_custom_cli_path(monkeypatch):
     """
-    Test that OCHRE CLI path can be configured via ochre.ochre_cli_path
+    Test that OCHRE CLI path can be configured via ochre.ochre_cli
     """
     custom_cli_path = "/custom/path/to/ochre"
 
@@ -652,7 +652,7 @@ def test_residential_hpxml_ochre_custom_cli_path(monkeypatch):
                 "debug": True,
                 "use_ochre": True,
                 "ochre": {
-                    "ochre_cli_path": custom_cli_path,
+                    "ochre_cli": custom_cli_path,
                 },
             },
         },

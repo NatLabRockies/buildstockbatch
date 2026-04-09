@@ -98,7 +98,7 @@ server-dir-cleanup-spec:
     retain_schedules_csv: bool(required=False)
     debug: bool(required=False)
 ochre-spec:
-    ochre_cli_path: str(required=False)
+    ochre_cli: str(required=False)
     hpxml_path: str(required=False)
     output_dir: str(required=False)
     time_res_minutes: int(required=False)
