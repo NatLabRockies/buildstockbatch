@@ -81,7 +81,7 @@ aws-dask-spec:
 
 hpc-spec:
   account: str(required=True)
-  minutes_per_sim: num(min=0.05, max=480, required=True)
+  minutes_per_sim: num(min=0.05, max=480, required=False)
   n_jobs: int(required=False)
   postprocessing: include('hpc-postprocessing-spec', required=False)
   sampling: include('sampling-spec', required=False)

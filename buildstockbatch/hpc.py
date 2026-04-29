@@ -111,6 +111,41 @@ class SlurmBatch(BuildStockBatchBase):
         shutil.copytree(src, dst, dirs_exist_ok=True)
 
     @classmethod
+    def _use_ochre(cls, cfg):
+        return cfg.get("workflow_generator", {}).get("args", {}).get("use_ochre", False)
+
+    @classmethod
+    def _workers_per_node(cls, cfg):
+        # OCHRE simulations are memory-hungry; cap concurrency to avoid OOM kills.
+        if cls._use_ochre(cfg):
+            return cls.CORES_PER_NODE // cls.OCHRE_WORKERS_DIVISOR
+        return cls.CORES_PER_NODE
+
+    @classmethod
+    def _default_minutes_per_sim(cls, cfg, project_filename):
+        use_ochre = cls._use_ochre(cfg)
+        try:
+            version_info = BuildStockBatchBase.get_stock_version_info(project_filename)
+        except Exception:
+            version_info = {}
+        if "ComStock" in version_info:
+            stock = "ComStock"
+        else:
+            stock = "ResStock"
+        return cls.DEFAULT_MINUTES_PER_SIM[(stock, use_ochre)]
+
+    @classmethod
+    def _estimate_walltime_min(cls, cfg, n_sims_per_job, project_filename):
+        hpc_cfg = cfg[cls.HPC_NAME]
+        minutes_per_sim = hpc_cfg.get("minutes_per_sim")
+        if minutes_per_sim is None:
+            minutes_per_sim = cls._default_minutes_per_sim(cfg, project_filename)
+        workers = cls._workers_per_node(cfg)
+        sim_min = math.ceil(n_sims_per_job / workers) * minutes_per_sim
+        housekeeping_min = cls.HOUSEKEEPING_BASE_MIN + n_sims_per_job / 100 * cls.HOUSEKEEPING_PER_100_SIMS_MIN
+        return math.ceil(sim_min + housekeeping_min)
+
+    @classmethod
     def get_apptainer_image(cls, cfg, os_version, os_sha):
         exts_to_try = ["Apptainer.sif", "Singularity.simg"]
         sys_img_dir = cfg.get("sys_image_dir", cls.DEFAULT_SYS_IMAGE_DIR)
@@ -253,26 +288,47 @@ class SlurmBatch(BuildStockBatchBase):
         logger.debug(f"Buildstock.csv trimmed to {len(df)} rows.")
 
         traceback_file_path = self.local_output_dir / "simulation_output" / f"traceback{job_array_number}.out"
+        worker_log_path = self.local_output_dir / "simulation_output" / f"worker{job_array_number}.log"
+
+        # Ensure the simulation_output directory exists for log files
+        worker_log_path.parent.mkdir(parents=True, exist_ok=True)
 
         @delayed
         def run_building_d(i, upgrade_idx):
+            # Configure logging for this worker process
+            worker_logger = logging.getLogger(__name__)
+            if not any(isinstance(h, logging.FileHandler) for h in worker_logger.handlers):
+                fh = logging.FileHandler(worker_log_path)
+                fh.setLevel(logging.DEBUG)
+                formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                fh.setFormatter(formatter)
+                worker_logger.addHandler(fh)
+                worker_logger.setLevel(logging.DEBUG)
+            
             try:
                 return self.run_building(self.output_dir, self.cfg, args["n_datapoints"], i, upgrade_idx)
-            except Exception:
+            except Exception as e:
+                worker_logger.error(f"Exception in run_building for building {i}, upgrade {upgrade_idx}: {str(e)}")
                 with open(traceback_file_path, "a") as f:
                     txt = get_error_details()
                     txt = "\n" + "#" * 20 + "\n" + f"Traceback for building{i}\n" + txt
                     f.write(txt)
+                    worker_logger.debug(f"Full traceback written to {traceback_file_path}")
                     del txt
                 upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
                 return {"building_id": i, "upgrade": upgrade_id}
 
         # Run the simulations, get the data_point_out.json info from each
         tick = time.time()
-        with Parallel(n_jobs=-1, verbose=9) as parallel:
+        logger.info(f"Starting parallel execution of {len(args['batch'])} simulations")
+        logger.info(f"Worker logs will be written to {worker_log_path}")
+        parallel_jobs = self._workers_per_node(self.cfg) if self._use_ochre(self.cfg) else -1
+        with Parallel(n_jobs=parallel_jobs, verbose=9) as parallel:
             dpouts = parallel(itertools.starmap(run_building_d, args["batch"]))
+        logger.debug(f"Sample outputs: {dpouts[:5]}")
         tick = time.time() - tick
         logger.info("Simulation time: {:.2f} minutes".format(tick / 60.0))
+        logger.info(f"Detailed worker logs available at {worker_log_path}")
 
         # Send pkill to any lingering EnergyPlus processes
         logger.info("Running pkill -9 -f energyplus to force lingering EnergyPlus processes to exit")
@@ -348,17 +404,23 @@ class SlurmBatch(BuildStockBatchBase):
 
         try:
             sim_id, sim_dir = cls.make_sim_dir(i, upgrade_idx, os.path.join(cls.local_output_dir, "simulation_output"))
+            logger.info(f"Starting simulation {sim_id} for building {i}, upgrade {upgrade_idx} in {sim_dir}")
         except SimulationExists as ex:
             sim_dir = ex.sim_dir
+            logger.info(f"Simulation already exists for building {i}, upgrade {upgrade_idx} at {sim_dir}")
         else:
             # Generate the osw for this simulation
+            logger.debug(f"Creating OSW for simulation {sim_id}")
             osw = cls.create_osw(cfg, n_datapoints, sim_id, building_id=i, upgrade_idx=upgrade_idx)
             with open(os.path.join(sim_dir, "in.osw"), "w") as f:
                 json.dump(osw, f, indent=4)
+            logger.debug(f"OSW created for simulation {sim_id}")
 
             # Create a temporary directory for the simulation to use
+            logger.debug(f"Creating temporary directory for simulation {sim_id}")
             with tempfile.TemporaryDirectory(dir=cls.local_scratch, prefix=f"{sim_id}_") as tmpdir:
                 # Build the command to instantiate and configure the apptainer container the simulation is run inside
+                logger.debug(f"Building apptainer command for simulation {sim_id}")
                 local_resources_dir = cls.local_buildstock_dir / "resources"
                 args = [
                     "apptainer",
@@ -410,6 +472,19 @@ class SlurmBatch(BuildStockBatchBase):
                 use_ochre = cfg.get("workflow_generator", {}).get("args", {}).get("use_ochre", False)
                 if get_bool_env_var("MEASURESONLY") or use_ochre:
                     cli_cmd += " --measures_only"
+                if use_ochre:
+                    # The apptainer image has OCHRE pre-installed (editable) at
+                    # /opt/OCHRE/.venv/bin/ochre with its source at /opt/OCHRE-src.
+                    # Bind-mount the host OCHRE repo over /opt/OCHRE-src so live
+                    # source edits are picked up without rebuilding the image.
+                    # Dependencies stay baked into the image.
+                    ochre_host_src = pathlib.Path(cfg["buildstock_directory"]).resolve().parent / "OCHRE"
+                    if not ochre_host_src.is_dir():
+                        raise RuntimeError(
+                            f"OCHRE source not found at {ochre_host_src}; cannot bind-mount "
+                            f"into apptainer container."
+                        )
+                    args.extend(["-B", f"{ochre_host_src}:/opt/OCHRE-src:ro"])
                 runscript.append(cli_cmd)
                 args.extend([str(cls.local_apptainer_img), "bash", "-x"])
                 env_vars = dict(os.environ)
@@ -421,8 +496,10 @@ class SlurmBatch(BuildStockBatchBase):
                 else:
                     subprocess_kw = {}
                 start_time = dt.datetime.now()
+                logger.info(f"Executing OpenStudio in apptainer for simulation {sim_id}")
                 with open(pathlib.Path(sim_dir, "openstudio_output.log"), "w") as f_out:
                     try:
+                        logger.debug(f"Apptainer command for {sim_id}: {' '.join(args[:5])}...")
                         subprocess.run(
                             args,
                             check=True,
@@ -436,8 +513,8 @@ class SlurmBatch(BuildStockBatchBase):
                     except subprocess.TimeoutExpired:
                         end_time = dt.datetime.now()
                         msg = f"Terminated {sim_id} after reaching max time of {max_time_min} minutes"
-                        f_out.write(f"[{end_time.now()} ERROR] {msg}")
-                        logger.warning(msg)
+                        f_out.write(f"[{end_time} ERROR] {msg}")
+                        logger.error(f"TIMEOUT: {msg}")
                         with open(pathlib.Path(sim_dir, "out.osw"), "w") as out_osw:
                             out_msg = {
                                 "started_at": start_time.strftime("%Y%m%dT%H%M%SZ"),
@@ -451,17 +528,19 @@ class SlurmBatch(BuildStockBatchBase):
                         with open(pathlib.Path(sim_dir, "run", "failed.job"), "w") as failed_job:
                             failed_job.write(f"[{end_time.strftime('%H:%M:%S')} ERROR] {msg}")
                         # Wait for EnergyPlus to release file locks and data_point.zip to finish
+                        logger.debug(f"Waiting 60s after timeout for {sim_id} to release file locks")
                         time.sleep(60)
-                    except subprocess.CalledProcessError:
-                        pass
+                    except subprocess.CalledProcessError as e:
+                        logger.error(f"Simulation {sim_id} failed with return code {e.returncode}")
                     finally:
                         # Clean up the symbolic links we created in the container
+                        logger.debug(f"Cleaning up symbolic links for simulation {sim_id}")
                         for mount_dir in dirs_to_mount + [pathlib.Path(sim_dir, "lib")]:
                             try:
                                 pathlib.Path(sim_dir, os.path.basename(mount_dir)).unlink()
                             except FileNotFoundError:
                                 pass
-
+                        logger.debug(f"Cleaning up simulation directory for {sim_id}")
                         # Clean up simulation directory
                         cls.cleanup_sim_dir(
                             sim_dir,
@@ -470,9 +549,12 @@ class SlurmBatch(BuildStockBatchBase):
                             upgrade_id,
                             i,
                         )
+                        logger.debug(f"Cleanup complete for simulation {sim_id}")
 
+        logger.debug(f"Reading simulation outputs for simulation {sim_id}")
         reporting_measures = cls.get_reporting_measures(cfg)
         dpout = postprocessing.read_simulation_outputs(fs, reporting_measures, sim_dir, upgrade_id, i)
+        logger.info(f"Completed simulation {sim_id} for building {i}")
         return dpout
 
     @staticmethod
@@ -511,11 +593,16 @@ class SlurmBatch(BuildStockBatchBase):
             "--time={}".format(cfg[cls.HPC_NAME].get("sampling", {}).get("time", 60)),
             "--account={}".format(cfg[cls.HPC_NAME]["account"]),
             "--nodes=1",
-            "--mem={}".format(cls.DEFAULT_NODE_MEMORY_MB),
+        ]
+
+        if not debug:
+            subargs.append("--mem={}".format(cls.DEFAULT_NODE_MEMORY_MB))
+
+        subargs.extend([
             "--export={}".format(",".join(env.keys())),
             "--output=sampling.out",
             hpc_sh,
-        ]
+        ])
         if debug:
             subargs.insert(-1, "--partition=debug")
         elif hipri:
@@ -546,9 +633,8 @@ class SlurmBatch(BuildStockBatchBase):
             array_spec = "1-{}".format(array_max)
         account = hpc_cfg["account"]
 
-        # Estimate the wall time in minutes
-        minutes_per_sim = hpc_cfg["minutes_per_sim"]
-        walltime = math.ceil(math.ceil(n_sims_per_job / self.CORES_PER_NODE) * minutes_per_sim)
+        # Estimate the wall time in minutes (auto-sized if minutes_per_sim is omitted)
+        walltime = self._estimate_walltime_min(self.cfg, n_sims_per_job, self.project_filename)
 
         # Queue up simulations
         here = os.path.dirname(os.path.abspath(__file__))
@@ -566,13 +652,16 @@ class SlurmBatch(BuildStockBatchBase):
             "--account={}".format(account),
             "--time={}".format(walltime),
             "--partition={}".format(partition),
-            "--mem={}".format(self.DEFAULT_NODE_MEMORY_MB),
+        ]
+        if not debug:
+            args.append("--mem={}".format(self.DEFAULT_NODE_MEMORY_MB))
+        args.extend([
             "--export={}".format(",".join(export_vars)),
             "--array={}".format(array_spec),
             "--output=job.out-%a",
             "--job-name=bstk",
             hpc_sh,
-        ]
+        ])
         if os.environ.get("SLURM_JOB_QOS"):
             args.insert(-1, "--qos={}".format(os.environ.get("SLURM_JOB_QOS")))
         elif hipri:
@@ -666,6 +755,13 @@ class SlurmBatch(BuildStockBatchBase):
             "--nodes={}".format(n_workers),
             hpc_post_sh,
         ]
+        cleaned_args = []
+        if debug:
+            for arg in args:
+                if "--tmp" in arg or "--mem" in arg:
+                    continue
+                cleaned_args.append(arg)
+            args = cleaned_args
 
         if after_jobids:
             args.insert(4, "--dependency=afterany:{}".format(":".join(after_jobids)))
@@ -783,6 +879,19 @@ class KestrelBatch(SlurmBatch):
     DEFAULT_NODE_MEMORY_MB = 246000  # Standard node on Kestrel as of 6/3/2024 HPC email
     DEFAULT_POSTPROCESSING_N_PROCS = 52
     DEFAULT_POSTPROCESSING_N_WORKERS = 2
+
+    # Walltime auto-sizing knobs. minutes_per_sim in the project YAML overrides
+    # DEFAULT_MINUTES_PER_SIM; the housekeeping piece is always added on top.
+    OCHRE_WORKERS_DIVISOR = 3  # workers/node = CORES_PER_NODE // this when use_ochre
+    HOUSEKEEPING_BASE_MIN = 10
+    HOUSEKEEPING_PER_100_SIMS_MIN = 1
+    DEFAULT_MINUTES_PER_SIM = {
+        # (stock, use_ochre): minutes per sim per worker, with margin.
+        # ComStock + use_ochre is not a supported combo (rejected in validation).
+        ("ResStock", False): 1,
+        ("ResStock", True): 8,
+        ("ComStock", False): 30,
+    }
 
     @classmethod
     def validate_output_directory_kestrel(cls, project_file):

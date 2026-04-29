@@ -320,6 +320,7 @@ class BuildStockBatchBase(object):
         assert cls.validate_measure_references(project_file)
         assert cls.validate_postprocessing_spec(project_file)
         assert cls.validate_resstock_or_comstock_version(project_file)
+        assert cls.validate_use_ochre_only_with_resstock(project_file)
         assert cls.validate_openstudio_version(project_file)
         assert cls.validate_number_of_options(project_file)
         logger.info("Base Validation Successful")
@@ -835,6 +836,17 @@ class BuildStockBatchBase(object):
                 )
             )
             return versions
+
+    @staticmethod
+    def validate_use_ochre_only_with_resstock(project_file):
+        cfg = get_project_configuration(project_file)
+        use_ochre = cfg.get("workflow_generator", {}).get("args", {}).get("use_ochre", False)
+        if not use_ochre:
+            return True
+        version_info = BuildStockBatchBase.get_stock_version_info(project_file)
+        if "ComStock" in version_info:
+            raise ValidationError("use_ochre: true is only supported for ResStock; ComStock is not supported.")
+        return True
 
     @staticmethod
     def validate_resstock_or_comstock_version(project_file):
