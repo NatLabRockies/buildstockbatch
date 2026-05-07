@@ -9,6 +9,7 @@ A module containing utility functions for postprocessing
 :copyright: (c) 2018 by The Alliance for Sustainable Energy
 :license: BSD-3
 """
+
 import boto3
 import botocore.exceptions
 import dask.bag as db

@@ -21,5 +21,5 @@ jobs:
     steps:
       - uses: actions/add-to-project@v0.3.0
         with:
-          project-url: https://github.com/orgs/NREL/projects/38
+          project-url: https://github.com/orgs/NatLabRockies/projects/38
           github-token: ${{ secrets.GHB_TOKEN }}
