@@ -4,7 +4,6 @@ from codecs import open
 import os
 import setuptools
 
-
 here = os.path.abspath(os.path.dirname(__file__))
 metadata = {}
 
