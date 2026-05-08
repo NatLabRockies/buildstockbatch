@@ -54,7 +54,7 @@ Development Changelog
         :pullreq: 499
 
 
-        Added eplusout_err column in the results_csv to provide visibility into Energplus warnings and errors. Especially useful
+        Added eplusout_err column in the results_csv to provide visibility into EnergyPlus warnings and errors. Especially useful
         for failed simulations.
 
     .. change::
@@ -69,8 +69,8 @@ Development Changelog
         :pullreq: 501
 
         Introduce a bunch of changes originating from issues in SDR run.
-        1. Indermediate files are not cleaned up after postprocessing. This allows for re-running postprocessing.
-        2. eplusout_err and step_failures are truncted to 100000 chars. eplusout_err is only collected if E+ terminated.
+        1. Intermediate files are not cleaned up after postprocessing. This allows for re-running postprocessing.
+        2. eplusout_err and step_failures are truncated to 100000 chars. eplusout_err is only collected if E+ terminated.
         3. Default for include_annual_emission_end_uses is changed to False.
         4. Default for timeseries_num_decimal_places is changed to 5.
         5. When SimulationOutputReport or ReportSimulationOutput is both missing in data_point_out.json (perhaps due to failure),

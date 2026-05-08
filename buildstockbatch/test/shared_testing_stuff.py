@@ -4,7 +4,6 @@ import os
 import pathlib
 import pytest
 
-
 resstock_directory = pathlib.Path(
     os.environ.get(
         "RESSTOCK_DIR",
