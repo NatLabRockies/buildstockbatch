@@ -1,6 +1,5 @@
 import datetime as dt
 
-
 __title__ = "buildstockbatch"
 __description__ = "Executing BuildStock projects on batch infrastructure."
 __url__ = "http://github.com/NREL/buildstockbatch"

@@ -12,7 +12,6 @@ This object contains the base class for generating OSW files from individual sam
 
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 
