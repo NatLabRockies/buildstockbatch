@@ -28,7 +28,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: fix_apply_measure
       - name: Remove AWS from resstock yaml
         run: |
           cd resstock
