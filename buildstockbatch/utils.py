@@ -147,8 +147,10 @@ def get_bool_env_var(varname):
 
 def get_annual_publishing_functions(stock_type):
     if stock_type == "residential":
-        from resstockpostproc import publish_baseline_annual_results, publish_upgrade_annual_results
+        # from resstockpostproc import publish_baseline_annual_results, publish_upgrade_annual_results
+        from resstockpostproc import process_simulation_outputs
 
-        return publish_baseline_annual_results, publish_upgrade_annual_results
+        # return publish_baseline_annual_results, publish_upgrade_annual_results
+        return process_simulation_outputs
     else:
         raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
