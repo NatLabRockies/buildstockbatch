@@ -892,6 +892,14 @@ class KestrelBatch(SlurmBatch):
         ("ResStock", True): 8,
         ("ComStock", False): 30,
     }
+    # Example Calulation for n_datapoints = 10K, njobs=20, use_ochre=True
+    # sims_per_job = 10000 / 20 = 500
+    # workers_per_node = 104 // 3 = 34
+    # sim_per_worker = ceil(500 / 34) = 15
+    # walltime = housekeeping_base + housekeeping_per_100_sims * sims_per_job / 100
+    #            +  (minutes_per_sim) * sims_per_worker
+    # walltime = 10 + 1 * 500 / 100 + (8) * 15
+    # walltime = 10 + 5 + 120 = 135 minutes
 
     @classmethod
     def validate_output_directory_kestrel(cls, project_file):

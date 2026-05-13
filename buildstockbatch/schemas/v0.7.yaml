@@ -1,4 +1,4 @@
-schema_version: enum('0.4')
+schema_version: enum('0.7')
 buildstock_directory: str()
 project_directory: str(required=True)
 weather_files_path: str(required=False)
@@ -6,7 +6,6 @@ weather_files_url: str(required=False)
 sampler: include('sampler-spec', required=True)
 workflow_generator: include('workflow-generator-spec', required=True)
 kestrel: include('hpc-spec', required=False)
-eagle: include('hpc-spec', required=False)
 gcp: include('gcp-spec', required=False)
 aws: include('aws-spec', required=False)
 output_directory: regex('^(.*\/)?[a-z][a-z0-9_]*\/?$', required=True)
@@ -81,7 +80,7 @@ aws-dask-spec:
 
 hpc-spec:
   account: str(required=True)
-  minutes_per_sim: num(min=0.05, max=480, required=True)
+  minutes_per_sim: num(min=0.05, max=480, required=False)
   n_jobs: int(required=False)
   postprocessing: include('hpc-postprocessing-spec', required=False)
   sampling: include('sampling-spec', required=False)
@@ -153,6 +152,7 @@ postprocessing-spec:
   partition_columns: list(str(), required=False)
   aws: include('aws-postprocessing-spec', required=False)
   keep_individual_timeseries: bool(required=False)
+  publish_annual_results: bool(required=False)  # Polish the results further for publication
 
 aws-postprocessing-spec:
   region_name: str(required=False)
@@ -166,4 +166,4 @@ s3-aws-postprocessing-spec:
 athena-aws-postprocessing-spec:
   glue_service_role: str(required=False)
   database_name: regex('^[a-z][a-z0-9_]*$', required=True)
-  max_crawling_time: num(requried=False)
+  max_crawling_time: num(required=False)
