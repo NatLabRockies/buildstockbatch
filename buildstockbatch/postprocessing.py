@@ -16,7 +16,6 @@ import dask.bag as db
 from dask.distributed import performance_report
 import dask
 import dask.dataframe as dd
-from dask.dataframe.io.parquet import create_metadata_file
 from functools import partial
 import gzip
 import json
@@ -32,8 +31,6 @@ import re
 import tempfile
 import time
 import sys
-from buildstockbatch.utils import get_annual_publishing_functions
-import polars as pl
 
 logger = logging.getLogger(__name__)
 
@@ -400,26 +397,23 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     :type cfg: dict
     :param do_timeseries: process timeseries results, defaults to True
     :type do_timeseries: bool, optional
+
+    When cfg['postprocessing']['publish_annual_results'] is True (ResStock only),
+    the function will call export_metadata_and_annual_results after processing
+    to generate published results with geographic partitioning.
+    Output directories created:
+    - metadata_and_annual_results/national/ and metadata_and_annual_results/by_state/
+    - cached_simulation_outputs/
+    Note: Requires Python 3.12+ and resstockpostproc package installed.
     """
     sim_output_dir = f"{results_dir}/simulation_output"
     ts_in_dir = f"{sim_output_dir}/timeseries"
     results_csvs_dir = f"{results_dir}/results_csvs"
-    results_csvs_pub_dir = None
-    parquet_pub_dir = None
-    publish_baseline, publish_upgrade = None, None  # metadata transform
     parquet_dir = f"{results_dir}/parquet"
     ts_dir = f"{results_dir}/parquet/timeseries"
     dirs = [results_csvs_dir, parquet_dir]
     if do_timeseries:
         dirs.append(ts_dir)
-
-    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
-        results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
-        parquet_pub_dir = f"{parquet_dir}/pub_annual"
-        dirs.append(results_csvs_pub_dir)
-        dirs.append(parquet_pub_dir)
-        stock_type = cfg.get("stock_type", "residential")
-        publish_baseline, publish_upgrade = get_annual_publishing_functions(stock_type)
 
     # create the postprocessing results directories
     for dr in dirs:
@@ -508,7 +502,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         logger.info(f"The timeseries files will be partitioned by {partition_columns}.")
 
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
-    base_df_lazy = None
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = dask.compute(results_df_groups.get_group(upgrade_id))[0]
@@ -538,27 +531,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info(f"The types for {unresolved} columns couldn't be determined.")
                 else:
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
-        if (publish_baseline is not None) and (publish_upgrade is not None):
-            if upgrade_id == 0:
-                pub_df_lazy: pl.LazyFrame = publish_baseline(pl.from_pandas(df, include_index=True).lazy())
-                base_df_lazy = pub_df_lazy
-            else:
-                pub_df_lazy = publish_upgrade(
-                    failed_bldgs, base_df_lazy, pl.from_pandas(df, include_index=True).lazy(), upgrade_num=upgrade_id
-                )
-
-            pub_df = pub_df_lazy.collect()
-            csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
-            logger.info(f"Writing {csv_filename}")
-            with fs.open(csv_filename, "wb") as f:
-                with gzip.open(f, "wb") as gf:  # Use wb here because polars writes in binary mode to file
-                    pub_df.write_csv(file=gf, line_terminator="\n")
-
-            dir = f"{parquet_pub_dir}/upgrade={upgrade_id}"
-            fs.makedirs(dir)
-            parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
-            logger.info(f"Writing {parquet_filename}")
-            pub_df.write_parquet(parquet_filename)
 
         # Write CSV
         csv_filename = f"{results_csvs_dir}/results_up{upgrade_id:02d}.csv.gz"
@@ -650,7 +622,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                                 partition_vals_list,
                             )
                         )
-                    except:
+                    except Exception:
                         logger.warning("Exception `dask.compute(map(concat_partial, ...` exception", exc_info=True)
                         sys.exit(1)
                 if tmpfilepath.exists():
@@ -664,6 +636,40 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     if do_timeseries:
         logger.info("Writing timeseries metadata files")
         write_metadata_files(fs, ts_dir, partition_columns)
+
+    # New ResStock postprocessing: generate published annual results with geographic partitioning
+    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+        stock_type = cfg.get("stock_type", "residential")
+        if stock_type != "residential":
+            logger.warning(
+                f"publish_annual_results is only supported for stock_type='residential', "
+                f"but got stock_type='{stock_type}'. Skipping published results generation."
+            )
+        else:
+            try:
+                from resstockpostproc.process_bsb_results import export_metadata_and_annual_results
+
+                logger.info("Starting ResStock postprocessing to generate published annual results...")
+                # Call the new postprocessing function which will:
+                # 1. Read the parquet files we just wrote
+                # 2. Transform them (income mapping, county/PUMA data, savings calculations, etc.)
+                # 3. Write to: metadata_and_annual_results/ and cached_simulation_outputs/
+                export_metadata_and_annual_results(
+                    raw_results_dir=parquet_dir,
+                    output_dir=results_dir,
+                    aws_profile_name=None  # Rely on environment for AWS credentials
+                )
+                logger.info("ResStock postprocessing completed successfully.")
+            except ImportError:
+                logger.error(
+                    "Failed to import resstockpostproc package. "
+                    "To use publish_annual_results, please install resstockpostproc: "
+                    "pip install resstockpostproc"
+                )
+                raise
+            except Exception as e:
+                logger.error(f"Error during ResStock postprocessing: {e}", exc_info=True)
+                raise
 
 
 def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False):

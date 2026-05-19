@@ -41,13 +41,21 @@ Development Changelog
 
 
     .. change::
-        :tags: postprocessing, feature
+        :tags: postprocessing, feature, breaking
         :pullreq: 492
 
 
-        Added support for publishing annual results in the postprocessing step. When enabled via the ``publish_annual_results``
-        configuration option, the system will generate additional processed results in both CSV and Parquet formats.
-        For resstock projects, this functionality leverages the ``resstockpostproc`` module's publishing functions.
+        **Updated** and **Breaking Change**: Refactored the ``publish_annual_results`` postprocessing feature to use the new
+        ``export_metadata_and_annual_results`` function from ``resstockpostproc.process_bsb_results``. The new implementation:
+        
+        - Generates comprehensive processed results with geographic partitioning (national and by_state)
+        - Creates new output structure: ``metadata_and_annual_results/`` and ``cached_simulation_outputs/``
+        - Requires Python 3.12+ (BuildStockBatch now requires Python 3.12 globally)
+        - Requires ``resstockpostproc`` package (install with ``pip install buildstockbatch[resstock]``)
+        - **Breaking**: No longer creates ``results_csvs_pub`` and ``pub_annual`` directories
+        
+        The old inline publishing functions (``publish_baseline_annual_results`` and ``publish_upgrade_annual_results``) 
+        are no longer used. The new approach runs as a separate postprocessing stage after the main combine_results loop.
 
     .. change::
         :tags: postprocessing, feature

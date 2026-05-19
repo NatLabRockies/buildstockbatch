@@ -70,7 +70,7 @@ For Windows, the process is similar.
 BuildStockBatch Python Library
 ..............................
 
-Install Python 3.8 or greater for your platform.
+Install Python 3.12 for your platform. BuildStockBatch requires Python 3.12 or greater.
 
 Get a copy of BuildStockBatch either by downloading the zip file from GitHub or
 `cloning the repository <https://github.com/NREL/buildstockbatch>`_.
@@ -78,7 +78,7 @@ Get a copy of BuildStockBatch either by downloading the zip file from GitHub or
 Optional, but highly recommended, is to create a new `python virtual
 environment`_ if you're using python from python.org, or to create a new `conda
 environment`_ if you're using conda. Make sure you configure your virtual
-environment to use Python 3.8 or greater. Then activate your environment.
+environment to use Python 3.12 or greater. Then activate your environment.
 
 .. _python virtual environment: https://docs.python.org/3/library/venv.html
 .. _conda environment: https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html

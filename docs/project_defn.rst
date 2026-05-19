@@ -389,9 +389,17 @@ The configuration options for postprocessing and AWS upload are:
       for moderate or large sized runs (ndatapoints > 10K)
 
     * ``publish_annual_results``: (optional, bool) When set to ``true``, additional processed annual results will be generated
-      in both CSV and Parquet formats. For residential projects, this functionality uses the ``resstockpostproc`` module's
-      publishing functions to transform the data. The processed results are stored in a ``results_csvs_pub`` directory and
-      a ``pub_annual`` subdirectory within the parquet directory. Default is ``false``.
+      in both CSV and Parquet formats with geographic partitioning. For residential projects, this functionality uses the 
+      ``resstockpostproc`` module's ``export_metadata_and_annual_results`` function to transform the data with comprehensive 
+      processing including income mapping, county/PUMA data, savings calculations, and more. The processed results are stored in:
+      
+      - ``metadata_and_annual_results/national/`` (national-level results)
+      - ``metadata_and_annual_results/by_state/`` (state-partitioned results)
+      - ``cached_simulation_outputs/`` (intermediate cached results)
+      
+      **Requirements**: Python 3.12+ and ``resstockpostproc`` package installed. Install with: ``pip install buildstockbatch[resstock]``
+      
+      Default is ``false``.
 
     * ``aws``: (optional) configuration related to uploading to and managing
       data in amazon web services. For this to work, please `configure aws`_.

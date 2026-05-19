@@ -43,4 +43,16 @@ A new flag ``low-disk`` has been added to ``buildstock_local`` to delete unused 
 Schema Updates
 ==============
 
-Added the ``publish_annual_results`` configuration option to the postprocessing section in project yaml. When set to ``true``, additional processed annual results will be generated in both CSV and Parquet formats. This functionality, which only works for ResStock, leverages the ``resstockpostproc`` module's publishing functions. The processed results are stored in a ``results_csvs_pub`` directory and a ``pub_annual`` subdirectory within the parquet directory. Default is ``false``.
+**Updated Implementation for ``publish_annual_results``**: The ``publish_annual_results`` configuration option in the postprocessing 
+section has been updated to use the new ``export_metadata_and_annual_results`` function from ``resstockpostproc``. When set to ``true``, 
+comprehensive processed annual results with geographic partitioning will be generated. The new output structure includes:
+
+- ``metadata_and_annual_results/national/`` and ``metadata_and_annual_results/by_state/`` (final published results)
+- ``cached_simulation_outputs/`` (intermediate cached data)
+
+**Requirements**: Python 3.12+ and ``resstockpostproc`` package must be installed (``pip install buildstockbatch[resstock]``).
+
+**Breaking Change**: The old output directories (``results_csvs_pub`` and ``pub_annual``) are no longer created. 
+If you were using these paths, update your workflows to use the new ``metadata_and_annual_results`` directory structure.
+
+**Python Version Requirement**: BuildStockBatch now requires Python 3.12 or greater (previously 3.11+).

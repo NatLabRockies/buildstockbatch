@@ -27,6 +27,10 @@ aws_requires = [
     "dask-cloudprovider[aws]>=2024.9.0",
 ]
 
+resstock_postprocessing_requires = [
+    "resstockpostproc",
+]
+
 
 setuptools.setup(
     name=metadata["__title__"],
@@ -38,7 +42,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=metadata["__url__"],
     packages=setuptools.find_packages(),
-    python_requires=">=3.11, <3.13",
+    python_requires=">=3.12, <3.13",
     package_data={
         "buildstockbatch": ["*.sh", "schemas/*.yaml", "workflow_generator/residential/**/*.yml"],
         "": ["LICENSE"],
@@ -85,6 +89,7 @@ setuptools.setup(
         + aws_requires,
         "gcp": gcp_requires,
         "aws": aws_requires,
+        "resstock": resstock_postprocessing_requires,
     },
     entry_points={
         "console_scripts": [
@@ -101,7 +106,6 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
     ],
 )

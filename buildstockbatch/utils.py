@@ -146,9 +146,16 @@ def get_bool_env_var(varname):
 
 
 def get_annual_publishing_functions(stock_type):
-    if stock_type == "residential":
-        from resstockpostproc import publish_baseline_annual_results, publish_upgrade_annual_results
-
-        return publish_baseline_annual_results, publish_upgrade_annual_results
-    else:
-        raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
+    """
+    Deprecated: This function is no longer used.
+    
+    The old publishing approach using publish_baseline_annual_results and 
+    publish_upgrade_annual_results has been replaced with 
+    export_metadata_and_annual_results from resstockpostproc.process_bsb_results.
+    
+    See postprocessing.combine_results for the new implementation.
+    """
+    raise DeprecationWarning(
+        "get_annual_publishing_functions is deprecated. "
+        "Use export_metadata_and_annual_results from resstockpostproc.process_bsb_results instead."
+    )

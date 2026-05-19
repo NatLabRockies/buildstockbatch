@@ -115,7 +115,7 @@ def test_upgrade_missing_ts(basic_residential_project_file, mocker, caplog):
 
 
 def test_publish_annual_results(basic_residential_project_file, mocker):
-    """Test that when publish_annual_results is True, the expected folders and files are created."""
+    """Test that when publish_annual_results is True, export_metadata_and_annual_results is called."""
     # Create project with schema v0.6 and publish_annual_results set to True
     project_filename, results_dir = basic_residential_project_file(
         {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
@@ -126,58 +126,34 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
     mocker.patch.object(BuildStockBatchBase, "get_dask_client")
     mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
 
-    # Create a simple mock module and add it to sys.modules
-    class MockResstockpostproc:
-        @staticmethod
-        def publish_baseline_annual_results(base):
-            # Simply rename columns with pub_ prefix
-            cols = base.collect_schema().names()
-            rename_map = {col: f"pub_{col}" for col in cols}
-            return base.rename(rename_map)
+    # Mock the new export_metadata_and_annual_results function
+    mock_export_func = mocker.MagicMock()
+    mocker.patch(
+        "buildstockbatch.postprocessing.export_metadata_and_annual_results",
+        mock_export_func
+    )
 
-        @staticmethod
-        def publish_upgrade_annual_results(failed_bldgs, base, upgrade, upgrade_num):
-            # Simply rename columns with pub_ prefix
-            cols = upgrade.collect_schema().names()
-            rename_map = {col: f"pub_{col}" for col in cols}
-            return upgrade.rename(rename_map)
+    # Create and run the BuildStockBatchBase instance
+    bsb = BuildStockBatchBase(project_filename)
+    bsb.process_results()
 
-    # Add the mock module to sys.modules
-    original_resstockpostproc = sys.modules.get("resstockpostproc")
-    sys.modules["resstockpostproc"] = MockResstockpostproc
-    try:
-        # Create and run the BuildStockBatchBase instance
-        bsb = BuildStockBatchBase(project_filename)
-        bsb.process_results()
-
-        # Check that the expected directories and files exist
-        results_path = pathlib.Path(results_dir)
-    finally:
-        # Restore the original state of sys.modules
-        if original_resstockpostproc is not None:
-            sys.modules["resstockpostproc"] = original_resstockpostproc
-        else:
-            del sys.modules["resstockpostproc"]
-    # Check for results_csvs_pub folder with CSV files
-    results_csvs_pub_path = results_path / "results_csvs_pub"
-    assert results_csvs_pub_path.exists(), "results_csvs_pub folder should exist"
-    assert len(list(results_csvs_pub_path.glob("*.csv.gz"))) > 0, "results_csvs_pub should contain CSV files"
-
-    # Check for pub_annual folder inside parquet_dir with files
+    # Verify that export_metadata_and_annual_results was called
+    mock_export_func.assert_called_once()
+    
+    # Verify the arguments passed to the function
+    call_args = mock_export_func.call_args
+    assert call_args is not None, "export_metadata_and_annual_results should have been called"
+    
+    # Check that raw_results_dir points to the parquet directory
+    results_path = pathlib.Path(results_dir)
     parquet_dir = results_path / "parquet"
-    pub_annual_path = parquet_dir / "pub_annual"
-    assert pub_annual_path.exists(), "pub_annual folder should exist inside parquet_dir"
-    assert len(list(pub_annual_path.rglob("*.parquet"))) > 0, "pub_annual should contain parquet files"
-
-    # Verify the structure - there should be upgrade=X folders inside pub_annual
-    upgrade_folders = list(pub_annual_path.glob("upgrade=*"))
-    assert len(upgrade_folders) > 0, "pub_annual should contain upgrade folders"
-
-    # Check each upgrade folder has the expected parquet files
-    for upgrade_folder in upgrade_folders:
-        upgrade_id = int(upgrade_folder.name.split("=")[1])
-        expected_file = upgrade_folder / f"results_up{upgrade_id:02d}.parquet"
-        assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"
+    assert call_args[1]["raw_results_dir"] == str(parquet_dir) or call_args[0][0] == str(parquet_dir)
+    
+    # Check that output_dir is the results_dir
+    assert call_args[1].get("output_dir") == str(results_dir) or call_args[0][1] == str(results_dir)
+    
+    # Check that aws_profile_name is None (relies on environment)
+    assert call_args[1].get("aws_profile_name") is None or call_args[0][2] is None
 
 
 @pytest.mark.parametrize(
