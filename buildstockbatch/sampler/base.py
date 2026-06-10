@@ -85,7 +85,7 @@ class BuildStockSampler(object):
             return self._run_sampling_apptainer()
         else:
             assert self.container_runtime == ContainerRuntime.LOCAL_OPENSTUDIO
-            return self._run_sampling_local_openstudio()
+            return self._run_sampling_local()
 
     def _run_sampling_docker(self):
         """
@@ -103,9 +103,9 @@ class BuildStockSampler(object):
         """
         raise NotImplementedError
 
-    def _run_sampling_local_openstudio(self):
+    def _run_sampling_local(self):
         """
-        Execute the sampling on the local openstudio instance
+        Execute the sampling on the local instance
 
         Replace this in a subclass as necessary
         """
