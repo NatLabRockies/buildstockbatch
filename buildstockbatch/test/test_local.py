@@ -38,11 +38,14 @@ def test_resstock_local_batch(project_filename):
         n_upgrades = 2
 
     # Modify the number of datapoints so we're not here all day.
-    if batch.cfg["sampler"]["type"] in ["residential_quota", "residential_stratified"]:
+    if batch.cfg["sampler"]["type"] == "residential_quota":
         if n_upgrades == 0:
             n_datapoints = 4
         else:
             n_datapoints = 2
+        batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
+    elif batch.cfg["sampler"]["type"] == "residential_stratified":
+        n_datapoints = 8  # if less than 8, it seems to sample 0 due to "rounding"
         batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
     else:
         sample_file = batch.cfg["sampler"]["args"]["sample_file"]
