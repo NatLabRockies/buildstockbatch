@@ -114,6 +114,12 @@ class LocalBatch(BuildStockBatchBase):
             (resources_path / "hpxml-measures").symlink_to(hpxml_measures_path, target_is_directory=True)
         else:
             resources_path = None
+        # samplers_path = buildstock_path / "samplers"
+        # if samplers_path.exists():
+        # sampler_path = sim_path / "samplers"
+        # (sampler_path).symlink_to(samplers_path, target_is_directory=True)
+        # else:
+        # sampler_path = None
         custom_gems_path = buildstock_path / ".custom_gems"
         if custom_gems_path.exists():
             gems_path = sim_path / ".custom_gems"
@@ -205,6 +211,8 @@ class LocalBatch(BuildStockBatchBase):
                 if resources_path:
                     (resources_path / "hpxml-measures").unlink()
                     resources_path.rmdir()
+                # if sampler_path:
+                # sampler_path.unlink()
                 if gems_path:
                     gems_path.unlink()
 
