@@ -88,7 +88,7 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         filename = pathlib.Path(folderpath) / "sampler_config.yaml"
         with open(filename, "w") as file:
             yaml.dump(data, file)
-        return filename
+        return str(filename)
 
     def _run_sampling_docker(self):
         docker_client = docker.DockerClient.from_env()
