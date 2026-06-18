@@ -3,7 +3,7 @@ buildstockbatch.sampler.residential_stratified
 ~~~~~~~~~~~~~~~
 This object contains the code required for generating the set of simulations to execute
 
-:author: Noel Merket, Ry Horsey
+:author: Joe Robertson
 :copyright: (c) 2020 by The Alliance for Sustainable Energy
 :license: BSD-3
 """
@@ -101,10 +101,13 @@ class ResidentialStratifiedSampler(BuildStockSampler):
             [
                 "python",
                 "samplers/stratified/sampler/run_sampler.py",
+                "sample",
                 "-p",
                 self.cfg["project_directory"],
                 "-n",
                 str(self.n_datapoints),
+                "-c",
+                self.sampler_config,
                 "-o",
                 "buildstock.csv",
             ],
@@ -124,30 +127,31 @@ class ResidentialStratifiedSampler(BuildStockSampler):
             os.path.join(self.buildstock_dir, "resources", "buildstock.csv"),
             destination_filename,
         )
+        config_filename = pathlib.Path(self.sampler_config)
+        if config_filename.exists():
+            os.remove(config_filename)
         return destination_filename
 
     def _run_sampling_apptainer(self):
         args = [
-            "apptainer",
-            "exec",
-            "--contain",
-            "--home",
-            "{}:/buildstock".format(self.buildstock_dir),
-            "--bind",
-            "{}:/outbind".format(os.path.dirname(self.csv_path)),
-            self.parent().apptainer_image,
             "python",
             "samplers/stratified/sampler/run_sampler.py",
+            "sample",
             "-p",
             self.cfg["project_directory"],
             "-n",
             str(self.n_datapoints),
+            "-c",
+            self.sampler_config,
             "-o",
-            "../../outbind/{}".format(os.path.basename(self.csv_path)),
+            self.csv_path,
         ]
-        logger.debug(f"Starting apptainer sampling with command: {' '.join(args)}")
-        subprocess.run(args, check=True, env=os.environ, cwd=self.parent().output_dir)
-        logger.debug("Apptainer sampling completed.")
+        logger.debug(f"Starting sampling with command: {' '.join(args)}")
+        subprocess.run(args, check=True, cwd=self.buildstock_dir)
+        logger.debug("Sampling completed.")
+        config_filename = pathlib.Path(self.sampler_config)
+        if config_filename.exists():
+            os.remove(config_filename)
         return self.csv_path
 
     def _run_sampling_local(self):
