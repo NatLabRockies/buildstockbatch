@@ -127,8 +127,8 @@ def test_residential_stratified_run_sampling_apptainer():
 
         subprocess_mock.run.assert_called_once()
         args = subprocess_mock.run.call_args[0][0]
-        assert args[0] == "apptainer"
-        assert "exec" in args
+        assert args[0] == "python"
+        assert "exec" not in args
         assert "python" in args
         assert any("run_sampler.py" in arg for arg in args)
         assert "-n" in args
