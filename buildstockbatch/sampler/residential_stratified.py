@@ -46,6 +46,12 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         :type parent: BuildStockBatchBase (or subclass)
         :param n_datapoints: number of datapoints to sample
         :type n_datapoints: int
+        :param segment_vars: parameter for sampling written to sampler_config.yaml
+        :type segment_vars: list[str]
+        :param segment_selection_sample_size: parameter for sampling written to sampler_config.yaml
+        :type segment_selection_sample_size: int
+        :param num_samples_per_segment: parameter for sampling written to sampler_config.yaml
+        :type num_samples_per_segment: int
         """
         super().__init__(parent)
         self.validate_args(self.parent().project_filename, n_datapoints=n_datapoints)
