@@ -385,9 +385,9 @@ def test_missing_arg_warning():
 
     del cfg["workflow_generator"]["args"]["build_existing_model"]["new_key1"]
     osw_gen = ResidentialHpxmlWorkflowGenerator(cfg, n_datapoints)
-    with LogCapture(level=logging.INFO) as log:
+    with LogCapture(level=logging.DEBUG) as log:
         measure_args = osw_gen.create_osw("bldb1up1", 13, None)
-        assert len(log.records) == 0
+        assert len(log.records) == 1
 
 
 def test_hpmxl_schema_defaults_and_mapping():
