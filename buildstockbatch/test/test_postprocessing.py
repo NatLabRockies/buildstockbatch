@@ -129,22 +129,27 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
     # Create a simple mock module and add it to sys.modules
     class MockResstockpostproc:
         @staticmethod
-        def publish_baseline_annual_results(base):
-            # Simply rename columns with pub_ prefix
-            cols = base.collect_schema().names()
-            rename_map = {col: f"pub_{col}" for col in cols}
-            return base.rename(rename_map)
-
-        @staticmethod
-        def publish_upgrade_annual_results(failed_bldgs, base, upgrade, upgrade_num):
+        def process_simulation_outputs(
+            failed_bldgs, base, base_proc_df, upgrade, upgrade_num, upgrade_renamer, upgrade_col_schema
+        ):
             # Simply rename columns with pub_ prefix
             cols = upgrade.collect_schema().names()
             rename_map = {col: f"pub_{col}" for col in cols}
             return upgrade.rename(rename_map)
 
+        @staticmethod
+        def get_upgrade_rename_dict(raw_results_dir):
+            pass
+
+        @staticmethod
+        def setup_fsspec_filesystem(output_dir, aws_profile_name):
+            pass
+
     # Add the mock module to sys.modules
     original_resstockpostproc = sys.modules.get("resstockpostproc")
     sys.modules["resstockpostproc"] = MockResstockpostproc
+    sys.modules["resstockpostproc.process_metadata"] = MockResstockpostproc
+    sys.modules["resstockpostproc.utils"] = MockResstockpostproc
     try:
         # Create and run the BuildStockBatchBase instance
         bsb = BuildStockBatchBase(project_filename)
