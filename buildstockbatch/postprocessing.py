@@ -34,17 +34,6 @@ import sys
 from buildstockbatch.utils import get_annual_publishing_functions
 import polars as pl
 
-try:
-    from resstockpostproc.process_metadata import (
-        get_upgrade_rename_dict,
-        get_schema_superset,
-    )
-    from resstockpostproc.utils import setup_fsspec_filesystem
-except ImportError:
-    # resstockpostproc may not be available in all environments
-    get_upgrade_rename_dict = None
-    get_schema_superset = None
-    setup_fsspec_filesystem = None
 
 logger = logging.getLogger(__name__)
 
@@ -424,13 +413,17 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         dirs.append(ts_dir)
 
     process_simulation_outputs = None
+    get_upgrade_rename_dict = None
+    setup_fsspec_filesystem = None
     if cfg.get("postprocessing", {}).get("publish_annual_results", False):
         results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
         parquet_pub_dir = f"{parquet_dir}/pub_annual"
         dirs.append(results_csvs_pub_dir)
         dirs.append(parquet_pub_dir)
         stock_type = cfg.get("stock_type", "residential")
-        process_simulation_outputs = get_annual_publishing_functions(stock_type)
+        process_simulation_outputs, get_upgrade_rename_dict, setup_fsspec_filesystem = get_annual_publishing_functions(
+            stock_type
+        )
 
     # create the postprocessing results directories
     for dr in dirs:
@@ -528,7 +521,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
 
     # If process_simulation_outputs is not None we are in resstock and using resstockpostproc to process
     if process_simulation_outputs is not None:
-        if get_upgrade_rename_dict is None or get_schema_superset is None or setup_fsspec_filesystem is None:
+        if get_upgrade_rename_dict is None or setup_fsspec_filesystem is None:
             raise ImportError(
                 "resstockpostproc functions are required for publish_annual_results but could not be imported"
             )
