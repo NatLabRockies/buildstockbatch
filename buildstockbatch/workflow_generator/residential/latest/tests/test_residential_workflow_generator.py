@@ -375,6 +375,7 @@ def test_missing_arg_warning():
 
     with LogCapture(level=logging.INFO) as log:
         measure_args = osw_gen.create_osw("bldb1up1", 13, None)
+        print(log.records)
         assert len(log.records) == 2
         all_msg = "\n".join([record.msg for record in log.records])
         assert "'new_key1' not found in 'BuildExistingModel'" in all_msg
