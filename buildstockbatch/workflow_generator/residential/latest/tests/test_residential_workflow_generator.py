@@ -373,11 +373,11 @@ def test_missing_arg_warning():
     osw_gen = ResidentialHpxmlWorkflowGenerator(cfg, n_datapoints)
     osw_gen.default_args["BuildExistingModel"]["new_key2"] = "test_value"
 
-    with LogCapture(level=logging.INFO) as log:
+    with LogCapture(level=logging.DEBUG) as log:
         measure_args = osw_gen.create_osw("bldb1up1", 13, None)
-        print(log.records)
-        assert len(log.records) == 2
+        assert len(log.records) == 3
         all_msg = "\n".join([record.msg for record in log.records])
+        assert "Generating OSW, sim_id=bldb1up1" in all_msg
         assert "'new_key1' not found in 'BuildExistingModel'" in all_msg
         assert "'new_key2' not found in 'BuildExistingModel'" in all_msg
     assert "new_key1" not in measure_args
