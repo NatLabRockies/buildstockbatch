@@ -151,6 +151,7 @@ def get_annual_publishing_functions(stock_type):
         from resstockpostproc.process_metadata import get_upgrade_rename_dict
         from resstockpostproc.utils import setup_fsspec_filesystem
 
+        # If process_simulation_outputs is not None, we need get_upgrade_rename_dict and setup_fsspec_filesystem
         return process_simulation_outputs, get_upgrade_rename_dict, setup_fsspec_filesystem
     else:
         raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
