@@ -147,6 +147,8 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
 
     # Add the mock module to sys.modules
     original_resstockpostproc = sys.modules.get("resstockpostproc")
+    original_resstockpostproc_process_metadata = sys.modules.get("resstockpostproc")
+    original_resstockpostproc_utils = sys.modules.get("resstockpostproc")
     sys.modules["resstockpostproc"] = MockResstockpostproc
     sys.modules["resstockpostproc.process_metadata"] = MockResstockpostproc
     sys.modules["resstockpostproc.utils"] = MockResstockpostproc
@@ -163,6 +165,14 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
             sys.modules["resstockpostproc"] = original_resstockpostproc
         else:
             del sys.modules["resstockpostproc"]
+        if original_resstockpostproc_process_metadata is not None:
+            sys.modules["resstockpostproc.process_metadata"] = original_resstockpostproc_process_metadata
+        else:
+            del sys.modules["resstockpostproc.process_metadata"]
+        if original_resstockpostproc_utils is not None:
+            sys.modules["resstockpostproc.utils"] = original_resstockpostproc_utils
+        else:
+            del sys.modules["resstockpostproc.utils"]
     # Check for results_csvs_pub folder with CSV files
     results_csvs_pub_path = results_path / "results_csvs_pub"
     assert results_csvs_pub_path.exists(), "results_csvs_pub folder should exist"
