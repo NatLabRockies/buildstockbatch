@@ -28,7 +28,7 @@ jobs:
         with:
           repository: NatLabRockies/resstock
           path: resstock
-          ref: fix-ci
+          ref: develop
       - name: Remove AWS from resstock yaml
         run: |
           cd resstock
@@ -104,7 +104,7 @@ jobs:
         with:
           repository: NatLabRockies/resstock
           path: resstock
-          ref: fix-ci
+          ref: develop
       - uses: actions/setup-python@v6
         with:
           python-version: 3.12
