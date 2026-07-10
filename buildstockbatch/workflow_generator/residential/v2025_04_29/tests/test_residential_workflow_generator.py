@@ -1,6 +1,8 @@
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml import ResidentialHpxmlWorkflowGenerator
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml_defaults import DEFAULT_MEASURE_ARGS
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml_arg_mapping import ARG_MAP
+from buildstockbatch.workflow_generator.residential.v2025_04_29.residential_hpxml import (
+    ResidentialHpxmlWorkflowGenerator,
+)
+from buildstockbatch.workflow_generator.residential.v2025_04_29.residential_hpxml_defaults import DEFAULT_MEASURE_ARGS
+from buildstockbatch.workflow_generator.residential.v2025_04_29.residential_hpxml_arg_mapping import ARG_MAP
 from testfixtures import LogCapture
 import os
 import yamale
@@ -435,7 +437,6 @@ def test_hpmxl_schema_defaults_and_mapping():
     assert_valid_keys("ReportSimulationOutput", "simulation_output_report")
     assert_valid_keys("ReportUtilityBills", None)
     assert_valid_keys("ServerDirectoryCleanup", "server_directory_cleanup")
-    assert_valid_keys("OCHRE", None)
 
 
 def test_block_compression_and_argmap():
@@ -502,172 +503,3 @@ def test_block_compression_and_argmap():
 
     # Only key4 should be remaining since the other three is already mapped to measure
     assert test_wf_arg["block1"] == {"key4": "v4"}
-
-
-@pytest.mark.parametrize("upgrade_idx", [None, 0])
-@pytest.mark.parametrize("include_measures", [True, False])
-def test_residential_hpxml_ochre(upgrade_idx, include_measures):
-    """
-    Test that OCHRE workflow generates correct simplified OSW.
-    OCHRE workflow should be: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE
-    """
-    cfg = {
-        "buildstock_directory": resstock_directory,
-        "project_directory": "project_testing",
-        "baseline": {"n_buildings_represented": 100},
-        "workflow_generator": {
-            "type": "residential_hpxml",
-            "args": {
-                "debug": True,
-                "use_ochre": True,
-                "ochre": {
-                    "ochre_cli": str(resstock_directory / "ochre_cli"),
-                },
-            },
-        },
-    }
-
-    if include_measures:
-        cfg["workflow_generator"]["args"]["measures"] = [
-            {
-                "measure_dir_name": "TestMeasure1",
-                "arguments": {"TestMeasure1_arg1": 1, "TestMeasure1_arg2": 2},
-            },
-            {"measure_dir_name": "TestMeasure2"},
-        ]
-
-    if upgrade_idx is not None:
-        cfg["upgrades"] = [
-            {
-                "upgrade_name": "Upgrade 1",
-                "options": [
-                    {
-                        "option": "Parameter|Option",
-                    }
-                ],
-            }
-        ]
-
-    n_datapoints = 10
-    osw_gen = ResidentialHpxmlWorkflowGenerator(cfg, n_datapoints)
-    osw = osw_gen.create_osw("bldb1up1", 13, upgrade_idx)
-
-    # Collect all measure names in order
-    measure_names = [step["measure_dir_name"] for step in osw["steps"]]
-
-    # Verify BuildExistingModel is first
-    assert measure_names[0] == "BuildExistingModel"
-    assert osw["steps"][0]["arguments"]["building_id"] == 13
-
-    # Verify OCHRE is last
-    assert measure_names[-1] == "OCHRE"
-    ochre_step = osw["steps"][-1]
-    assert "hpxml_path" in ochre_step["arguments"]
-    assert "output_dir" in ochre_step["arguments"]
-    assert ochre_step["arguments"]["debug"] is True
-
-    # Verify HPXMLtoOpenStudio IS present (added to OCHRE workflow)
-    assert "HPXMLtoOpenStudio" in measure_names
-
-    # Verify standard workflow-only measures are NOT present
-    assert "UpgradeCosts" not in measure_names
-    assert "ReportSimulationOutput" not in measure_names
-    assert "ReportUtilityBills" not in measure_names
-    assert "ServerDirectoryCleanup" not in measure_names
-
-    # Verify ApplyUpgrade position if upgrade
-    if upgrade_idx is not None:
-        assert measure_names[1] == "ApplyUpgrade"
-        assert osw["steps"][1]["arguments"]["upgrade_name"] == "Upgrade 1"
-        assert osw["steps"][1]["arguments"]["option_1"] == "Parameter|Option"
-
-    # Verify custom measures are present and come before OCHRE
-    if include_measures:
-        assert "TestMeasure1" in measure_names
-        assert "TestMeasure2" in measure_names
-        # Custom measures should come before OCHRE (last step)
-        assert measure_names.index("TestMeasure1") < measure_names.index("OCHRE")
-        assert measure_names.index("TestMeasure2") < measure_names.index("OCHRE")
-
-
-def test_residential_hpxml_ochre_no_reporting_measures():
-    """
-    Test that reporting measures are NOT included when use_ochre is True
-    """
-    cfg = {
-        "buildstock_directory": resstock_directory,
-        "project_directory": "project_testing",
-        "baseline": {"n_buildings_represented": 100},
-        "workflow_generator": {
-            "type": "residential_hpxml",
-            "args": {
-                "debug": True,
-                "use_ochre": True,
-                "ochre": {
-                    "ochre_cli": str(resstock_directory / "ochre_cli"),
-                },
-                "reporting_measures": [
-                    {
-                        "measure_dir_name": "TestReportingMeasure1",
-                        "arguments": {
-                            "TestReportingMeasure1_arg1": "TestReportingMeasure1_val1",
-                        },
-                    },
-                ],
-            },
-        },
-    }
-
-    n_datapoints = 10
-    osw_gen = ResidentialHpxmlWorkflowGenerator(cfg, n_datapoints)
-    osw = osw_gen.create_osw("bldb1up1", 13, None)
-
-    measure_names = [step["measure_dir_name"] for step in osw["steps"]]
-
-    # Verify reporting measures are NOT added
-    assert "TestReportingMeasure1" not in measure_names
-
-    # Verify OCHRE is still the last step
-    assert measure_names[-1] == "OCHRE"
-
-
-def test_residential_hpxml_ochre_custom_cli_path(monkeypatch):
-    """
-    Test that OCHRE CLI path can be configured via ochre.ochre_cli
-    """
-    custom_cli_path = "/custom/path/to/ochre"
-
-    # Mock the OCHRE CLI path existence check
-    # Save original function to avoid infinite recursion
-    original_isfile = os.path.isfile
-    monkeypatch.setattr("os.path.isfile", lambda path: True if "ochre" in path.lower() else original_isfile(path))
-
-    cfg = {
-        "buildstock_directory": resstock_directory,
-        "project_directory": "project_testing",
-        "baseline": {"n_buildings_represented": 100},
-        "workflow_generator": {
-            "type": "residential_hpxml",
-            "args": {
-                "debug": True,
-                "use_ochre": True,
-                "ochre": {
-                    "ochre_cli": custom_cli_path,
-                },
-            },
-        },
-    }
-
-    n_datapoints = 10
-    osw_gen = ResidentialHpxmlWorkflowGenerator(cfg, n_datapoints)
-    osw = osw_gen.create_osw("bldb1up1", 13, None)
-
-    # Find OCHRE step
-    ochre_step = None
-    for step in osw["steps"]:
-        if step["measure_dir_name"] == "OCHRE":
-            ochre_step = step
-            break
-
-    assert ochre_step is not None
-    assert ochre_step["arguments"]["ochre_cli"] == custom_cli_path

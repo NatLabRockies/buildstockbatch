@@ -28,18 +28,6 @@ DEFAULT_MEASURE_ARGS = {
         "add_component_loads": False,
         "skip_validation": True,
     },
-    "OCHRE": {
-        "hpxml_path": "../../run/in.xml",
-        "output_dir": "../../run",
-        "time_res_minutes": 60,
-        "duration_days": 365,
-        "start_year": 2007,
-        "start_month": 1,
-        "start_day": 1,
-        "export_res": 60,
-        "debug": False,
-        "ochre_cli": "",
-    },
     "ReportSimulationOutput": {
         "timeseries_frequency": "none",
         "include_timeseries_total_consumptions": False,

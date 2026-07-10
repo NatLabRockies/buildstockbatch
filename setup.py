@@ -4,7 +4,6 @@ from codecs import open
 import os
 import setuptools
 
-
 here = os.path.abspath(os.path.dirname(__file__))
 metadata = {}
 
@@ -55,7 +54,8 @@ setuptools.setup(
         "pyarrow",
         "dask[complete]>=2022.10.0",
         "docker",
-        "s3fs[boto3]",
+        "boto3",
+        "s3fs",
         "fsspec",
         "yamale",
         "ruamel.yaml",

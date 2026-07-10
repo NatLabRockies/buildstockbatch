@@ -33,7 +33,6 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
     def __init__(self, cfg, n_datapoints):
         super().__init__(cfg, n_datapoints)
         self.buildstock_dir = cfg["buildstock_directory"]
-        self.parent_dir = os.path.dirname(self.buildstock_dir)
         self.measures_dir = os.path.join(self.buildstock_dir, "measures")
         self.workflow_args = self.cfg["workflow_generator"].get("args", {})
         self.default_args = copy.deepcopy(DEFAULT_MEASURE_ARGS)
@@ -114,27 +113,15 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         """
         logger.debug("Generating OSW, sim_id={}".format(sim_id))
         workflow_args = copy.deepcopy(self.workflow_args)
-        use_ochre = workflow_args.get("use_ochre", False)
 
-        if use_ochre:
-            # OCHRE workflow: BuildExistingModel -> (ApplyUpgrade) -> (measures) -> OCHRE -> UpgradeCosts -> Cleanup
-            workflow_key_to_measure_names = {
-                "build_existing_model": "BuildExistingModel",
-                "hpxml_to_openstudio": "HPXMLtoOpenStudio",
-                "ochre": "OCHRE",
-                "upgrade_costs": "UpgradeCosts",
-                "server_directory_cleanup": "ServerDirectoryCleanup",
-            }
-        else:
-            # Standard workflow
-            workflow_key_to_measure_names = {  # This is the order the osw steps will be in
-                "build_existing_model": "BuildExistingModel",
-                "hpxml_to_openstudio": "HPXMLtoOpenStudio",  # Non-existing Workflow Key is fine
-                "upgrade_costs": "UpgradeCosts",
-                "simulation_output_report": "ReportSimulationOutput",
-                "report_utility_bills": "ReportUtilityBills",
-                "server_directory_cleanup": "ServerDirectoryCleanup",
-            }
+        workflow_key_to_measure_names = {  # This is the order the osw steps will be in
+            "build_existing_model": "BuildExistingModel",
+            "hpxml_to_openstudio": "HPXMLtoOpenStudio",  # Non-existing Workflow Key is fine
+            "upgrade_costs": "UpgradeCosts",
+            "simulation_output_report": "ReportSimulationOutput",
+            "report_utility_bills": "ReportUtilityBills",
+            "server_directory_cleanup": "ServerDirectoryCleanup",
+        }
 
         steps = []
         measure_args = {}
@@ -151,36 +138,6 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         # update with workflow block args
         for workflow_key, measure_name in workflow_key_to_measure_names.items():
             measure_args[measure_name].update(workflow_args.get(workflow_key, {}).copy())
-
-        # Special handling for OCHRE: calculate duration_days from OCHRE's mapped start/end dates
-        if use_ochre and "OCHRE" in measure_args:
-            ochre_args = measure_args["OCHRE"]
-
-            # The start dates have been mapped from BuildExistingModel
-            # For end dates, we need to get them from BuildExistingModel args (which still have them)
-            bem_args = measure_args.get("BuildExistingModel", {})
-
-            # Extract run period dates from both sources
-            start_month = ochre_args.get("start_month", 1)
-            start_day = ochre_args.get("start_day", 1)
-            end_month = bem_args.get("simulation_control_run_period_end_month", 12)
-            end_day = bem_args.get("simulation_control_run_period_end_day_of_month", 31)
-
-            # Calculate and set duration_days if not already set by user
-            if "duration_days" not in workflow_args.get("ochre", {}):
-                duration = self._calculate_duration_days(start_month, start_day, end_month, end_day)
-                measure_args["OCHRE"]["duration_days"] = duration
-
-            # Set ochre_cli path. OCHRE is pre-installed inside the apptainer
-            # image at /opt/OCHRE/.venv/bin/ochre, so the default points there.
-            # Users can override via workflow_generator.args.ochre.ochre_cli if
-            # they need to point at a different in-container path. Since the
-            # path lives inside the container, we cannot validate existence
-            # from the host.
-            user_ochre_cli = workflow_args.get("ochre", {}).get("ochre_cli")
-            ochre_cli_path = user_ochre_cli or "/opt/OCHRE/.venv/bin/ochre"
-            measure_args["OCHRE"]["ochre_cli"] = ochre_cli_path
-            measure_args["OCHRE"]["seed"] = building_id
 
         # Verify the arguments and add to steps
         for workflow_key, measure_name in workflow_key_to_measure_names.items():
@@ -210,26 +167,16 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
             "measure_paths": ["measures", "resources/hpxml-measures"],
             "run_options": {"skip_zip_results": True},
         }
-
-        if use_ochre:
-            # For OCHRE workflow: insert custom measures before OCHRE
-            ochre_index = next(i for i, s in enumerate(osw["steps"]) if s["measure_dir_name"] == "OCHRE")
-            for measure in reversed(workflow_args.get("measures", [])):
-                osw["steps"].insert(ochre_index, measure)
-        else:
-            # For standard workflow: insert custom measures after UpgradeCosts
-            for measure in reversed(workflow_args.get("measures", [])):
-                osw["steps"].insert(3, measure)  # After UpgradeCosts
+        for measure in reversed(workflow_args.get("measures", [])):
+            osw["steps"].insert(3, measure)  # After UpgradeCosts
 
         self.add_upgrade_step_to_osw(upgrade_idx, osw)
 
-        # Only add reporting_measures if NOT using OCHRE
-        if not use_ochre:
-            for reporting_measure in self.workflow_args.get("reporting_measures", []):
-                if "arguments" not in reporting_measure:
-                    reporting_measure["arguments"] = {}
-                reporting_measure["measure_type"] = "ReportingMeasure"
-                osw["steps"].insert(-1, reporting_measure)  # right before ServerDirectoryCleanup
+        for reporting_measure in self.workflow_args.get("reporting_measures", []):
+            if "arguments" not in reporting_measure:
+                reporting_measure["arguments"] = {}
+            reporting_measure["measure_type"] = "ReportingMeasure"
+            osw["steps"].insert(-1, reporting_measure)  # right before ServerDirectoryCleanup
 
         return osw
 
@@ -356,28 +303,6 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         for key in all_keys:
             condensed_block[key] = [block.get(key, "") for block in yaml_block]
         return condensed_block
-
-    @staticmethod
-    def _calculate_duration_days(start_month, start_day, end_month, end_day):
-        """
-        Calculate the number of days between start and end dates.
-        Assumes a non-leap year for simplicity (consistent with BuildExistingModel default year 2007).
-
-        :param start_month: Starting month (1-12)
-        :param start_day: Starting day (1-31)
-        :param end_month: Ending month (1-12)
-        :param end_day: Ending day (1-31)
-        :return: Number of days in the simulation period (inclusive)
-        """
-        # Use a non-leap year (2007 matches BuildExistingModel default)
-        year = 2007
-        start_date = dt.date(year, start_month, start_day)
-        end_date = dt.date(year, end_month, end_day)
-
-        # Add 1 because we want to include both start and end days
-        duration = (end_date - start_date).days + 1
-
-        return duration
 
     @staticmethod
     def _get_mapped_args_from_block(block, arg_map: Dict[str, str], default_args) -> Dict[str, Any]:
