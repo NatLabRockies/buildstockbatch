@@ -102,6 +102,7 @@ ochre-spec:
     hpxml_path: str(required=False)
     output_dir: str(required=False)
     time_res_minutes: int(required=False)
+    output_res_minutes: int(required=False)
     duration_days: int(required=False)
     start_year: int(required=False)
     start_month: int(required=False)
