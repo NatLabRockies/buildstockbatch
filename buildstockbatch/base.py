@@ -245,6 +245,17 @@ class BuildStockBatchBase(object):
             skiprows = []
             schedules_filepaths = []  # can't join schedules to ochre.csv
         schedules_filepaths = []  # Temporarily disable schedules joining for now
+
+        # Only publish the timeseries parquet for runs that finished successfully. A
+        # failed or killed run can leave behind a partial results_timeseries.csv, which
+        # would otherwise show up as a short building in the aggregated Athena output.
+        if timeseries_filepath and not os.path.isfile(os.path.join(output_dir, "finished.job")):
+            logger.warning(
+                f"Skipping timeseries parquet for bldg{building_id:07d} up{upgrade_id:02d}: "
+                f"no finished.job (simulation failed or was killed)."
+            )
+            timeseries_filepath = None
+
         if timeseries_filepath:
             # Find the time columns present in the enduse_timeseries file
             possible_time_cols = ["time", "Time", "TimeDST", "TimeUTC"]

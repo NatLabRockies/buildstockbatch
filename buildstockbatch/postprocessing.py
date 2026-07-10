@@ -663,7 +663,11 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             fs.makedirs(dir)
             parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
             logger.info(f"Writing {parquet_filename}")
-            pub_df.write_parquet(parquet_filename)
+            # 'upgrade' is encoded in the Hive partition path (upgrade={id}); keeping it
+            # as a column too produces duplicate-column metadata when the parquet is
+            # crawled into Athena (HIVE_INVALID_METADATA). Drop it from the file itself.
+            pub_df_parquet = pub_df.drop("upgrade") if "upgrade" in pub_df.columns else pub_df
+            pub_df_parquet.write_parquet(parquet_filename)
 
         # Write CSV
         csv_filename = f"{results_csvs_dir}/results_up{upgrade_id:02d}.csv.gz"

@@ -889,7 +889,7 @@ class KestrelBatch(SlurmBatch):
         # (stock, use_ochre): minutes per sim per worker, with margin.
         # ComStock + use_ochre is not a supported combo (rejected in validation).
         ("ResStock", False): 1,
-        ("ResStock", True): 8,
+        ("ResStock", True): 15,
         ("ComStock", False): 30,
     }
     # Example Calulation for n_datapoints = 10K, njobs=20, use_ochre=True
@@ -898,8 +898,8 @@ class KestrelBatch(SlurmBatch):
     # sim_per_worker = ceil(500 / 34) = 15
     # walltime = housekeeping_base + housekeeping_per_100_sims * sims_per_job / 100
     #            +  (minutes_per_sim) * sims_per_worker
-    # walltime = 10 + 1 * 500 / 100 + (8) * 15
-    # walltime = 10 + 5 + 120 = 135 minutes
+    # walltime = 10 + 1 * 500 / 100 + (15) * 15
+    # walltime = 10 + 5 + 225 = 240 minutes
 
     @classmethod
     def validate_output_directory_kestrel(cls, project_file):
