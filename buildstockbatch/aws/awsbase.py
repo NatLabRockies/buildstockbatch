@@ -181,6 +181,7 @@ class AwsJobBase:
         self.priv_subnet_cidr_1 = ""  # will be available after VPC creation
         self.priv_vpc_subnet_id_1 = "REPL"  # will be available after VPC creation
         self.priv_vpc_subnet_id_2 = "REPL"  # will be available after VPC creation
+        self.batch_subnet_ids = []  # will be available after VPC creation or lookup
 
     def get_tags(self, **kwargs):
         tags = kwargs.copy()

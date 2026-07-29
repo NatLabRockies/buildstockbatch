@@ -61,6 +61,7 @@ aws-spec:
   region: str(required=True)
   base_dockerfile: str(required=False)
   base_target: str(required=False)
+  vpc: include('aws-vpc-spec', required=False)
   use_spot: bool(required=False)
   spot_bid_percent: num(min=1, max=100, required=False)
   batch_array_size: num(min=1, max=10000, required=True)
@@ -72,6 +73,11 @@ aws-spec:
 aws-job-environment:
   vcpus: int(min=1, max=36, required=False)
   memory: int(min=1024, required=False)
+
+aws-vpc-spec:
+  vpc_id: str(required=True)
+  subnet_ids: list(str(), min=1, required=True)
+  security_group_id: str(required=False)
 
 aws-dask-spec:
   scheduler_cpu: enum(1024, 2048, 4096, 8192, 16384, required=False)

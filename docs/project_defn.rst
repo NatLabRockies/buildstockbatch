@@ -217,6 +217,16 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
    buildstockbatch will not run its own ``bundle install``.
 *  ``base_target``: (optional) Name of the build stage to target in ``base_dockerfile``, if it
    is a multi-stage Dockerfile (e.g. ``os-comstock``).
+*  ``vpc``: (optional) Use an existing VPC instead of creating one. Use this in accounts where
+   VPC creation is not permitted. Nothing in the VPC is created, modified, or deleted by
+   buildstockbatch. The subnets must have outbound internet access (e.g. via a NAT gateway) so
+   the Batch instances can reach ECR and S3.
+
+    * ``vpc_id``: (required) The id of the existing VPC, e.g. ``vpc-0123456789abcdef0``.
+    * ``subnet_ids``: (required) List of subnet ids in that VPC to run Batch compute and Fargate
+      postprocessing tasks in.
+    * ``security_group_id``: (optional) Security group id to use. Defaults to the VPC's default
+      security group. Must allow outbound traffic.
 *  ``use_spot``: (optional) true or false. Defaults to true if missing. This tells the project
    to use the `Spot Market <https://aws.amazon.com/ec2/spot/>`_ for data
    simulations, which typically yields about 60-70% cost savings.

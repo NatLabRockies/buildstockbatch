@@ -145,6 +145,28 @@ class AwsBatchEnv(AwsJobBase):
         return super().__repr__()
 
     def create_vpc(self):
+        existing_vpc = self.aws_config.get("vpc")
+        if existing_vpc:
+            # Use an existing VPC rather than creating one (for accounts where VPC
+            # creation is not permitted). Nothing in the VPC is created or modified.
+            self.vpc_id = existing_vpc["vpc_id"]
+            self.batch_subnet_ids = existing_vpc["subnet_ids"]
+            security_group_id = existing_vpc.get("security_group_id")
+            if not security_group_id:
+                sec_response = self.ec2.describe_security_groups(
+                    Filters=[
+                        {"Name": "vpc-id", "Values": [self.vpc_id]},
+                        {"Name": "group-name", "Values": ["default"]},
+                    ]
+                )
+                security_group_id = sec_response["SecurityGroups"][0]["GroupId"]
+            self.batch_security_group = security_group_id
+            logger.info(
+                f"Using existing VPC {self.vpc_id} with subnets {self.batch_subnet_ids} "
+                f"and security group {self.batch_security_group}"
+            )
+            return
+
         cidrs_in_use = set()
         vpc_response = self.ec2.describe_vpcs()
         for vpc in vpc_response["Vpcs"]:
@@ -231,6 +253,7 @@ class AwsBatchEnv(AwsJobBase):
         )
 
         self.priv_vpc_subnet_id_2 = priv_response_2["Subnet"]["SubnetId"]
+        self.batch_subnet_ids = [self.priv_vpc_subnet_id_1, self.priv_vpc_subnet_id_2]
 
         logger.info("Private subnet created.")
 
@@ -602,7 +625,7 @@ class AwsBatchEnv(AwsJobBase):
                 "launchTemplate": {
                     "launchTemplateName": self.launch_template_name,
                 },
-                "subnets": [self.priv_vpc_subnet_id_1, self.priv_vpc_subnet_id_2],
+                "subnets": self.batch_subnet_ids,
                 "securityGroupIds": [self.batch_security_group],
                 "instanceRole": self.instance_profile_arn,
             }
@@ -682,6 +705,19 @@ class AwsBatchEnv(AwsJobBase):
                 else:
                     raise
 
+        # Wait for the job queue to finish being created; submitting jobs to a
+        # queue that isn't in the VALID state yet fails.
+        for _ in range(60):
+            response = self.batch.describe_job_queues(jobQueues=[self.batch_job_queue_name])
+            queue_status = response["jobQueues"][0]["status"]
+            if queue_status == "VALID":
+                logger.info(f"Job queue {self.batch_job_queue_name} is ready")
+                break
+            logger.debug(f"Waiting for job queue {self.batch_job_queue_name} (status = {queue_status})")
+            time.sleep(5)
+        else:
+            raise RuntimeError(f"Job queue {self.batch_job_queue_name} did not reach the VALID state")
+
     def create_job_definition(self, docker_image, vcpus, memory, command, env_vars):
         """
         Creates a job definition to run in the Batch environment.  This will create a new version with every execution.
@@ -730,41 +766,44 @@ class AwsBatchEnv(AwsJobBase):
         return resp
 
     def clean(self):
-        # Get our vpc:
+        # When using an existing VPC, don't touch it (or its security groups) during cleanup.
+        using_existing_vpc = bool(self.aws_config.get("vpc"))
 
-        response = self.ec2.describe_vpcs(
-            Filters=[
-                {
-                    "Name": "tag:Name",
-                    "Values": [
-                        self.vpc_name,
-                    ],
-                },
-            ]
-        )
-        try:
-            self.vpc_id = response["Vpcs"][0]["VpcId"]
-        except (KeyError, IndexError):
-            self.vpc_id = None
+        if not using_existing_vpc:
+            # Get our vpc:
+            response = self.ec2.describe_vpcs(
+                Filters=[
+                    {
+                        "Name": "tag:Name",
+                        "Values": [
+                            self.vpc_name,
+                        ],
+                    },
+                ]
+            )
+            try:
+                self.vpc_id = response["Vpcs"][0]["VpcId"]
+            except (KeyError, IndexError):
+                self.vpc_id = None
 
-        default_sg_response = self.ec2.describe_security_groups(
-            Filters=[
-                {
-                    "Name": "group-name",
-                    "Values": [
-                        "default",
-                    ],
-                },
-            ]
-        )
+            default_sg_response = self.ec2.describe_security_groups(
+                Filters=[
+                    {
+                        "Name": "group-name",
+                        "Values": [
+                            "default",
+                        ],
+                    },
+                ]
+            )
 
-        logger.info("Removing egress from default security group.")
-        for group in default_sg_response["SecurityGroups"]:
-            if group["VpcId"] == self.vpc_id:
-                default_group_id = group["GroupId"]
-                dsg = self.ec2r.SecurityGroup(default_group_id)
-                if len(dsg.ip_permissions_egress):
-                    response = dsg.revoke_egress(IpPermissions=dsg.ip_permissions_egress)
+            logger.info("Removing egress from default security group.")
+            for group in default_sg_response["SecurityGroups"]:
+                if group["VpcId"] == self.vpc_id:
+                    default_group_id = group["GroupId"]
+                    dsg = self.ec2r.SecurityGroup(default_group_id)
+                    if len(dsg.ip_permissions_egress):
+                        response = dsg.revoke_egress(IpPermissions=dsg.ip_permissions_egress)
 
         try:
             self.batch.update_job_queue(jobQueue=self.batch_job_queue_name, state="DISABLED")
@@ -829,18 +868,22 @@ class AwsBatchEnv(AwsJobBase):
 
         # Find Nat Gateways and VPCs
 
-        response = self.ec2.describe_vpcs(
-            Filters=[
-                {
-                    "Name": "tag:Name",
-                    "Values": [
-                        self.job_identifier,
-                    ],
-                },
-            ],
-        )
+        if using_existing_vpc:
+            vpcs_to_delete = []
+        else:
+            response = self.ec2.describe_vpcs(
+                Filters=[
+                    {
+                        "Name": "tag:Name",
+                        "Values": [
+                            self.job_identifier,
+                        ],
+                    },
+                ],
+            )
+            vpcs_to_delete = response["Vpcs"]
 
-        for vpc in response["Vpcs"]:
+        for vpc in vpcs_to_delete:
             this_vpc = vpc["VpcId"]
 
             s3gw_response = self.ec2.describe_vpc_endpoints(Filters=[{"Name": "vpc-id", "Values": [this_vpc]}])
@@ -1055,15 +1098,25 @@ class AwsBatch(docker_base.DockerBatchBase):
         image = self.docker_client.images.get(self.docker_image)
         image.tag(repo_url, tag=self.job_identifier)
         last_status = None
-        for x in self.docker_client.images.push(repo_url, tag=self.job_identifier, stream=True):
+        push_error = None
+        # Pass the credentials explicitly; otherwise the push resolves auth from the
+        # machine's docker credential store, which may hold an expired token for ECR.
+        auth_config = {"username": dkr_user, "password": dkr_pass}
+        for x in self.docker_client.images.push(
+            repo_url, tag=self.job_identifier, stream=True, auth_config=auth_config
+        ):
             try:
                 y = json.loads(x)
             except json.JSONDecodeError:
                 continue
-            else:
-                if y.get("status") is not None and y.get("status") != last_status:
-                    logger.debug(y["status"])
-                    last_status = y["status"]
+            if y.get("error") is not None:
+                push_error = y["error"]
+                logger.error(f"Error pushing docker image: {push_error}")
+            elif y.get("status") is not None and y.get("status") != last_status:
+                logger.debug(y["status"])
+                last_status = y["status"]
+        if push_error:
+            raise RuntimeError(f"Failed to push docker image {repo_url}:{self.job_identifier}: {push_error}")
 
     def clean(self):
         """
@@ -1225,6 +1278,13 @@ class AwsBatch(docker_base.DockerBatchBase):
 
         batch_env = AwsBatchEnv(self.job_identifier, self.cfg["aws"], self.boto3_session)
         m = 1024
+        fargate_vpc_kwargs = {}
+        existing_vpc = self.cfg["aws"].get("vpc")
+        if existing_vpc:
+            fargate_vpc_kwargs["vpc"] = existing_vpc["vpc_id"]
+            fargate_vpc_kwargs["subnets"] = existing_vpc["subnet_ids"]
+            if existing_vpc.get("security_group_id"):
+                fargate_vpc_kwargs["security_groups"] = [existing_vpc["security_group_id"]]
         self.dask_cluster = FargateCluster(
             region_name=self.region,
             fargate_spot=True,
@@ -1237,6 +1297,7 @@ class AwsBatch(docker_base.DockerBatchBase):
             n_workers=dask_cfg["n_workers"],
             task_role_policies=["arn:aws:iam::aws:policy/AmazonS3FullAccess"],
             tags=batch_env.get_tags(),
+            **fargate_vpc_kwargs,
         )
         self.dask_client = Client(self.dask_cluster)
         return self.dask_client

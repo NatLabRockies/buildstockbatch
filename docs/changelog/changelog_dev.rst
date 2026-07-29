@@ -116,3 +116,25 @@ Development Changelog
         IAM roles, the Batch instance profile, the ECR repository, and the Batch security group.
         Job definitions now set ``propagateTags`` so the tags also reach the ECS tasks launched
         for each simulation job.
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 521
+
+        Adds an optional ``aws.vpc`` configuration (``vpc_id``, ``subnet_ids``, and optionally
+        ``security_group_id``) to run AWS Batch and the Fargate dask cluster in an existing VPC
+        instead of creating a new one. This supports accounts where ``ec2:CreateVpc`` is denied
+        by policy. When set, buildstockbatch does not create, modify, or delete anything in the
+        VPC, including during ``--clean``.
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 521
+
+        Fixes two AWS submission bugs: jobs were submitted immediately after the Batch job queue
+        was created, failing with "JobQueue not in VALID state" when the queue was still being
+        provisioned (buildstockbatch now waits for the queue to become VALID); and docker push
+        errors were silently ignored, so a failed image push (e.g. due to an expired token in the
+        machine's docker credential store, which is now bypassed by passing ECR credentials
+        explicitly) led to Batch jobs failing later with "image not found" instead of a clear
+        error at push time.
