@@ -24,6 +24,7 @@ class AWSIAMHelper:
         description,
         policies_list=[],
         managed_policie_arns=[],
+        tags=None,
     ):
         """
         Creates a role and attached the policies - will catch errors and skip if role already exists
@@ -47,12 +48,16 @@ class AWSIAMHelper:
                     }}
                 """
 
+        create_role_kwargs = {}
+        if tags:
+            create_role_kwargs["Tags"] = tags
         try:
             response = self.iam.create_role(
                 Path="/",
                 RoleName=role_name,
                 AssumeRolePolicyDocument=trust_policy,
                 Description=description,
+                **create_role_kwargs,
             )
             role_arn = response["Role"]["Arn"]
 

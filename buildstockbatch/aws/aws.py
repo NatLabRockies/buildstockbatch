@@ -189,6 +189,12 @@ class AwsBatchEnv(AwsJobBase):
 
         logger.info(f"Security group {self.batch_security_group} created for vpc/job.")
 
+        backoff(
+            self.ec2.create_tags,
+            Resources=[self.batch_security_group],
+            Tags=self.get_tags_uppercase(Name=self.job_identifier),
+        )
+
         response = backoff(
             self.ec2.authorize_security_group_ingress,
             GroupId=self.batch_security_group,
@@ -396,6 +402,7 @@ class AwsBatchEnv(AwsJobBase):
             "batch",
             f"Service role for Batch environment {self.job_identifier}",
             managed_policie_arns=["arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"],
+            tags=self.get_tags_uppercase(),
         )
 
         # Instance Role for Batch compute environment
@@ -405,12 +412,16 @@ class AwsBatchEnv(AwsJobBase):
             "ec2",
             f"Instance role for Batch compute environment {self.job_identifier}",
             managed_policie_arns=["arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"],
+            tags=self.get_tags_uppercase(),
         )
 
         # Instance Profile
 
         try:
-            response = self.iam.create_instance_profile(InstanceProfileName=self.batch_instance_profile_name)
+            response = self.iam.create_instance_profile(
+                InstanceProfileName=self.batch_instance_profile_name,
+                Tags=self.get_tags_uppercase(),
+            )
 
             self.instance_profile_arn = response["InstanceProfile"]["Arn"]
 
@@ -521,6 +532,7 @@ class AwsBatchEnv(AwsJobBase):
             "ecs-tasks",
             f"Task role for Batch job {self.job_identifier}",
             policies_list=[task_permissions_policy],
+            tags=self.get_tags_uppercase(),
         )
 
         if self.batch_use_spot:
@@ -530,6 +542,7 @@ class AwsBatchEnv(AwsJobBase):
                 "spotfleet",
                 f"Spot Fleet role for Batch compute environment {self.job_identifier}",
                 managed_policie_arns=["arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole"],
+                tags=self.get_tags_uppercase(),
             )
 
     def create_compute_environment(self, maxCPUs=10000):
@@ -693,6 +706,7 @@ class AwsBatchEnv(AwsJobBase):
                 "environment": self.generate_name_value_inputs(env_vars),
             },
             retryStrategy={"attempts": 2},
+            propagateTags=True,
             tags=self.get_tags(),
         )
 
@@ -1017,7 +1031,8 @@ class AwsBatch(docker_base.DockerBatchBase):
             if repo["repositoryName"] == repo_name:
                 break
         if repo is None:
-            resp = self.ecr.create_repository(repositoryName=repo_name)
+            tags = [{"Key": k, "Value": v} for k, v in self.cfg["aws"].get("tags", {}).items()]
+            resp = self.ecr.create_repository(repositoryName=repo_name, tags=tags)
             repo = resp["repository"]
         return repo
 

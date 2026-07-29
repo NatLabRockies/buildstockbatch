@@ -107,3 +107,12 @@ Development Changelog
         Also adds ``dask-scheduler``/``dask-worker`` compatibility shims, since dask_cloudprovider
         launches Fargate postprocessing containers with those legacy commands, which modern
         distributed no longer installs.
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 521
+
+        Applies the ``aws.tags`` configuration to AWS resources that previously weren't tagged:
+        IAM roles, the Batch instance profile, the ECR repository, and the Batch security group.
+        Job definitions now set ``propagateTags`` so the tags also reach the ECS tasks launched
+        for each simulation job.
