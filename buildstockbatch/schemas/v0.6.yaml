@@ -59,6 +59,8 @@ aws-spec:
   job_identifier: regex('^[a-zA-Z]\w{,9}$', required=True)
   s3: include('s3-aws-postprocessing-spec', required=True)
   region: str(required=True)
+  base_dockerfile: str(required=False)
+  base_target: str(required=False)
   use_spot: bool(required=False)
   spot_bid_percent: num(min=1, max=100, required=False)
   batch_array_size: num(min=1, max=10000, required=True)

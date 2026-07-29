@@ -91,16 +91,16 @@ Information about baseline simulations are listed under the ``baseline`` key.
 - ``skip_sims``: Include this key to control whether the set of baseline simulations are run. The default (i.e., when
   this key is not included) is to run all the baseline simulations. No results csv table with baseline characteristics
   will be provided when the baseline simulations are skipped.
-- ``custom_gems``: true or false. **ONLY WORKS ON KESTREL AND LOCAL**
+- ``custom_gems``: true or false.
   When true, buildstockbatch will call the OpenStudio CLI commands with the
   ``bundle`` and ``bundle_path`` options. These options tell the CLI to load a
-  custom set of gems rather than those included in the OpenStudio CLI. For both
-  Kestrel and local Docker runs, these gems are first specified in the
-  ``buildstock\resources\Gemfile``. For Kestrel, when the apptainer image
-  is built, these gems are added to the image. For local Docker, when the
-  containers are started, the gems specified in the Gemfile are installed into a
-  Docker volume on the local computer. This volume is mounted by each container
-  as models are run, so each run uses the custom gems.
+  custom set of gems rather than those included in the OpenStudio CLI. These
+  gems are specified in the ``buildstock\resources\Gemfile``. For Kestrel, the
+  gems must already be included in the apptainer image. For local runs, the
+  gems are installed into ``buildstock\.custom_gems`` on the local computer.
+  For AWS/GCP, the gems are bundled into the Docker image when it is built,
+  unless ``base_dockerfile`` is set, in which case the base image is expected
+  to already contain them at ``/var/oscli``.
 
 OpenStudio Version
 ~~~~~~~~~~~~~~~~~~
@@ -207,6 +207,16 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
     *  ``prefix``: The s3 prefix at which the data will be stored.
 
 *  ``region``: (required) The AWS region in which the batch will be run and data stored. Probably "us-west-2" if you're at NREL.
+*  ``base_dockerfile``: (optional) Path, relative to ``buildstock_directory``, of a Dockerfile
+   to build and use as the base image for the buildstockbatch simulation image, in place of the
+   stock ``nrel/openstudio`` image. Use this when the project provides its own simulation
+   environment (e.g. ComStock's ``build/Dockerfile``, which adds python dependencies used by its
+   measures). The resulting image must contain OpenStudio matching ``os_version``, plus ``curl``
+   and ``ca-certificates``. When this is set along with ``baseline.custom_gems``, the base image
+   is expected to provide the custom gems and Gemfile at ``/var/oscli`` (as ComStock's does), and
+   buildstockbatch will not run its own ``bundle install``.
+*  ``base_target``: (optional) Name of the build stage to target in ``base_dockerfile``, if it
+   is a multi-stage Dockerfile (e.g. ``os-comstock``).
 *  ``use_spot``: (optional) true or false. Defaults to true if missing. This tells the project
    to use the `Spot Market <https://aws.amazon.com/ec2/spot/>`_ for data
    simulations, which typically yields about 60-70% cost savings.

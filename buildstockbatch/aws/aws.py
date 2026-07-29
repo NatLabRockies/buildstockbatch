@@ -994,6 +994,7 @@ class AwsBatch(docker_base.DockerBatchBase):
     def validate_project(project_file):
         super(AwsBatch, AwsBatch).validate_project(project_file)
         AwsBatch.validate_dask_settings(project_file)
+        AwsBatch.validate_base_dockerfile(project_file, "aws")
 
     @property
     def docker_image(self):
@@ -1114,7 +1115,7 @@ class AwsBatch(docker_base.DockerBatchBase):
         job_env_cfg = self.cfg["aws"].get("job_environment", {})
         batch_env.create_job_definition(
             self.image_url,
-            command=["python3", "-m", "buildstockbatch.aws.aws"],
+            command=[docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws"],
             vcpus=job_env_cfg.get("vcpus", 1),
             memory=job_env_cfg.get("memory", 1024),
             env_vars=env_vars,
@@ -1262,7 +1263,7 @@ class AwsBatch(docker_base.DockerBatchBase):
             logger.info("Starting container for postprocessing")
             container = self.docker_client.containers.run(
                 self.image_url,
-                ["python3", "-m", "buildstockbatch.aws.aws", container_cfg_path],
+                [docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws", container_cfg_path],
                 volumes={
                     tmpdir: {"bind": str(container_workpath), "mode": "rw"},
                     self.buildstock_dir: {"bind": container_buildstock_dir, "mode": "ro"},

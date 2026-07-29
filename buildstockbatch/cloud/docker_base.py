@@ -33,9 +33,21 @@ import time
 
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase, ValidationError
-from buildstockbatch.utils import ContainerRuntime, calc_hash_for_file, compress_file, read_csv, get_bool_env_var
+from buildstockbatch.utils import (
+    ContainerRuntime,
+    calc_hash_for_file,
+    compress_file,
+    read_csv,
+    get_bool_env_var,
+    get_project_configuration,
+)
 
 logger = logging.getLogger(__name__)
+
+# Python interpreter with buildstockbatch installed inside the docker image built from this
+# repo's Dockerfile. Referenced explicitly because the base image's own interpreters
+# (python3, python3.11) take precedence on the image's PATH.
+CONTAINER_BUILDSTOCKBATCH_PYTHON = "/buildstock-batch/.venv/bin/python3"
 
 
 def determine_weather_files_needed_for_job(sim_dir, jobs_d):
@@ -163,6 +175,30 @@ class DockerBatchBase(BuildStockBatchBase):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def validate_base_dockerfile(project_file, platform):
+        """
+        Validate the optional ``<platform>.base_dockerfile`` config, which must be a path to a
+        Dockerfile relative to the buildstock directory.
+
+        :param platform: String specifying the platform the image is built for. Must be "aws" or "gcp".
+        """
+        cfg = get_project_configuration(project_file)
+        base_dockerfile = cfg.get(platform, {}).get("base_dockerfile")
+        if base_dockerfile is None:
+            return True
+        if os.path.isabs(base_dockerfile):
+            raise ValidationError(
+                f"`{platform}.base_dockerfile` must be a path relative to `buildstock_directory`, "
+                f"got the absolute path {base_dockerfile}"
+            )
+        base_dockerfile_path = pathlib.Path(cfg["buildstock_directory"], base_dockerfile)
+        if not base_dockerfile_path.is_file():
+            raise ValidationError(
+                f"`{platform}.base_dockerfile` = {base_dockerfile}, but no file exists at {base_dockerfile_path}"
+            )
+        return True
+
     def build_image(self, platform):
         """
         Build the docker image to use in the batch simulation
@@ -179,54 +215,68 @@ class DockerBatchBase(BuildStockBatchBase):
         if not os.path.exists(local_log_dir):
             os.makedirs(local_log_dir)
 
+        buildargs = {"OS_VER": self.os_version, "CLOUD_PLATFORM": platform}
+
+        # If the project provides its own Dockerfile (e.g. ComStock's, which adds python
+        # dependencies its measures call at simulation time), build it first and use the
+        # resulting image as the base for the buildstockbatch image.
+        base_dockerfile = self.cfg.get(platform, {}).get("base_dockerfile")
+        if base_dockerfile:
+            base_dockerfile_path = pathlib.Path(self.buildstock_dir, base_dockerfile)
+            if not base_dockerfile_path.is_file():
+                raise ValidationError(
+                    f"`{platform}.base_dockerfile` = {base_dockerfile}, but no file exists at {base_dockerfile_path}"
+                )
+            base_target = self.cfg[platform].get("base_target")
+            base_image_tag = f"buildstockbatch-base-{platform}"
+            logger.info(f"Building base docker image from {base_dockerfile_path}, stage: {base_target}")
+            self._build_docker_image(
+                "base_build_image.log",
+                local_log_dir,
+                path=str(self.buildstock_dir),
+                # The dockerfile path is relative to the build context and must use forward slashes
+                dockerfile=base_dockerfile.replace("\\", "/"),
+                tag=base_image_tag,
+                target=base_target,
+            )
+            buildargs["BASE_IMAGE"] = base_image_tag
+
         # Determine whether or not to build the image with custom gems bundled in
+        stage = "buildstockbatch"
         if self.cfg.get("baseline", dict()).get("custom_gems", False):
-            # Ensure the custom Gemfile exists in the buildstock dir
-            local_gemfile_path = pathlib.Path(self.buildstock_dir, "resources", "Gemfile")
-            if not local_gemfile_path.exists():
-                raise AttributeError(f"baseline:custom_gems = True, but did not find Gemfile at {local_gemfile_path}")
+            if base_dockerfile:
+                # The base image is responsible for bundling the custom gems;
+                # `custom_gems` still controls the openstudio bundle arguments at run time.
+                logger.info(
+                    f"Skipping the custom gems Docker build stage because `{platform}.base_dockerfile` is set. "
+                    "The base image must provide the custom gems and Gemfile at /var/oscli."
+                )
+            else:
+                # Ensure the custom Gemfile exists in the buildstock dir
+                local_gemfile_path = pathlib.Path(self.buildstock_dir, "resources", "Gemfile")
+                if not local_gemfile_path.exists():
+                    raise AttributeError(
+                        f"baseline:custom_gems = True, but did not find Gemfile at {local_gemfile_path}"
+                    )
 
-            # Copy the custom Gemfile into the buildstockbatch repo
-            new_gemfile_path = root_path / "Gemfile"
-            shutil.copyfile(local_gemfile_path, new_gemfile_path)
-            logger.info(f"Copying custom Gemfile from {local_gemfile_path}")
+                # Copy the custom Gemfile into the buildstockbatch repo
+                new_gemfile_path = root_path / "Gemfile"
+                shutil.copyfile(local_gemfile_path, new_gemfile_path)
+                logger.info(f"Copying custom Gemfile from {local_gemfile_path}")
 
-            # Choose the custom-gems stage in the Dockerfile,
-            # which runs bundle install to build custom gems into the image
-            stage = "buildstockbatch-custom-gems"
-        else:
-            # Choose the base stage in the Dockerfile,
-            # which stops before bundling custom gems into the image
-            stage = "buildstockbatch"
+                # Choose the custom-gems stage in the Dockerfile,
+                # which runs bundle install to build custom gems into the image
+                stage = "buildstockbatch-custom-gems"
 
         logger.info(f"Building docker image stage: {stage} from OpenStudio {self.os_version}")
-        try:
-            img, build_logs = self.docker_client.images.build(
-                path=str(root_path),
-                tag=self.docker_image,
-                rm=True,
-                target=stage,
-                platform="linux/amd64",
-                buildargs={"OS_VER": self.os_version, "CLOUD_PLATFORM": platform},
-            )
-        except docker.errors.BuildError as e:
-            for line in e.build_log:
-                if "stream" in line:
-                    logger.error(line["stream"].strip())
-                elif "errorDetail" in line:
-                    logger.error(f"Error: {line['errorDetail']['message'].strip()}")
-            raise
-        build_image_log = os.path.join(local_log_dir, "build_image.log")
-        with open(build_image_log, "w") as f_out:
-            f_out.write("Built image")
-            for line in build_logs:
-                for itm_type, item_msg in line.items():
-                    if itm_type in ["stream", "status"]:
-                        try:
-                            f_out.write(f"{item_msg}")
-                        except UnicodeEncodeError:
-                            pass
-        logger.debug(f"Review docker image build log: {build_image_log}")
+        self._build_docker_image(
+            "build_image.log",
+            local_log_dir,
+            path=str(root_path),
+            tag=self.docker_image,
+            target=stage,
+            buildargs=buildargs,
+        )
 
         # Report and confirm the openstudio version from the image
         os_ver_cmd = "openstudio openstudio_version"
@@ -256,6 +306,37 @@ class DockerBatchBase(BuildStockBatchBase):
         for line in container_output.decode().split("\n"):
             logger.debug(line)
         logger.debug(f"Review custom gems list at: {gem_list_log}")
+
+    def _build_docker_image(self, log_filename, local_log_dir, **build_kwargs):
+        """
+        Run a docker build, writing the build output to a log file.
+
+        :param log_filename: Name of the log file to write in ``local_log_dir``.
+        :param local_log_dir: Directory in which to write the log file.
+        :param build_kwargs: Keyword arguments passed through to ``docker.images.build``.
+        :returns: The built docker image.
+        """
+        try:
+            img, build_logs = self.docker_client.images.build(rm=True, platform="linux/amd64", **build_kwargs)
+        except docker.errors.BuildError as e:
+            for line in e.build_log:
+                if "stream" in line:
+                    logger.error(line["stream"].strip())
+                elif "errorDetail" in line:
+                    logger.error(f"Error: {line['errorDetail']['message'].strip()}")
+            raise
+        build_image_log = os.path.join(local_log_dir, log_filename)
+        with open(build_image_log, "w") as f_out:
+            f_out.write("Built image")
+            for line in build_logs:
+                for itm_type, item_msg in line.items():
+                    if itm_type in ["stream", "status"]:
+                        try:
+                            f_out.write(f"{item_msg}")
+                        except UnicodeEncodeError:
+                            pass
+        logger.debug(f"Review docker image build log: {build_image_log}")
+        return img
 
     def start_batch_job(self, batch_info):
         """Create and start the Batch job on the cloud.

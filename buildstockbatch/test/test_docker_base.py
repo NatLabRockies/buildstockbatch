@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 from unittest.mock import MagicMock, PropertyMock
 
+from buildstockbatch.base import ValidationError
 from buildstockbatch.cloud import docker_base
 from buildstockbatch.cloud.docker_base import DockerBatchBase
 from buildstockbatch.test.shared_testing_stuff import docker_available
@@ -225,3 +226,101 @@ def test_log_summary(basic_residential_project_file, mocker, caplog):
         assert "Upgrade 01   Success: 3        Fail: 1" in caplog.text
         assert "Baseline     Success: 3        Fail: 1" in caplog.text
         assert "Total        Success: 6        Fail: 2" in caplog.text
+
+
+def _mock_docker_client(mocker, os_version):
+    """Mock the docker client so build_image tests don't require a docker daemon."""
+    docker_client = MagicMock()
+    docker_client.images.build.return_value = (MagicMock(), [])
+    docker_client.containers.run.return_value = f"OpenStudio {os_version}".encode()
+    mocker.patch.object(docker_base.docker.DockerClient, "from_env", return_value=docker_client)
+    return docker_client
+
+
+def test_build_image_no_base_dockerfile(basic_residential_project_file, mocker):
+    """Without ``<platform>.base_dockerfile``, build_image performs a single build from the stock base image."""
+    project_filename, _ = basic_residential_project_file(update_args={"os_version": "3.10.0"})
+    docker_client = _mock_docker_client(mocker, "3.10.0")
+
+    dbb = DockerBatchBase(project_filename)
+    dbb.build_image("aws")
+
+    assert docker_client.images.build.call_count == 1
+    build_kwargs = docker_client.images.build.call_args.kwargs
+    assert build_kwargs["target"] == "buildstockbatch"
+    assert build_kwargs["buildargs"] == {"OS_VER": "3.10.0", "CLOUD_PLATFORM": "aws"}
+
+
+def test_build_image_with_base_dockerfile(basic_residential_project_file, mocker):
+    """With ``<platform>.base_dockerfile``, the project's Dockerfile is built first and used as the base image,
+    and the custom-gems build stage is skipped even when ``custom_gems`` is on."""
+    project_filename, _ = basic_residential_project_file(
+        update_args={
+            "os_version": "3.10.0",
+            "baseline": {"custom_gems": True, "n_buildings_represented": 80000000},
+            "aws": {"base_dockerfile": "build/Dockerfile", "base_target": "os-comstock"},
+        }
+    )
+    cfg = get_project_configuration(project_filename)
+    buildstock_directory = cfg["buildstock_directory"]
+    os.makedirs(os.path.join(buildstock_directory, "build"))
+    with open(os.path.join(buildstock_directory, "build", "Dockerfile"), "w") as f:
+        f.write("FROM ubuntu:22.04 as os-comstock\n")
+
+    docker_client = _mock_docker_client(mocker, "3.10.0")
+
+    dbb = DockerBatchBase(project_filename)
+    dbb.build_image("aws")
+
+    assert docker_client.images.build.call_count == 2
+
+    base_kwargs = docker_client.images.build.call_args_list[0].kwargs
+    assert base_kwargs["path"] == str(dbb.buildstock_dir)
+    assert base_kwargs["dockerfile"] == "build/Dockerfile"
+    assert base_kwargs["target"] == "os-comstock"
+
+    main_kwargs = docker_client.images.build.call_args_list[1].kwargs
+    assert main_kwargs["buildargs"]["BASE_IMAGE"] == base_kwargs["tag"]
+    assert main_kwargs["buildargs"]["OS_VER"] == "3.10.0"
+    assert main_kwargs["target"] == "buildstockbatch"
+
+
+def test_build_image_missing_base_dockerfile(basic_residential_project_file, mocker):
+    """build_image fails cleanly if ``<platform>.base_dockerfile`` doesn't exist."""
+    project_filename, _ = basic_residential_project_file(
+        update_args={
+            "os_version": "3.10.0",
+            "aws": {"base_dockerfile": "build/Dockerfile"},
+        }
+    )
+    _mock_docker_client(mocker, "3.10.0")
+
+    dbb = DockerBatchBase(project_filename)
+    with pytest.raises(ValidationError, match="base_dockerfile"):
+        dbb.build_image("aws")
+
+
+def test_validate_base_dockerfile(basic_residential_project_file):
+    """validate_base_dockerfile passes when the file exists (or isn't configured) and fails when it doesn't."""
+    project_filename, _ = basic_residential_project_file(update_args={"aws": {"base_dockerfile": "build/Dockerfile"}})
+
+    with pytest.raises(ValidationError, match="base_dockerfile"):
+        DockerBatchBase.validate_base_dockerfile(project_filename, "aws")
+
+    cfg = get_project_configuration(project_filename)
+    os.makedirs(os.path.join(cfg["buildstock_directory"], "build"))
+    with open(os.path.join(cfg["buildstock_directory"], "build", "Dockerfile"), "w") as f:
+        f.write("FROM ubuntu:22.04\n")
+    assert DockerBatchBase.validate_base_dockerfile(project_filename, "aws")
+
+
+def test_validate_base_dockerfile_not_set(basic_residential_project_file):
+    project_filename, _ = basic_residential_project_file()
+    assert DockerBatchBase.validate_base_dockerfile(project_filename, "aws")
+
+
+def test_validate_base_dockerfile_absolute_path(basic_residential_project_file):
+    abs_path = os.path.join(here, "Dockerfile")
+    project_filename, _ = basic_residential_project_file(update_args={"aws": {"base_dockerfile": abs_path}})
+    with pytest.raises(ValidationError, match="relative"):
+        DockerBatchBase.validate_base_dockerfile(project_filename, "aws")

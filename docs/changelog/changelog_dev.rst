@@ -81,3 +81,29 @@ Development Changelog
         :pullreq: 517
 
         Adds ``include_annual_foo`` arguments to the Residential HPXML Workflow Generator.
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 521
+
+        Adds optional ``aws.base_dockerfile`` and ``aws.base_target`` configuration options. When set,
+        buildstockbatch builds the specified Dockerfile from the buildstock directory (e.g. ComStock's
+        ``build/Dockerfile``) and uses the resulting image as the base for the buildstockbatch Docker
+        image, in place of the stock ``nrel/openstudio`` image. This allows running projects like
+        ComStock, whose simulation environment includes additional python dependencies and custom gems,
+        on AWS without publishing their image to a registry.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+        :pullreq: 521
+
+        Fixes the cloud Dockerfile so buildstockbatch is actually present in the built image. The
+        python venv was previously created in the image's working directory, ``/var/simdata/openstudio``,
+        which the ``nrel/openstudio`` base image declares as a ``VOLUME`` -- files written there during
+        the build are discarded, so ``python3 -m buildstockbatch...`` failed inside the container. The
+        venv now lives at ``/buildstock-batch/.venv``, the AWS/GCP job commands reference its interpreter
+        explicitly, and uv no longer installs a bare ``python3.11`` shim that would shadow a base image's
+        own ``python3.11`` (which, for ComStock, has PySAM and other measure dependencies installed).
+        Also adds ``dask-scheduler``/``dask-worker`` compatibility shims, since dask_cloudprovider
+        launches Fargate postprocessing containers with those legacy commands, which modern
+        distributed no longer installs.
