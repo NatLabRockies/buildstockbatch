@@ -147,3 +147,12 @@ Development Changelog
         files inside the AWS and GCP containers. That argument was removed from the standard
         library in Python 3.9, so every Batch task crashed with a ``TypeError`` immediately after
         downloading its job file.
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 521
+
+        Raises the docker client timeout from 60 seconds to an hour -- starting the local
+        postprocessing container can exceed a minute when a large buildstock directory is
+        bind-mounted through Docker Desktop's file sharing on Windows -- and removes a leftover
+        ``bsb_post`` container from a previous interrupted run before starting a new one.

@@ -13,6 +13,7 @@ This class contains the object & methods that allow for usage of the library wit
 import argparse
 import base64
 import boto3
+import docker
 from botocore.exceptions import ClientError
 from copy import deepcopy
 import csv
@@ -1337,6 +1338,11 @@ class AwsBatch(docker_base.DockerBatchBase):
             env["POSTPROCESSING_INSIDE_DOCKER_CONTAINER"] = "true"
 
             logger.info("Starting container for postprocessing")
+            # Remove a leftover container from a previous interrupted run
+            try:
+                self.docker_client.containers.get("bsb_post").remove(force=True)
+            except docker.errors.NotFound:
+                pass
             container = self.docker_client.containers.run(
                 self.image_url,
                 [docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws", container_cfg_path],

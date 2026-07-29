@@ -132,7 +132,9 @@ class DockerBatchBase(BuildStockBatchBase):
         if get_bool_env_var("POSTPROCESSING_INSIDE_DOCKER_CONTAINER"):
             return
 
-        self.docker_client = docker.DockerClient.from_env()
+        # Generous timeout: some operations (e.g. starting a container that bind-mounts a
+        # large directory through Docker Desktop's file sharing) can take several minutes.
+        self.docker_client = docker.DockerClient.from_env(timeout=3600)
         try:
             self.docker_client.ping()
         except:  # noqa: E722 (allow bare except in this case because error can be a weird non-class Windows API error)
