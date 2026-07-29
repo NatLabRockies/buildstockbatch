@@ -768,7 +768,7 @@ Results output browser (Cloud Console):
         jobs_file_path = sim_dir.parent / "jobs.tar.gz"
         bucket.blob(f"{gcs_prefix}/jobs.tar.gz").download_to_filename(jobs_file_path)
         with tarfile.open(jobs_file_path, "r") as tar_f:
-            jobs_d = json.load(tar_f.extractfile(f"jobs/job{task_index:05d}.json"), encoding="utf-8")
+            jobs_d = json.load(tar_f.extractfile(f"jobs/job{task_index:05d}.json"))
         logger.debug("Number of simulations = {}".format(len(jobs_d["batch"])))
 
         logger.debug("Getting weather files")

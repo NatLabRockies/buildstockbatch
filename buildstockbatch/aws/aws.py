@@ -1250,7 +1250,7 @@ class AwsBatch(docker_base.DockerBatchBase):
         jobs_file_path = sim_dir.parent / "jobs.tar.gz"
         s3.download_file(bucket, f"{prefix}/jobs.tar.gz", str(jobs_file_path))
         with tarfile.open(jobs_file_path, "r") as tar_f:
-            jobs_d = json.load(tar_f.extractfile(f"jobs/job{job_id:05d}.json"), encoding="utf-8")
+            jobs_d = json.load(tar_f.extractfile(f"jobs/job{job_id:05d}.json"))
         logger.debug("Number of simulations = {}".format(len(jobs_d["batch"])))
 
         logger.debug("Getting weather files")

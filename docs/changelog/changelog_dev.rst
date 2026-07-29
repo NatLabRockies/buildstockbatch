@@ -138,3 +138,12 @@ Development Changelog
         machine's docker credential store, which is now bypassed by passing ECR credentials
         explicitly) led to Batch jobs failing later with "image not found" instead of a clear
         error at push time.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+        :pullreq: 521
+
+        Removes the ``encoding`` argument from the ``json.load`` calls that read the per-task job
+        files inside the AWS and GCP containers. That argument was removed from the standard
+        library in Python 3.9, so every Batch task crashed with a ``TypeError`` immediately after
+        downloading its job file.
