@@ -156,3 +156,15 @@ Development Changelog
         postprocessing container can exceed a minute when a large buildstock directory is
         bind-mounted through Docker Desktop's file sharing on Windows -- and removes a leftover
         ``bsb_post`` container from a previous interrupted run before starting a new one.
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 521
+
+        Several AWS postprocessing fixes: adds an optional ``aws.vpc.dask_subnet_ids`` setting so
+        the Fargate dask cluster can run in public subnets (its scheduler must be reachable from
+        the machine running postprocessing) while Batch compute stays in private subnets; skips
+        dask_cloudprovider's stale-resource sweep when using an existing VPC (it deletes security
+        groups by name, which only works in the default VPC); copies a precomputed sample file
+        into the postprocessing container, where the sampler re-validates it; and raises an error
+        when the postprocessing container exits nonzero instead of silently succeeding.

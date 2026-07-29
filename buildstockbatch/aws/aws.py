@@ -43,6 +43,7 @@ from buildstockbatch.utils import (
     log_error_details,
     get_project_configuration,
     get_bool_env_var,
+    path_rel_to_file,
 )
 
 logger = logging.getLogger(__name__)
@@ -1283,9 +1284,14 @@ class AwsBatch(docker_base.DockerBatchBase):
         existing_vpc = self.cfg["aws"].get("vpc")
         if existing_vpc:
             fargate_vpc_kwargs["vpc"] = existing_vpc["vpc_id"]
-            fargate_vpc_kwargs["subnets"] = existing_vpc["subnet_ids"]
+            # The dask scheduler must be reachable from the machine running postprocessing,
+            # so its subnets (public, internet-gateway-routed) may differ from the Batch ones.
+            fargate_vpc_kwargs["subnets"] = existing_vpc.get("dask_subnet_ids", existing_vpc["subnet_ids"])
             if existing_vpc.get("security_group_id"):
                 fargate_vpc_kwargs["security_groups"] = [existing_vpc["security_group_id"]]
+            # dask_cloudprovider's stale-resource sweep deletes security groups by name,
+            # which only works in the default VPC; it crashes on groups in other VPCs.
+            fargate_vpc_kwargs["skip_cleanup"] = True
         self.dask_cluster = FargateCluster(
             region_name=self.region,
             fargate_spot=True,
@@ -1321,6 +1327,14 @@ class AwsBatch(docker_base.DockerBatchBase):
             cfg["buildstock_directory"] = container_buildstock_dir
             cfg["project_directory"] = str(pathlib.Path(self.project_dir).relative_to(self.buildstock_dir))
 
+            # Make a precomputed sample file available inside the container, where it is
+            # re-validated relative to the project config file's location.
+            sampler_args = cfg.get("sampler", {}).get("args", {})
+            if "sample_file" in sampler_args:
+                sample_file = path_rel_to_file(self.project_filename, sampler_args["sample_file"])
+                shutil.copy(sample_file, tmppath / "buildstock.csv")
+                sampler_args["sample_file"] = "buildstock.csv"
+
             with open(tmppath / "project_config.yml", "w") as f:
                 f.write(yaml.dump(cfg, Dumper=yaml.SafeDumper))
             container_cfg_path = str(container_workpath / "project_config.yml")
@@ -1352,11 +1366,16 @@ class AwsBatch(docker_base.DockerBatchBase):
                 },
                 environment=env,
                 name="bsb_post",
-                auto_remove=True,
                 detach=True,
             )
-            for msg in container.logs(stream=True):
-                logger.debug(msg)
+            try:
+                for msg in container.logs(stream=True):
+                    logger.debug(msg)
+                result = container.wait()
+            finally:
+                container.remove(force=True)
+            if result.get("StatusCode", 1) != 0:
+                raise RuntimeError(f"Postprocessing failed. The bsb_post container exited with {result}")
 
     def _process_results_inside_container(self):
         with open("/var/simdata/openstudio/args.json", "r") as f:

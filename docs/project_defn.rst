@@ -223,8 +223,11 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
    the Batch instances can reach ECR and S3.
 
     * ``vpc_id``: (required) The id of the existing VPC, e.g. ``vpc-0123456789abcdef0``.
-    * ``subnet_ids``: (required) List of subnet ids in that VPC to run Batch compute and Fargate
-      postprocessing tasks in.
+    * ``subnet_ids``: (required) List of subnet ids in that VPC to run Batch compute in.
+    * ``dask_subnet_ids``: (optional) List of subnet ids for the Fargate dask postprocessing
+      cluster. The dask scheduler must be reachable on port 8786 from the machine running
+      postprocessing, so these should generally be public (internet-gateway-routed) subnets.
+      Defaults to ``subnet_ids``.
     * ``security_group_id``: (optional) Security group id to use. Defaults to the VPC's default
       security group. Must allow outbound traffic.
 *  ``use_spot``: (optional) true or false. Defaults to true if missing. This tells the project
