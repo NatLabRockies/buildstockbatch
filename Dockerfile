@@ -22,11 +22,6 @@ RUN uv venv --python 3.11 "$VIRTUAL_ENV" && uv pip install "/buildstock-batch[${
 # venv goes last on PATH: dask/buildstockbatch executables resolve when the base
 # image doesn't provide them, without shadowing base-image interpreters and tools.
 ENV PATH="$PATH:$VIRTUAL_ENV/bin"
-# dask_cloudprovider starts scheduler/worker containers with the legacy
-# "dask-scheduler"/"dask-worker" commands, which modern distributed no longer installs.
-RUN printf '#!/bin/sh\nexec /buildstock-batch/.venv/bin/dask scheduler "$@"\n' > /usr/local/bin/dask-scheduler \
-    && printf '#!/bin/sh\nexec /buildstock-batch/.venv/bin/dask worker "$@"\n' > /usr/local/bin/dask-worker \
-    && chmod +x /usr/local/bin/dask-scheduler /usr/local/bin/dask-worker
 
 # Base plus custom gems
 FROM --platform=linux/amd64 buildstockbatch as buildstockbatch-custom-gems

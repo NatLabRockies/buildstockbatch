@@ -224,10 +224,6 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
 
     * ``vpc_id``: (required) The id of the existing VPC, e.g. ``vpc-0123456789abcdef0``.
     * ``subnet_ids``: (required) List of subnet ids in that VPC to run Batch compute in.
-    * ``dask_subnet_ids``: (optional) List of subnet ids for the Fargate dask postprocessing
-      cluster. The dask scheduler must be reachable on port 8786 from the machine running
-      postprocessing, so these should generally be public (internet-gateway-routed) subnets.
-      Defaults to ``subnet_ids``.
     * ``security_group_id``: (optional) Security group id to use. Defaults to the VPC's default
       security group. Must allow outbound traffic.
 *  ``use_spot``: (optional) true or false. Defaults to true if missing. This tells the project
@@ -242,32 +238,20 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
 *  ``notifications_email``: (required) Email to notify you of simulation completion.
    You'll receive an email at the beginning where you'll need to accept the
    subscription to receive further notification emails. This doesn't work right now.
-*  ``dask``: (required) Dask configuration for postprocessing
-
-   * ``use_fargate_cluster``: (optional) Default true. When false, postprocessing runs on a
-     local dask cluster inside the postprocessing container instead of an AWS Fargate cluster.
-     Use this for small runs, or when the Fargate dask scheduler isn't reachable from the
-     machine running postprocessing (e.g. corporate networks that block the dask protocol).
-   * ``n_workers``: (required) Number of dask workers to use.
-   * ``scheduler_cpu``: (optional) One of ``[1024, 2048, 4096, 8192, 16384]``.
-     Default: 2048. CPU to allocate for the scheduler task. 1024 = 1 VCPU. See
-     `Fargate Task CPU and memory`_ for allowable combinations of CPU and
-     memory.
-   * ``scheduler_memory``: (optional) Amount of memory to allocate to the
-     scheduler task. Default: 8192. See `Fargate Task CPU and memory`_ for
-     allowable combinations of CPU and memory.
-   * ``worker_cpu``: (optional) One of ``[1024, 2048, 4096, 8192, 16384]``.
-     Default: 2048. CPU to allocate for the worker tasks. 1024 = 1 VCPU. See
-     `Fargate Task CPU and memory`_ for allowable combinations of CPU and
-     memory.
-   * ``worker_memory``: (optional) Amount of memory to allocate to the worker
-     tasks. Default: 8192. See `Fargate Task CPU and memory`_ for allowable
-     combinations of CPU and memory.
 *  ``job_environment``: Specifies the computing requirements for each simulation.
 
     * ``vcpus``: (optional) Number of CPUs needed. Default: 1. This probably doesn't need to be changed.
     * ``memory``: (optional) Amount of RAM memory needed for each simulation in MiB. default 1024. For large multifamily buildings
       this works better if set to 2048.
+*  ``postprocessing_environment``: (optional) Specifies the computing requirements for the
+   postprocessing job. Postprocessing runs as a separate AWS Batch job in the cloud, reading
+   from and writing to S3 directly, so it needs no connection back to the machine that
+   submitted the batch (which may safely be interrupted while it runs).
+
+    * ``vcpus``: (optional) Number of CPUs for the postprocessing job. Also sets the number of
+      dask workers. Default: 4.
+    * ``memory``: (optional) Amount of RAM in MiB for the postprocessing job. Default: 30720.
+      Increase this for large runs with timeseries output.
 *  ``tags``: (optional) This is a list of key-value pairs to attach as tags to
    all the AWS objects created in the process of running the simulation. If you
    are at NREL, please fill out the following tags so we can track and allocate
@@ -275,7 +259,6 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
 
 
 .. _instance type: https://aws.amazon.com/ec2/instance-types/
-.. _Fargate Task CPU and memory: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-size
 
 
 .. _gcp-config:

@@ -104,9 +104,6 @@ Development Changelog
         venv now lives at ``/buildstock-batch/.venv``, the AWS/GCP job commands reference its interpreter
         explicitly, and uv no longer installs a bare ``python3.11`` shim that would shadow a base image's
         own ``python3.11`` (which, for ComStock, has PySAM and other measure dependencies installed).
-        Also adds ``dask-scheduler``/``dask-worker`` compatibility shims, since dask_cloudprovider
-        launches Fargate postprocessing containers with those legacy commands, which modern
-        distributed no longer installs.
 
     .. change::
         :tags: aws, bugfix
@@ -122,10 +119,10 @@ Development Changelog
         :pullreq: 521
 
         Adds an optional ``aws.vpc`` configuration (``vpc_id``, ``subnet_ids``, and optionally
-        ``security_group_id``) to run AWS Batch and the Fargate dask cluster in an existing VPC
-        instead of creating a new one. This supports accounts where ``ec2:CreateVpc`` is denied
-        by policy. When set, buildstockbatch does not create, modify, or delete anything in the
-        VPC, including during ``--clean``.
+        ``security_group_id``) to run AWS Batch in an existing VPC instead of creating a new
+        one. This supports accounts where ``ec2:CreateVpc`` is denied by policy. When set,
+        buildstockbatch does not create, modify, or delete anything in the VPC, including
+        during ``--clean``.
 
     .. change::
         :tags: aws, bugfix
@@ -152,29 +149,19 @@ Development Changelog
         :tags: aws, bugfix
         :pullreq: 521
 
-        Raises the docker client timeout from 60 seconds to an hour -- starting the local
-        postprocessing container can exceed a minute when a large buildstock directory is
-        bind-mounted through Docker Desktop's file sharing on Windows -- and removes a leftover
-        ``bsb_post`` container from a previous interrupted run before starting a new one.
-
-    .. change::
-        :tags: aws, bugfix
-        :pullreq: 521
-
-        Several AWS postprocessing fixes: adds an optional ``aws.vpc.dask_subnet_ids`` setting so
-        the Fargate dask cluster can run in public subnets (its scheduler must be reachable from
-        the machine running postprocessing) while Batch compute stays in private subnets; skips
-        dask_cloudprovider's stale-resource sweep when using an existing VPC (it deletes security
-        groups by name, which only works in the default VPC); copies a precomputed sample file
-        into the postprocessing container, where the sampler re-validates it; and raises an error
-        when the postprocessing container exits nonzero instead of silently succeeding.
+        Raises the docker client timeout from 60 seconds to an hour, since some docker API
+        operations (e.g. uploading a large build context through Docker Desktop's file sharing
+        on Windows) can take longer than a minute.
 
     .. change::
         :tags: aws, feature
         :pullreq: 521
 
-        Adds ``aws.dask.use_fargate_cluster`` (default true). When false, postprocessing runs on
-        a local dask cluster inside the postprocessing container instead of launching an AWS
-        Fargate cluster. Useful for small runs and for machines that cannot reach the Fargate
-        dask scheduler (e.g. corporate networks that block the dask protocol on port 8786, which
-        manifests as "Cluster failed to start ... Stream is closed").
+        AWS postprocessing now runs as an AWS Batch job in the cloud (mirroring how it runs as
+        a Cloud Run job on GCP), reading from and writing to S3 directly. It no longer runs in
+        a docker container on the machine that submitted the batch, and no longer launches an
+        AWS Fargate dask cluster, whose scheduler had to be reachable from that machine on port
+        8786 -- something many institutional networks block. The size of the postprocessing job
+        is configurable with the new ``aws.postprocessing_environment`` section (``vcpus`` and
+        ``memory``), and the ``aws.dask`` configuration section is removed. The
+        dask-cloudprovider dependency is no longer needed.

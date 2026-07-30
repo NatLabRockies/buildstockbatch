@@ -38,7 +38,6 @@ from buildstockbatch.utils import (
     calc_hash_for_file,
     compress_file,
     read_csv,
-    get_bool_env_var,
     get_project_configuration,
 )
 
@@ -129,11 +128,8 @@ class DockerBatchBase(BuildStockBatchBase):
         super().__init__(project_filename)
         self.missing_only = missing_only
 
-        if get_bool_env_var("POSTPROCESSING_INSIDE_DOCKER_CONTAINER"):
-            return
-
-        # Generous timeout: some operations (e.g. starting a container that bind-mounts a
-        # large directory through Docker Desktop's file sharing) can take several minutes.
+        # Generous timeout: some docker API operations (e.g. uploading a large build
+        # context through Docker Desktop's file sharing on Windows) can take several minutes.
         self.docker_client = docker.DockerClient.from_env(timeout=3600)
         try:
             self.docker_client.ping()

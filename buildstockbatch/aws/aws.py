@@ -13,12 +13,9 @@ This class contains the object & methods that allow for usage of the library wit
 import argparse
 import base64
 import boto3
-import docker
 from botocore.exceptions import ClientError
-from copy import deepcopy
 import csv
 from dask.distributed import Client, LocalCluster
-from dask_cloudprovider.aws import FargateCluster
 import gzip
 from joblib import Parallel, delayed
 import json
@@ -30,20 +27,15 @@ from s3fs import S3FileSystem
 import shutil
 import tarfile
 import re
-import tempfile
 import time
 import tqdm
 import io
-import yaml
 
+from buildstockbatch import postprocessing
 from buildstockbatch.aws.awsbase import AwsJobBase, boto_client_config
-from buildstockbatch.base import ValidationError
 from buildstockbatch.cloud import docker_base
 from buildstockbatch.utils import (
     log_error_details,
-    get_project_configuration,
-    get_bool_env_var,
-    path_rel_to_file,
 )
 
 logger = logging.getLogger(__name__)
@@ -720,7 +712,7 @@ class AwsBatchEnv(AwsJobBase):
         else:
             raise RuntimeError(f"Job queue {self.batch_job_queue_name} did not reach the VALID state")
 
-    def create_job_definition(self, docker_image, vcpus, memory, command, env_vars):
+    def create_job_definition(self, docker_image, vcpus, memory, command, env_vars, job_def_name=None):
         """
         Creates a job definition to run in the Batch environment.  This will create a new version with every execution.
         :param docker_image: The image ID from the related ECR enviornment
@@ -728,9 +720,11 @@ class AwsBatchEnv(AwsJobBase):
         :param memory: Numeric value of the memory MBs dedicated to each container
         :param command: Command to run in the container
         :param env_vars: Dictionary of key/value environment variables to include in the job
+        :param job_def_name: Name of the job definition; defaults to the job identifier
+        :returns: The ARN of the created job definition
         """
         response = self.batch.register_job_definition(
-            jobDefinitionName=self.job_identifier,
+            jobDefinitionName=job_def_name or self.job_identifier,
             type="container",
             # parameters={
             #    'string': 'string'
@@ -748,7 +742,9 @@ class AwsBatchEnv(AwsJobBase):
             tags=self.get_tags(),
         )
 
-        self.job_definition_arn = response["jobDefinitionArn"]
+        if job_def_name is None:
+            self.job_definition_arn = response["jobDefinitionArn"]
+        return response["jobDefinitionArn"]
 
     def submit_job(self, array_size=4):
         """
@@ -765,6 +761,20 @@ class AwsBatchEnv(AwsJobBase):
         )
 
         logger.info(f"Job {self.job_identifier} submitted.")
+        return resp
+
+    def submit_postprocessing_job(self, job_definition_arn):
+        """
+        Submits a single (non-array) job that runs postprocessing in the cloud.
+        """
+        resp = backoff(
+            self.batch.submit_job,
+            jobName=f"{self.job_identifier}-postprocessing",
+            jobQueue=self.batch_job_queue_name,
+            jobDefinition=job_definition_arn,
+            tags=self.get_tags(),
+        )
+        logger.info(f"Postprocessing job {self.job_identifier}-postprocessing submitted.")
         return resp
 
     def clean(self):
@@ -993,16 +1003,11 @@ class AwsBatchEnv(AwsJobBase):
 
             response = self.ec2.release_address(AllocationId=this_address)
 
-        try:
-            self.ec2.delete_security_group(GroupName=f"dask-{self.job_identifier}")
-        except ClientError as error:
-            if error.response["Error"]["Code"] == "InvalidGroup.NotFound":
-                pass
-            else:
-                raise error
-
 
 class AwsBatch(docker_base.DockerBatchBase):
+    DEFAULT_PP_VCPUS = 4
+    DEFAULT_PP_MEMORY_MIB = 30720
+
     def __init__(self, project_filename):
         super().__init__(project_filename)
 
@@ -1019,40 +1024,8 @@ class AwsBatch(docker_base.DockerBatchBase):
         self.boto3_session = boto3.Session(region_name=self.region)
 
     @staticmethod
-    def validate_dask_settings(project_file):
-        cfg = get_project_configuration(project_file)
-        if "emr" in cfg["aws"]:
-            logger.warning("The `aws.emr` configuration is no longer used and is ignored. Recommend removing.")
-        dask_cfg = cfg["aws"]["dask"]
-        errors = []
-        mem_rules = {
-            1024: (2, 8, 1),
-            2048: (4, 16, 1),
-            4096: (8, 30, 1),
-            8192: (16, 60, 4),
-            16384: (32, 120, 8),
-        }
-        for node_type in ("scheduler", "worker"):
-            mem = dask_cfg.get(f"{node_type}_memory", 8 * 1024)
-            if mem % 1024 != 0:
-                errors.append(f"`aws.dask.{node_type}_memory` = {mem}, needs to be a multiple of 1024.")
-            mem_gb = mem // 1024
-            min_gb, max_gb, incr_gb = mem_rules[dask_cfg.get(f"{node_type}_cpu", 2 * 1024)]
-            if not (min_gb <= mem_gb <= max_gb and (mem_gb - min_gb) % incr_gb == 0):
-                errors.append(
-                    f"`aws.dask.{node_type}_memory` = {mem}, "
-                    f"should be between {min_gb * 1024} and {max_gb * 1024} in a multiple of {incr_gb * 1024}."
-                )
-        if errors:
-            errors.append("See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html")
-            raise ValidationError("\n".join(errors))
-
-        return True
-
-    @staticmethod
     def validate_project(project_file):
         super(AwsBatch, AwsBatch).validate_project(project_file)
-        AwsBatch.validate_dask_settings(project_file)
         AwsBatch.validate_base_dockerfile(project_file, "aws")
 
     @property
@@ -1275,123 +1248,122 @@ class AwsBatch(docker_base.DockerBatchBase):
     def get_fs(self):
         return S3FileSystem()
 
-    def get_dask_client(self):
-        dask_cfg = self.cfg["aws"]["dask"]
-
-        if not dask_cfg.get("use_fargate_cluster", True):
-            # Run dask locally (inside the postprocessing container). Useful when the
-            # Fargate scheduler isn't reachable from the machine running postprocessing,
-            # e.g. from behind a corporate network that blocks the dask protocol.
-            logger.info("Using a local dask cluster for postprocessing")
-            self.dask_cluster = LocalCluster(n_workers=dask_cfg.get("n_workers", 2))
-            self.dask_client = Client(self.dask_cluster)
-            return self.dask_client
-
-        batch_env = AwsBatchEnv(self.job_identifier, self.cfg["aws"], self.boto3_session)
-        m = 1024
-        fargate_vpc_kwargs = {}
-        existing_vpc = self.cfg["aws"].get("vpc")
-        if existing_vpc:
-            fargate_vpc_kwargs["vpc"] = existing_vpc["vpc_id"]
-            # The dask scheduler must be reachable from the machine running postprocessing,
-            # so its subnets (public, internet-gateway-routed) may differ from the Batch ones.
-            fargate_vpc_kwargs["subnets"] = existing_vpc.get("dask_subnet_ids", existing_vpc["subnet_ids"])
-            if existing_vpc.get("security_group_id"):
-                fargate_vpc_kwargs["security_groups"] = [existing_vpc["security_group_id"]]
-            # dask_cloudprovider's stale-resource sweep deletes security groups by name,
-            # which only works in the default VPC; it crashes on groups in other VPCs.
-            fargate_vpc_kwargs["skip_cleanup"] = True
-        self.dask_cluster = FargateCluster(
-            region_name=self.region,
-            fargate_spot=True,
-            image=self.image_url,
-            cluster_name_template=f"dask-{self.job_identifier}",
-            scheduler_cpu=dask_cfg.get("scheduler_cpu", 2 * m),
-            scheduler_mem=dask_cfg.get("scheduler_memory", 8 * m),
-            worker_cpu=dask_cfg.get("worker_cpu", 2 * m),
-            worker_mem=dask_cfg.get("worker_memory", 8 * m),
-            n_workers=dask_cfg["n_workers"],
-            task_role_policies=["arn:aws:iam::aws:policy/AmazonS3FullAccess"],
-            tags=batch_env.get_tags(),
-            **fargate_vpc_kwargs,
-        )
-        self.dask_client = Client(self.dask_cluster)
-        return self.dask_client
-
-    def cleanup_dask(self):
-        self.dask_client.close()
-        self.dask_cluster.close()
-
     def upload_results(self, *args, **kwargs):
         """Do nothing because the results are already on S3"""
         return self.s3_bucket, self.s3_bucket_prefix + "/results/parquet"
 
-    def process_results(self, *args, **kwargs):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = pathlib.Path(tmpdir)
-            container_workpath = pathlib.PurePosixPath("/var/simdata/openstudio")
+    def process_results(self, skip_combine=False, use_dask_cluster=True):
+        """
+        Overrides `BuildStockBatchBase.process_results()`.
 
-            cfg = deepcopy(self.cfg)
-            container_buildstock_dir = str(container_workpath / "buildstock")
-            cfg["buildstock_directory"] = container_buildstock_dir
-            cfg["project_directory"] = str(pathlib.Path(self.project_dir).relative_to(self.buildstock_dir))
+        Instead of running `combine_results` on the machine that submitted the batch, this
+        submits an AWS Batch job that runs it in the cloud (the same approach GCP uses with
+        a Cloud Run job). The job reads from and writes to S3 directly, so nothing needs to
+        be transferred to or from this machine, and no connection back to it is required.
 
-            # Make a precomputed sample file available inside the container, where it is
-            # re-validated relative to the project config file's location.
-            sampler_args = cfg.get("sampler", {}).get("args", {})
-            if "sample_file" in sampler_args:
-                sample_file = path_rel_to_file(self.project_filename, sampler_args["sample_file"])
-                shutil.copy(sample_file, tmppath / "buildstock.csv")
-                sampler_args["sample_file"] = "buildstock.csv"
+        The Athena table creation step (if configured), which only makes AWS API calls,
+        still runs from this machine via the parent implementation.
+        """
+        if not skip_combine:
+            self.start_combine_results_job_on_cloud()
+        super().process_results(skip_combine=True, use_dask_cluster=False)
 
-            with open(tmppath / "project_config.yml", "w") as f:
-                f.write(yaml.dump(cfg, Dumper=yaml.SafeDumper))
-            container_cfg_path = str(container_workpath / "project_config.yml")
+    def start_combine_results_job_on_cloud(self):
+        """Submit an AWS Batch job that runs `combine_results` in the cloud and wait for it."""
+        do_timeseries = False
+        wfg_args = self.cfg["workflow_generator"].get("args", {})
+        if self.cfg["workflow_generator"]["type"] == "residential_hpxml":
+            if "simulation_output_report" in wfg_args.keys():
+                if "timeseries_frequency" in wfg_args["simulation_output_report"].keys():
+                    do_timeseries = wfg_args["simulation_output_report"]["timeseries_frequency"] != "none"
+        else:
+            do_timeseries = "timeseries_csv_export" in wfg_args.keys()
 
-            with open(tmppath / "args.json", "w") as f:
-                json.dump([args, kwargs], f)
+        # Ensure the Batch environment exists. These are all no-ops right after a
+        # simulation run, but --postprocessonly may need to (re)create it.
+        batch_env = AwsBatchEnv(self.job_identifier, self.cfg["aws"], self.boto3_session)
+        batch_env.create_batch_service_roles()
+        batch_env.create_vpc()
+        batch_env.create_compute_environment()
+        batch_env.create_job_queue()
 
-            credentials = boto3.Session().get_credentials().get_frozen_credentials()
-            env = {
-                "AWS_ACCESS_KEY_ID": credentials.access_key,
-                "AWS_SECRET_ACCESS_KEY": credentials.secret_key,
-            }
-            if credentials.token:
-                env["AWS_SESSION_TOKEN"] = credentials.token
-            env["POSTPROCESSING_INSIDE_DOCKER_CONTAINER"] = "true"
+        pp_env_cfg = self.cfg["aws"].get("postprocessing_environment", {})
+        n_vcpus = pp_env_cfg.get("vcpus", self.DEFAULT_PP_VCPUS)
+        memory_mib = pp_env_cfg.get("memory", self.DEFAULT_PP_MEMORY_MIB)
 
-            logger.info("Starting container for postprocessing")
-            # Remove a leftover container from a previous interrupted run
-            try:
-                self.docker_client.containers.get("bsb_post").remove(force=True)
-            except docker.errors.NotFound:
-                pass
-            container = self.docker_client.containers.run(
-                self.image_url,
-                [docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws", container_cfg_path],
-                volumes={
-                    tmpdir: {"bind": str(container_workpath), "mode": "rw"},
-                    self.buildstock_dir: {"bind": container_buildstock_dir, "mode": "ro"},
-                },
-                environment=env,
-                name="bsb_post",
-                detach=True,
+        env_vars = {
+            "JOB_TYPE": "POSTPROCESS",
+            "S3_BUCKET": self.s3_bucket,
+            "S3_PREFIX": self.s3_bucket_prefix,
+            "DO_TIMESERIES": "True" if do_timeseries else "False",
+            "DASK_N_WORKERS": str(n_vcpus),
+            "DASK_MEMORY_LIMIT_MB": str(memory_mib // n_vcpus),
+        }
+        job_def_arn = batch_env.create_job_definition(
+            self.image_url,
+            command=[docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws"],
+            vcpus=n_vcpus,
+            memory=memory_mib,
+            env_vars=env_vars,
+            job_def_name=f"{self.job_identifier}_pp",
+        )
+        job_id = batch_env.submit_postprocessing_job(job_def_arn)["jobId"]
+
+        logger.info("Waiting for the postprocessing job to complete...")
+        logs = self.boto3_session.client("logs", config=boto_client_config)
+        log_stream_name = None
+        next_log_token = None
+        last_status = None
+        while True:
+            time.sleep(10)
+            job_desc = batch_env.batch.describe_jobs(jobs=[job_id])["jobs"][0]
+            job_status = job_desc["status"]
+            if job_status != last_status:
+                logger.info(f"Postprocessing job status: {job_status}")
+                last_status = job_status
+            if log_stream_name is None:
+                log_stream_name = job_desc.get("container", {}).get("logStreamName")
+            if log_stream_name is not None:
+                try:
+                    log_kwargs = {"nextToken": next_log_token} if next_log_token else {"startFromHead": True}
+                    resp = logs.get_log_events(
+                        logGroupName="/aws/batch/job", logStreamName=log_stream_name, **log_kwargs
+                    )
+                    for event in resp["events"]:
+                        logger.debug("[postprocessing] " + event["message"])
+                    next_log_token = resp["nextForwardToken"]
+                except logs.exceptions.ResourceNotFoundException:
+                    pass
+            if job_status in ("SUCCEEDED", "FAILED"):
+                break
+        if job_status == "FAILED":
+            raise RuntimeError(
+                "The postprocessing job failed. See the CloudWatch logs "
+                f"(log group /aws/batch/job, log stream {log_stream_name})."
             )
-            try:
-                for msg in container.logs(stream=True):
-                    logger.debug(msg)
-                result = container.wait()
-            finally:
-                container.remove(force=True)
-            if result.get("StatusCode", 1) != 0:
-                raise RuntimeError(f"Postprocessing failed. The bsb_post container exited with {result}")
 
-    def _process_results_inside_container(self):
-        with open("/var/simdata/openstudio/args.json", "r") as f:
-            args, kwargs = json.load(f)
+    @classmethod
+    def run_combine_results_on_cloud(cls, s3_bucket, s3_prefix, do_timeseries):
+        """Run `combine_results` in the cloud.
 
-        logger.info("Running postprocessing in container")
-        super().process_results(*args, **kwargs)
+        This runs inside the AWS Batch postprocessing job container submitted by
+        `start_combine_results_job_on_cloud`.
+        """
+        logger.info("run_combine_results_on_cloud starting")
+        s3 = boto3.client("s3", config=boto_client_config)
+        with io.BytesIO() as f:
+            s3.download_fileobj(s3_bucket, f"{s3_prefix}/config.json", f)
+            cfg = json.loads(f.getvalue())
+
+        # Size the dask cluster explicitly: from inside the container, dask sees the host
+        # instance's CPUs and memory, not the resources allotted to this Batch job.
+        n_workers = int(os.environ["DASK_N_WORKERS"])
+        memory_limit_mb = int(os.environ["DASK_MEMORY_LIMIT_MB"])
+        cluster = LocalCluster(n_workers=n_workers, threads_per_worker=2, memory_limit=f"{memory_limit_mb}MB")
+        Client(cluster)
+
+        results_dir = f"{s3_bucket}/{s3_prefix}/results"
+        postprocessing.combine_results(S3FileSystem(), results_dir, cfg, do_timeseries=do_timeseries)
 
 
 @log_error_details()
@@ -1436,12 +1408,11 @@ def main():
         job_name = os.environ["JOB_NAME"]
         region = os.environ["REGION"]
         AwsBatch.run_job(job_id, s3_bucket, s3_prefix, job_name, region)
-    elif get_bool_env_var("POSTPROCESSING_INSIDE_DOCKER_CONTAINER"):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("project_filename")
-        args = parser.parse_args()
-        batch = AwsBatch(args.project_filename)
-        batch._process_results_inside_container()
+    elif os.environ.get("JOB_TYPE") == "POSTPROCESS":
+        s3_bucket = os.environ["S3_BUCKET"]
+        s3_prefix = os.environ["S3_PREFIX"]
+        do_timeseries = os.environ.get("DO_TIMESERIES", "False") == "True"
+        AwsBatch.run_combine_results_on_cloud(s3_bucket, s3_prefix, do_timeseries)
     else:
         parser = argparse.ArgumentParser()
         parser.add_argument("project_filename")

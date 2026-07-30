@@ -107,8 +107,6 @@ file, something like this:
       region: us-west-2
       use_spot: true
       batch_array_size: 10000
-      dask:
-        n_workers: 8
       notifications_email: your_email@somewhere.com  # doesn't work right now
 
 See :ref:`aws-config` for details.
