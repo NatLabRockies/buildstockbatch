@@ -81,6 +81,7 @@ aws-vpc-spec:
   security_group_id: str(required=False)
 
 aws-dask-spec:
+  use_fargate_cluster: bool(required=False)
   scheduler_cpu: enum(1024, 2048, 4096, 8192, 16384, required=False)
   scheduler_memory: int(min=1024, required=False)
   worker_cpu: enum(1024, 2048, 4096, 8192, 16384, required=False)

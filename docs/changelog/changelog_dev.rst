@@ -168,3 +168,13 @@ Development Changelog
         groups by name, which only works in the default VPC); copies a precomputed sample file
         into the postprocessing container, where the sampler re-validates it; and raises an error
         when the postprocessing container exits nonzero instead of silently succeeding.
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 521
+
+        Adds ``aws.dask.use_fargate_cluster`` (default true). When false, postprocessing runs on
+        a local dask cluster inside the postprocessing container instead of launching an AWS
+        Fargate cluster. Useful for small runs and for machines that cannot reach the Fargate
+        dask scheduler (e.g. corporate networks that block the dask protocol on port 8786, which
+        manifests as "Cluster failed to start ... Stream is closed").

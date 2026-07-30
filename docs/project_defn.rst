@@ -244,6 +244,10 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
    subscription to receive further notification emails. This doesn't work right now.
 *  ``dask``: (required) Dask configuration for postprocessing
 
+   * ``use_fargate_cluster``: (optional) Default true. When false, postprocessing runs on a
+     local dask cluster inside the postprocessing container instead of an AWS Fargate cluster.
+     Use this for small runs, or when the Fargate dask scheduler isn't reachable from the
+     machine running postprocessing (e.g. corporate networks that block the dask protocol).
    * ``n_workers``: (required) Number of dask workers to use.
    * ``scheduler_cpu``: (optional) One of ``[1024, 2048, 4096, 8192, 16384]``.
      Default: 2048. CPU to allocate for the scheduler task. 1024 = 1 VCPU. See

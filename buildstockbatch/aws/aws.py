@@ -17,7 +17,7 @@ import docker
 from botocore.exceptions import ClientError
 from copy import deepcopy
 import csv
-from dask.distributed import Client
+from dask.distributed import Client, LocalCluster
 from dask_cloudprovider.aws import FargateCluster
 import gzip
 from joblib import Parallel, delayed
@@ -1277,6 +1277,15 @@ class AwsBatch(docker_base.DockerBatchBase):
 
     def get_dask_client(self):
         dask_cfg = self.cfg["aws"]["dask"]
+
+        if not dask_cfg.get("use_fargate_cluster", True):
+            # Run dask locally (inside the postprocessing container). Useful when the
+            # Fargate scheduler isn't reachable from the machine running postprocessing,
+            # e.g. from behind a corporate network that blocks the dask protocol.
+            logger.info("Using a local dask cluster for postprocessing")
+            self.dask_cluster = LocalCluster(n_workers=dask_cfg.get("n_workers", 2))
+            self.dask_client = Client(self.dask_cluster)
+            return self.dask_client
 
         batch_env = AwsBatchEnv(self.job_identifier, self.cfg["aws"], self.boto3_session)
         m = 1024
