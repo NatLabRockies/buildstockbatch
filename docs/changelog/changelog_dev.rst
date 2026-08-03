@@ -84,7 +84,7 @@ Development Changelog
 
     .. change::
         :tags: aws, feature
-        :pullreq: 521
+        :pullreq: 527
 
         Adds optional ``aws.base_dockerfile`` and ``aws.base_target`` configuration options. When set,
         buildstockbatch builds the specified Dockerfile from the buildstock directory (e.g. ComStock's
@@ -95,7 +95,7 @@ Development Changelog
 
     .. change::
         :tags: aws, gcp, bugfix
-        :pullreq: 521
+        :pullreq: 527
 
         Fixes the cloud Dockerfile so buildstockbatch is actually present in the built image. The
         python venv was previously created in the image's working directory, ``/var/simdata/openstudio``,
@@ -107,7 +107,7 @@ Development Changelog
 
     .. change::
         :tags: aws, bugfix
-        :pullreq: 521
+        :pullreq: 527
 
         Applies the ``aws.tags`` configuration to AWS resources that previously weren't tagged:
         IAM roles, the Batch instance profile, the ECR repository, and the Batch security group.
@@ -116,7 +116,7 @@ Development Changelog
 
     .. change::
         :tags: aws, feature
-        :pullreq: 521
+        :pullreq: 527
 
         Adds an optional ``aws.vpc`` configuration (``vpc_id``, ``subnet_ids``, and optionally
         ``security_group_id``) to run AWS Batch in an existing VPC instead of creating a new
@@ -126,7 +126,7 @@ Development Changelog
 
     .. change::
         :tags: aws, bugfix
-        :pullreq: 521
+        :pullreq: 527
 
         Fixes two AWS submission bugs: jobs were submitted immediately after the Batch job queue
         was created, failing with "JobQueue not in VALID state" when the queue was still being
@@ -138,7 +138,7 @@ Development Changelog
 
     .. change::
         :tags: aws, gcp, bugfix
-        :pullreq: 521
+        :pullreq: 527
 
         Removes the ``encoding`` argument from the ``json.load`` calls that read the per-task job
         files inside the AWS and GCP containers. That argument was removed from the standard
@@ -147,7 +147,7 @@ Development Changelog
 
     .. change::
         :tags: aws, bugfix
-        :pullreq: 521
+        :pullreq: 527
 
         Raises the docker client timeout from 60 seconds to an hour, since some docker API
         operations (e.g. uploading a large build context through Docker Desktop's file sharing
@@ -155,7 +155,7 @@ Development Changelog
 
     .. change::
         :tags: aws, feature
-        :pullreq: 521
+        :pullreq: 527
 
         AWS postprocessing now runs as an AWS Batch job in the cloud (mirroring how it runs as
         a Cloud Run job on GCP), reading from and writing to S3 directly. It no longer runs in
@@ -168,7 +168,7 @@ Development Changelog
 
     .. change::
         :tags: aws, gcp, bugfix
-        :pullreq: 521
+        :pullreq: 527
 
         The ``max_minutes_per_sim`` configuration option is now honored by the cloud (AWS/GCP)
         simulation workers, matching the local and HPC behavior: a simulation exceeding the
@@ -180,7 +180,7 @@ Development Changelog
 
     .. change::
         :tags: aws, feature
-        :pullreq: 521
+        :pullreq: 527
 
         Adds the ``--missingonly`` command line option for AWS (matching GCP), which reruns
         only the simulation batches that are missing results from a previous run of the same
