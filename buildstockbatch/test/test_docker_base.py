@@ -8,6 +8,7 @@ import os
 import pathlib
 import pytest
 import shutil
+import subprocess
 import tarfile
 import tempfile
 from unittest.mock import MagicMock, PropertyMock
@@ -186,6 +187,56 @@ def test_run_simulations(basic_residential_project_file):
 
         # Check that files were cleaned up correctly
         assert not os.listdir(sim_dir)
+        os.chdir(old_cwd)
+
+
+def test_run_simulations_timeout(basic_residential_project_file, mocker):
+    """A simulation that exceeds ``max_minutes_per_sim`` is terminated, recorded as failed,
+    and the worker moves on to the next simulation in its batch."""
+    jobs_d = {
+        "job_num": 0,
+        "n_datapoints": 10,
+        "batch": [
+            [1, None],
+            [5, None],
+        ],
+    }
+    fs = LocalFileSystem()
+    project_filename, results_dir = basic_residential_project_file({"max_minutes_per_sim": 5})
+    cfg = get_project_configuration(project_filename)
+
+    run_mock = mocker.patch.object(
+        docker_base.subprocess,
+        "run",
+        side_effect=subprocess.TimeoutExpired(cmd="openstudio", timeout=5 * 60),
+    )
+    sleep_mock = mocker.patch.object(docker_base.time, "sleep")
+
+    with tempfile.TemporaryDirectory(prefix="bsb_") as temp_dir_str:
+        temp_path = pathlib.Path(temp_dir_str)
+        sim_dir = temp_path / "simdata" / "openstudio"
+        os.makedirs(sim_dir)
+        old_cwd = os.getcwd()
+        os.chdir(sim_dir)
+        bucket = temp_path / "bucket"
+        os.makedirs(bucket / "test_prefix" / "results" / "simulation_output")
+
+        DockerBatchBase.run_simulations(cfg, 0, jobs_d, sim_dir, fs, f"{bucket}/test_prefix")
+
+        # Both simulations were attempted with the timeout, despite the first one timing out
+        assert run_mock.call_count == 2
+        for call in run_mock.call_args_list:
+            assert call.kwargs["timeout"] == 5 * 60
+        assert sleep_mock.call_count == 2
+
+        # Both simulations are recorded as failed
+        output_dir = bucket / "test_prefix" / "results" / "simulation_output"
+        with gzip.open(output_dir / "results_job0.json.gz", "r") as f:
+            results = json.load(f)
+        assert len(results) == 2
+        for building in results:
+            assert building["building_id"] in (1, 5)
+            assert building["completed_status"] == "Fail"
         os.chdir(old_cwd)
 
 

@@ -165,3 +165,24 @@ Development Changelog
         is configurable with the new ``aws.postprocessing_environment`` section (``vcpus`` and
         ``memory``), and the ``aws.dask`` configuration section is removed. The
         dask-cloudprovider dependency is no longer needed.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+        :pullreq: 521
+
+        The ``max_minutes_per_sim`` configuration option is now honored by the cloud (AWS/GCP)
+        simulation workers, matching the local and HPC behavior: a simulation exceeding the
+        limit is terminated and recorded as failed, and the worker moves on to its next
+        simulation. Previously a hung simulation would stall its whole Batch task
+        indefinitely. Also fixes the AWS Batch array size to match the actual number of
+        simulation batches instead of ``aws.batch_array_size`` (which could submit tasks
+        with no assigned work that then crashed and failed the whole array job).
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 521
+
+        Adds the ``--missingonly`` command line option for AWS (matching GCP), which reruns
+        only the simulation batches that are missing results from a previous run of the same
+        project, then runs postprocessing. Useful for recovering a run in which some tasks
+        failed, e.g. from repeated spot instance reclamation.

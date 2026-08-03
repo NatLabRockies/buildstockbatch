@@ -242,7 +242,8 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
 
     * ``vcpus``: (optional) Number of CPUs needed. Default: 1. This probably doesn't need to be changed.
     * ``memory``: (optional) Amount of RAM memory needed for each simulation in MiB. default 1024. For large multifamily buildings
-      this works better if set to 2048.
+      this works better if set to 2048. Large commercial models (e.g. ComStock hospitals, the same models that
+      dominate the long tail of simulation runtimes) may also need more than the default.
 *  ``postprocessing_environment``: (optional) Specifies the computing requirements for the
    postprocessing job. Postprocessing runs as a separate AWS Batch job in the cloud, reading
    from and writing to S3 directly, so it needs no connection back to the machine that

@@ -33,6 +33,7 @@ import io
 
 from buildstockbatch import postprocessing
 from buildstockbatch.aws.awsbase import AwsJobBase, boto_client_config
+from buildstockbatch.base import ValidationError
 from buildstockbatch.cloud import docker_base
 from buildstockbatch.utils import (
     log_error_details,
@@ -1008,8 +1009,13 @@ class AwsBatch(docker_base.DockerBatchBase):
     DEFAULT_PP_VCPUS = 4
     DEFAULT_PP_MEMORY_MIB = 30720
 
-    def __init__(self, project_filename):
-        super().__init__(project_filename)
+    def __init__(self, project_filename, missing_only=False):
+        """
+        :param project_filename: Path to the project's configuration file.
+        :param missing_only: If true, use asset files from a previous job and only run the
+            simulation batches that don't already have results from a previous run.
+        """
+        super().__init__(project_filename, missing_only)
 
         self.job_identifier = re.sub("[^0-9a-zA-Z]+", "_", self.cfg["aws"]["job_identifier"])[:10]
 
@@ -1153,6 +1159,7 @@ class AwsBatch(docker_base.DockerBatchBase):
             S3_PREFIX=self.s3_bucket_prefix,
             JOB_NAME=self.job_identifier,
             REGION=self.region,
+            MISSING_ONLY=str(self.missing_only),
         )
 
         job_env_cfg = self.cfg["aws"].get("job_environment", {})
@@ -1164,12 +1171,26 @@ class AwsBatch(docker_base.DockerBatchBase):
             env_vars=env_vars,
         )
 
-        # start job
-        job_info = batch_env.submit_job(array_size=self.batch_array_size)
+        if self.missing_only:
+            # Save a list of task numbers to rerun in a file on S3. Task i of the new array job
+            # will read line i of this file to find the task of the original job it should rerun.
+            n_tasks = self.find_missing_tasks(batch_info.job_count)
+            if not n_tasks:
+                raise ValidationError(
+                    f"There are no tasks to retry. All {batch_info.job_count} results files are present."
+                )
+            logger.info(f"Found {n_tasks} out of {batch_info.job_count} tasks to rerun.")
+        else:
+            n_tasks = batch_info.job_count
+
+        # start job. AWS Batch requires array jobs to have at least 2 tasks; tasks with no
+        # assigned batch of simulations exit without doing anything.
+        array_size = max(n_tasks, 2)
+        job_info = batch_env.submit_job(array_size=array_size)
 
         # Monitor job status
         n_succeeded_last_time = 0
-        with tqdm.tqdm(desc="Running Simulations", total=self.batch_array_size) as progress_bar:
+        with tqdm.tqdm(desc="Running Simulations", total=array_size) as progress_bar:
             job_status = None
             while job_status not in ("SUCCEEDED", "FAILED"):
                 time.sleep(10)
@@ -1195,17 +1216,32 @@ class AwsBatch(docker_base.DockerBatchBase):
             raise RuntimeError("Batch Job Failed. Go look at the CloudWatch logs.")
 
     @classmethod
-    def run_job(cls, job_id, bucket, prefix, job_name, region):
+    def run_job(cls, job_id, bucket, prefix, job_name, region, missing_only=False):
         """
         Run a few simulations inside a container.
 
         This method is called from inside docker container in AWS. It will
         go get the necessary files from S3, run the simulation, and post the
         results back to S3.
+
+        :param missing_only: If True, rerun a task from a previous job. The provided job_id is
+            used as an index into the list of tasks that need to be rerun.
         """
 
         logger.debug(f"region: {region}")
         s3 = boto3.client("s3", config=boto_client_config)
+
+        if missing_only:
+            # Find the task number of the original task we're retrying.
+            with io.BytesIO() as f:
+                s3.download_fileobj(bucket, f"{prefix}/results/missing_tasks.txt", f)
+                tasks = f.getvalue().decode().split()
+            if job_id >= len(tasks):
+                # Extra task from padding the array job to AWS Batch's two-task minimum
+                logger.info(f"No missing task at index {job_id}; nothing to do.")
+                return
+            job_id = int(tasks[job_id])
+            logger.info(f"Rerunning task {job_id}")
 
         sim_dir = pathlib.Path("/var/simdata/openstudio")
 
@@ -1225,7 +1261,12 @@ class AwsBatch(docker_base.DockerBatchBase):
         jobs_file_path = sim_dir.parent / "jobs.tar.gz"
         s3.download_file(bucket, f"{prefix}/jobs.tar.gz", str(jobs_file_path))
         with tarfile.open(jobs_file_path, "r") as tar_f:
-            jobs_d = json.load(tar_f.extractfile(f"jobs/job{job_id:05d}.json"))
+            try:
+                jobs_d = json.load(tar_f.extractfile(f"jobs/job{job_id:05d}.json"))
+            except KeyError:
+                # Extra task from padding the array job to AWS Batch's two-task minimum
+                logger.info(f"No job file for task {job_id}; nothing to do.")
+                return
         logger.debug("Number of simulations = {}".format(len(jobs_d["batch"])))
 
         logger.debug("Getting weather files")
@@ -1407,7 +1448,8 @@ def main():
         s3_prefix = os.environ["S3_PREFIX"]
         job_name = os.environ["JOB_NAME"]
         region = os.environ["REGION"]
-        AwsBatch.run_job(job_id, s3_bucket, s3_prefix, job_name, region)
+        missing_only = os.environ.get("MISSING_ONLY") == "True"
+        AwsBatch.run_job(job_id, s3_bucket, s3_prefix, job_name, region, missing_only)
     elif os.environ.get("JOB_TYPE") == "POSTPROCESS":
         s3_bucket = os.environ["S3_BUCKET"]
         s3_prefix = os.environ["S3_PREFIX"]
@@ -1438,6 +1480,13 @@ def main():
             help="Only do the crawling in Athena. When simulations and postprocessing are done.",
             action="store_true",
         )
+        group.add_argument(
+            "--missingonly",
+            action="store_true",
+            help="Only run batches of simulations that are missing results from a previous job, then run "
+            "post-processing. Assumes that the project file is the same as the previous job. Will not rerun "
+            "individual failed simulations, only full batches that are missing results.",
+        )
         args = parser.parse_args()
 
         # validate the project, and in case of the --validateonly flag return True if validation passes
@@ -1445,7 +1494,7 @@ def main():
         if args.validateonly:
             return
 
-        batch = AwsBatch(args.project_filename)
+        batch = AwsBatch(args.project_filename, missing_only=args.missingonly)
         if args.clean:
             batch.clean()
         elif args.postprocessonly:

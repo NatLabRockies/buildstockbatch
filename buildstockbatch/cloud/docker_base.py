@@ -12,6 +12,7 @@ This is the base class mixed into classes that deploy using a docker container.
 import collections
 import csv
 from dataclasses import dataclass
+import datetime as dt
 import docker
 from fsspec.implementations.local import LocalFileSystem
 import gzip
@@ -648,6 +649,12 @@ class DockerBatchBase(BuildStockBatchBase):
         asset_dirs = os.listdir(sim_dir)
         ts_output_dir = f"{output_path}/results/simulation_output/timeseries"
 
+        max_time_min = cfg.get("max_minutes_per_sim")
+        if max_time_min is not None:
+            subprocess_kw = {"timeout": max_time_min * 60}
+        else:
+            subprocess_kw = {}
+
         with tarfile.open(str(simulation_output_tar_filename), "w:gz") as simout_tar:
             for building_id, upgrade_idx in jobs_d["batch"]:
                 upgrade_id = 0 if upgrade_idx is None else upgrade_idx + 1
@@ -659,6 +666,7 @@ class DockerBatchBase(BuildStockBatchBase):
                     json.dump(osw, f, indent=4)
 
                 # Run Simulation
+                start_time = dt.datetime.now()
                 with open(sim_dir / "os_stdout.log", "w") as f_out:
                     try:
                         logger.debug("Running {}".format(sim_id))
@@ -683,7 +691,27 @@ class DockerBatchBase(BuildStockBatchBase):
                             stdout=f_out,
                             stderr=subprocess.STDOUT,
                             cwd=str(sim_dir),
+                            **subprocess_kw,
                         )
+                    except subprocess.TimeoutExpired:
+                        end_time = dt.datetime.now()
+                        msg = f"Terminated {sim_id} after reaching max time of {max_time_min} minutes"
+                        logger.warning(msg)
+                        f_out.write(msg)
+                        with open(sim_dir / "out.osw", "w") as out_osw:
+                            out_msg = {
+                                "started_at": start_time.strftime("%Y%m%dT%H%M%SZ"),
+                                "completed_at": end_time.strftime("%Y%m%dT%H%M%SZ"),
+                                "completed_status": "Fail",
+                                "timeout": msg,
+                            }
+                            out_osw.write(json.dumps(out_msg, indent=3))
+                        (sim_dir / "run").mkdir(exist_ok=True)
+                        with open(sim_dir / "run" / "run.log", "a") as run_log:
+                            run_log.write(f"[{end_time.strftime('%H:%M:%S')} ERROR] {msg}")
+                        with open(sim_dir / "run" / "failed.job", "w") as failed_job:
+                            failed_job.write(f"[{end_time.strftime('%H:%M:%S')} ERROR] {msg}")
+                        time.sleep(20)  # Wait for EnergyPlus to release file locks
                     except subprocess.CalledProcessError:
                         logger.debug(f"Simulation failed: see {sim_id}/os_stdout.log")
 
