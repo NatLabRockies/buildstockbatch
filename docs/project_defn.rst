@@ -91,16 +91,16 @@ Information about baseline simulations are listed under the ``baseline`` key.
 - ``skip_sims``: Include this key to control whether the set of baseline simulations are run. The default (i.e., when
   this key is not included) is to run all the baseline simulations. No results csv table with baseline characteristics
   will be provided when the baseline simulations are skipped.
-- ``custom_gems``: true or false. **ONLY WORKS ON KESTREL AND LOCAL**
+- ``custom_gems``: true or false.
   When true, buildstockbatch will call the OpenStudio CLI commands with the
   ``bundle`` and ``bundle_path`` options. These options tell the CLI to load a
-  custom set of gems rather than those included in the OpenStudio CLI. For both
-  Kestrel and local Docker runs, these gems are first specified in the
-  ``buildstock\resources\Gemfile``. For Kestrel, when the apptainer image
-  is built, these gems are added to the image. For local Docker, when the
-  containers are started, the gems specified in the Gemfile are installed into a
-  Docker volume on the local computer. This volume is mounted by each container
-  as models are run, so each run uses the custom gems.
+  custom set of gems rather than those included in the OpenStudio CLI. These
+  gems are specified in the ``buildstock\resources\Gemfile``. For Kestrel, the
+  gems must already be included in the apptainer image. For local runs, the
+  gems are installed into ``buildstock\.custom_gems`` on the local computer.
+  For AWS/GCP, the gems are bundled into the Docker image when it is built,
+  unless ``base_dockerfile`` is set, in which case the base image is expected
+  to already contain them at ``/var/oscli``.
 
 OpenStudio Version
 ~~~~~~~~~~~~~~~~~~
@@ -207,6 +207,25 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
     *  ``prefix``: The s3 prefix at which the data will be stored.
 
 *  ``region``: (required) The AWS region in which the batch will be run and data stored. Probably "us-west-2" if you're at NREL.
+*  ``base_dockerfile``: (optional) Path, relative to ``buildstock_directory``, of a Dockerfile
+   to build and use as the base image for the buildstockbatch simulation image, in place of the
+   stock ``nrel/openstudio`` image. Use this when the project provides its own simulation
+   environment (e.g. ComStock's ``build/Dockerfile``, which adds python dependencies used by its
+   measures). The resulting image must contain OpenStudio matching ``os_version``, plus ``curl``
+   and ``ca-certificates``. When this is set along with ``baseline.custom_gems``, the base image
+   is expected to provide the custom gems and Gemfile at ``/var/oscli`` (as ComStock's does), and
+   buildstockbatch will not run its own ``bundle install``.
+*  ``base_target``: (optional) Name of the build stage to target in ``base_dockerfile``, if it
+   is a multi-stage Dockerfile (e.g. ``os-comstock``).
+*  ``vpc``: (optional) Use an existing VPC instead of creating one. Use this in accounts where
+   VPC creation is not permitted. Nothing in the VPC is created, modified, or deleted by
+   buildstockbatch. The subnets must have outbound internet access (e.g. via a NAT gateway) so
+   the Batch instances can reach ECR and S3.
+
+    * ``vpc_id``: (required) The id of the existing VPC, e.g. ``vpc-0123456789abcdef0``.
+    * ``subnet_ids``: (required) List of subnet ids in that VPC to run Batch compute in.
+    * ``security_group_id``: (optional) Security group id to use. Defaults to the VPC's default
+      security group. Must allow outbound traffic.
 *  ``use_spot``: (optional) true or false. Defaults to true if missing. This tells the project
    to use the `Spot Market <https://aws.amazon.com/ec2/spot/>`_ for data
    simulations, which typically yields about 60-70% cost savings.
@@ -219,28 +238,21 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
 *  ``notifications_email``: (required) Email to notify you of simulation completion.
    You'll receive an email at the beginning where you'll need to accept the
    subscription to receive further notification emails. This doesn't work right now.
-*  ``dask``: (required) Dask configuration for postprocessing
-
-   * ``n_workers``: (required) Number of dask workers to use.
-   * ``scheduler_cpu``: (optional) One of ``[1024, 2048, 4096, 8192, 16384]``.
-     Default: 2048. CPU to allocate for the scheduler task. 1024 = 1 VCPU. See
-     `Fargate Task CPU and memory`_ for allowable combinations of CPU and
-     memory.
-   * ``scheduler_memory``: (optional) Amount of memory to allocate to the
-     scheduler task. Default: 8192. See `Fargate Task CPU and memory`_ for
-     allowable combinations of CPU and memory.
-   * ``worker_cpu``: (optional) One of ``[1024, 2048, 4096, 8192, 16384]``.
-     Default: 2048. CPU to allocate for the worker tasks. 1024 = 1 VCPU. See
-     `Fargate Task CPU and memory`_ for allowable combinations of CPU and
-     memory.
-   * ``worker_memory``: (optional) Amount of memory to allocate to the worker
-     tasks. Default: 8192. See `Fargate Task CPU and memory`_ for allowable
-     combinations of CPU and memory.
 *  ``job_environment``: Specifies the computing requirements for each simulation.
 
     * ``vcpus``: (optional) Number of CPUs needed. Default: 1. This probably doesn't need to be changed.
     * ``memory``: (optional) Amount of RAM memory needed for each simulation in MiB. default 1024. For large multifamily buildings
-      this works better if set to 2048.
+      this works better if set to 2048. Large commercial models (e.g. ComStock hospitals, the same models that
+      dominate the long tail of simulation runtimes) may also need more than the default.
+*  ``postprocessing_environment``: (optional) Specifies the computing requirements for the
+   postprocessing job. Postprocessing runs as a separate AWS Batch job in the cloud, reading
+   from and writing to S3 directly, so it needs no connection back to the machine that
+   submitted the batch (which may safely be interrupted while it runs).
+
+    * ``vcpus``: (optional) Number of CPUs for the postprocessing job. Also sets the number of
+      dask workers. Default: 4.
+    * ``memory``: (optional) Amount of RAM in MiB for the postprocessing job. Default: 30720.
+      Increase this for large runs with timeseries output.
 *  ``tags``: (optional) This is a list of key-value pairs to attach as tags to
    all the AWS objects created in the process of running the simulation. If you
    are at NREL, please fill out the following tags so we can track and allocate
@@ -248,7 +260,6 @@ on the `AWS Batch <https://aws.amazon.com/batch/>`_ service.
 
 
 .. _instance type: https://aws.amazon.com/ec2/instance-types/
-.. _Fargate Task CPU and memory: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-size
 
 
 .. _gcp-config:

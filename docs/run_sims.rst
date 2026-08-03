@@ -107,11 +107,21 @@ file, something like this:
       region: us-west-2
       use_spot: true
       batch_array_size: 10000
-      dask:
-        n_workers: 8
       notifications_email: your_email@somewhere.com  # doesn't work right now
 
 See :ref:`aws-config` for details.
+
+Retry failed tasks
+..................
+
+Occasionally, especially when using spot instances, tasks will fail for transient reasons, like
+the instance being reclaimed. While reclaimed tasks are automatically retried, if they continue
+to fail, the entire job will fail and postprocessing will not run.
+
+If this happens, you can rerun the same job with the ``--missingonly`` flag. This will rerun only
+the tasks that didn't produce output files, then run postprocessing. Note: This flag assumes that
+your project config file has not changed since the previous run. If it has changed, the behavior
+is undefined.
 
 Cleaning up after yourself
 ..........................

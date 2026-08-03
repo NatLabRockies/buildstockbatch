@@ -23,9 +23,7 @@ gcp_requires = [
     "tqdm",
 ]
 
-aws_requires = [
-    "dask-cloudprovider[aws]>=2024.9.0",
-]
+aws_requires = []
 
 
 setuptools.setup(

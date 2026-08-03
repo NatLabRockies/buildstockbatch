@@ -81,3 +81,108 @@ Development Changelog
         :pullreq: 517
 
         Adds ``include_annual_foo`` arguments to the Residential HPXML Workflow Generator.
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 527
+
+        Adds optional ``aws.base_dockerfile`` and ``aws.base_target`` configuration options. When set,
+        buildstockbatch builds the specified Dockerfile from the buildstock directory (e.g. ComStock's
+        ``build/Dockerfile``) and uses the resulting image as the base for the buildstockbatch Docker
+        image, in place of the stock ``nrel/openstudio`` image. This allows running projects like
+        ComStock, whose simulation environment includes additional python dependencies and custom gems,
+        on AWS without publishing their image to a registry.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+        :pullreq: 527
+
+        Fixes the cloud Dockerfile so buildstockbatch is actually present in the built image. The
+        python venv was previously created in the image's working directory, ``/var/simdata/openstudio``,
+        which the ``nrel/openstudio`` base image declares as a ``VOLUME`` -- files written there during
+        the build are discarded, so ``python3 -m buildstockbatch...`` failed inside the container. The
+        venv now lives at ``/buildstock-batch/.venv``, the AWS/GCP job commands reference its interpreter
+        explicitly, and uv no longer installs a bare ``python3.11`` shim that would shadow a base image's
+        own ``python3.11`` (which, for ComStock, has PySAM and other measure dependencies installed).
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 527
+
+        Applies the ``aws.tags`` configuration to AWS resources that previously weren't tagged:
+        IAM roles, the Batch instance profile, the ECR repository, and the Batch security group.
+        Job definitions now set ``propagateTags`` so the tags also reach the ECS tasks launched
+        for each simulation job.
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 527
+
+        Adds an optional ``aws.vpc`` configuration (``vpc_id``, ``subnet_ids``, and optionally
+        ``security_group_id``) to run AWS Batch in an existing VPC instead of creating a new
+        one. This supports accounts where ``ec2:CreateVpc`` is denied by policy. When set,
+        buildstockbatch does not create, modify, or delete anything in the VPC, including
+        during ``--clean``.
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 527
+
+        Fixes two AWS submission bugs: jobs were submitted immediately after the Batch job queue
+        was created, failing with "JobQueue not in VALID state" when the queue was still being
+        provisioned (buildstockbatch now waits for the queue to become VALID); and docker push
+        errors were silently ignored, so a failed image push (e.g. due to an expired token in the
+        machine's docker credential store, which is now bypassed by passing ECR credentials
+        explicitly) led to Batch jobs failing later with "image not found" instead of a clear
+        error at push time.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+        :pullreq: 527
+
+        Removes the ``encoding`` argument from the ``json.load`` calls that read the per-task job
+        files inside the AWS and GCP containers. That argument was removed from the standard
+        library in Python 3.9, so every Batch task crashed with a ``TypeError`` immediately after
+        downloading its job file.
+
+    .. change::
+        :tags: aws, bugfix
+        :pullreq: 527
+
+        Raises the docker client timeout from 60 seconds to an hour, since some docker API
+        operations (e.g. uploading a large build context through Docker Desktop's file sharing
+        on Windows) can take longer than a minute.
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 527
+
+        AWS postprocessing now runs as an AWS Batch job in the cloud (mirroring how it runs as
+        a Cloud Run job on GCP), reading from and writing to S3 directly. It no longer runs in
+        a docker container on the machine that submitted the batch, and no longer launches an
+        AWS Fargate dask cluster, whose scheduler had to be reachable from that machine on port
+        8786 -- something many institutional networks block. The size of the postprocessing job
+        is configurable with the new ``aws.postprocessing_environment`` section (``vcpus`` and
+        ``memory``), and the ``aws.dask`` configuration section is removed. The
+        dask-cloudprovider dependency is no longer needed.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+        :pullreq: 527
+
+        The ``max_minutes_per_sim`` configuration option is now honored by the cloud (AWS/GCP)
+        simulation workers, matching the local and HPC behavior: a simulation exceeding the
+        limit is terminated and recorded as failed, and the worker moves on to its next
+        simulation. Previously a hung simulation would stall its whole Batch task
+        indefinitely. Also fixes the AWS Batch array size to match the actual number of
+        simulation batches instead of ``aws.batch_array_size`` (which could submit tasks
+        with no assigned work that then crashed and failed the whole array job).
+
+    .. change::
+        :tags: aws, feature
+        :pullreq: 527
+
+        Adds the ``--missingonly`` command line option for AWS (matching GCP), which reruns
+        only the simulation batches that are missing results from a previous run of the same
+        project, then runs postprocessing. Useful for recovering a run in which some tasks
+        failed, e.g. from repeated spot instance reclamation.

@@ -563,7 +563,10 @@ class GcpBatch(DockerBatchBase):
         }
         bsb_runnable.environment = environment
 
-        bsb_runnable.container.commands = ["-c", "python3 -m buildstockbatch.gcp.gcp"]
+        bsb_runnable.container.commands = [
+            "-c",
+            f"{docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON} -m buildstockbatch.gcp.gcp",
+        ]
 
         gcp_cfg = self.cfg["gcp"]
         job_env_cfg = gcp_cfg.get("job_environment", {})
@@ -765,7 +768,7 @@ Results output browser (Cloud Console):
         jobs_file_path = sim_dir.parent / "jobs.tar.gz"
         bucket.blob(f"{gcs_prefix}/jobs.tar.gz").download_to_filename(jobs_file_path)
         with tarfile.open(jobs_file_path, "r") as tar_f:
-            jobs_d = json.load(tar_f.extractfile(f"jobs/job{task_index:05d}.json"), encoding="utf-8")
+            jobs_d = json.load(tar_f.extractfile(f"jobs/job{task_index:05d}.json"))
         logger.debug("Number of simulations = {}".format(len(jobs_d["batch"])))
 
         logger.debug("Getting weather files")
@@ -871,7 +874,7 @@ Results output browser (Cloud Console):
                                 }
                             ),
                             command=["/bin/sh"],
-                            args=["-c", "python3 -m buildstockbatch.gcp.gcp"],
+                            args=["-c", f"{docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON} -m buildstockbatch.gcp.gcp"],
                             env=[
                                 run_v2.EnvVar(name="JOB_TYPE", value="POSTPROCESS"),
                                 run_v2.EnvVar(name="GCS_PREFIX", value=self.gcs_prefix),

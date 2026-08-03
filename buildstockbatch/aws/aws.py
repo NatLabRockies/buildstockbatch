@@ -14,10 +14,8 @@ import argparse
 import base64
 import boto3
 from botocore.exceptions import ClientError
-from copy import deepcopy
 import csv
-from dask.distributed import Client
-from dask_cloudprovider.aws import FargateCluster
+from dask.distributed import Client, LocalCluster
 import gzip
 from joblib import Parallel, delayed
 import json
@@ -29,19 +27,16 @@ from s3fs import S3FileSystem
 import shutil
 import tarfile
 import re
-import tempfile
 import time
 import tqdm
 import io
-import yaml
 
+from buildstockbatch import postprocessing
 from buildstockbatch.aws.awsbase import AwsJobBase, boto_client_config
 from buildstockbatch.base import ValidationError
 from buildstockbatch.cloud import docker_base
 from buildstockbatch.utils import (
     log_error_details,
-    get_project_configuration,
-    get_bool_env_var,
 )
 
 logger = logging.getLogger(__name__)
@@ -145,6 +140,28 @@ class AwsBatchEnv(AwsJobBase):
         return super().__repr__()
 
     def create_vpc(self):
+        existing_vpc = self.aws_config.get("vpc")
+        if existing_vpc:
+            # Use an existing VPC rather than creating one (for accounts where VPC
+            # creation is not permitted). Nothing in the VPC is created or modified.
+            self.vpc_id = existing_vpc["vpc_id"]
+            self.batch_subnet_ids = existing_vpc["subnet_ids"]
+            security_group_id = existing_vpc.get("security_group_id")
+            if not security_group_id:
+                sec_response = self.ec2.describe_security_groups(
+                    Filters=[
+                        {"Name": "vpc-id", "Values": [self.vpc_id]},
+                        {"Name": "group-name", "Values": ["default"]},
+                    ]
+                )
+                security_group_id = sec_response["SecurityGroups"][0]["GroupId"]
+            self.batch_security_group = security_group_id
+            logger.info(
+                f"Using existing VPC {self.vpc_id} with subnets {self.batch_subnet_ids} "
+                f"and security group {self.batch_security_group}"
+            )
+            return
+
         cidrs_in_use = set()
         vpc_response = self.ec2.describe_vpcs()
         for vpc in vpc_response["Vpcs"]:
@@ -189,6 +206,12 @@ class AwsBatchEnv(AwsJobBase):
 
         logger.info(f"Security group {self.batch_security_group} created for vpc/job.")
 
+        backoff(
+            self.ec2.create_tags,
+            Resources=[self.batch_security_group],
+            Tags=self.get_tags_uppercase(Name=self.job_identifier),
+        )
+
         response = backoff(
             self.ec2.authorize_security_group_ingress,
             GroupId=self.batch_security_group,
@@ -225,6 +248,7 @@ class AwsBatchEnv(AwsJobBase):
         )
 
         self.priv_vpc_subnet_id_2 = priv_response_2["Subnet"]["SubnetId"]
+        self.batch_subnet_ids = [self.priv_vpc_subnet_id_1, self.priv_vpc_subnet_id_2]
 
         logger.info("Private subnet created.")
 
@@ -396,6 +420,7 @@ class AwsBatchEnv(AwsJobBase):
             "batch",
             f"Service role for Batch environment {self.job_identifier}",
             managed_policie_arns=["arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"],
+            tags=self.get_tags_uppercase(),
         )
 
         # Instance Role for Batch compute environment
@@ -405,12 +430,16 @@ class AwsBatchEnv(AwsJobBase):
             "ec2",
             f"Instance role for Batch compute environment {self.job_identifier}",
             managed_policie_arns=["arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"],
+            tags=self.get_tags_uppercase(),
         )
 
         # Instance Profile
 
         try:
-            response = self.iam.create_instance_profile(InstanceProfileName=self.batch_instance_profile_name)
+            response = self.iam.create_instance_profile(
+                InstanceProfileName=self.batch_instance_profile_name,
+                Tags=self.get_tags_uppercase(),
+            )
 
             self.instance_profile_arn = response["InstanceProfile"]["Arn"]
 
@@ -521,6 +550,7 @@ class AwsBatchEnv(AwsJobBase):
             "ecs-tasks",
             f"Task role for Batch job {self.job_identifier}",
             policies_list=[task_permissions_policy],
+            tags=self.get_tags_uppercase(),
         )
 
         if self.batch_use_spot:
@@ -530,6 +560,7 @@ class AwsBatchEnv(AwsJobBase):
                 "spotfleet",
                 f"Spot Fleet role for Batch compute environment {self.job_identifier}",
                 managed_policie_arns=["arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole"],
+                tags=self.get_tags_uppercase(),
             )
 
     def create_compute_environment(self, maxCPUs=10000):
@@ -589,7 +620,7 @@ class AwsBatchEnv(AwsJobBase):
                 "launchTemplate": {
                     "launchTemplateName": self.launch_template_name,
                 },
-                "subnets": [self.priv_vpc_subnet_id_1, self.priv_vpc_subnet_id_2],
+                "subnets": self.batch_subnet_ids,
                 "securityGroupIds": [self.batch_security_group],
                 "instanceRole": self.instance_profile_arn,
             }
@@ -669,7 +700,20 @@ class AwsBatchEnv(AwsJobBase):
                 else:
                     raise
 
-    def create_job_definition(self, docker_image, vcpus, memory, command, env_vars):
+        # Wait for the job queue to finish being created; submitting jobs to a
+        # queue that isn't in the VALID state yet fails.
+        for _ in range(60):
+            response = self.batch.describe_job_queues(jobQueues=[self.batch_job_queue_name])
+            queue_status = response["jobQueues"][0]["status"]
+            if queue_status == "VALID":
+                logger.info(f"Job queue {self.batch_job_queue_name} is ready")
+                break
+            logger.debug(f"Waiting for job queue {self.batch_job_queue_name} (status = {queue_status})")
+            time.sleep(5)
+        else:
+            raise RuntimeError(f"Job queue {self.batch_job_queue_name} did not reach the VALID state")
+
+    def create_job_definition(self, docker_image, vcpus, memory, command, env_vars, job_def_name=None):
         """
         Creates a job definition to run in the Batch environment.  This will create a new version with every execution.
         :param docker_image: The image ID from the related ECR enviornment
@@ -677,9 +721,11 @@ class AwsBatchEnv(AwsJobBase):
         :param memory: Numeric value of the memory MBs dedicated to each container
         :param command: Command to run in the container
         :param env_vars: Dictionary of key/value environment variables to include in the job
+        :param job_def_name: Name of the job definition; defaults to the job identifier
+        :returns: The ARN of the created job definition
         """
         response = self.batch.register_job_definition(
-            jobDefinitionName=self.job_identifier,
+            jobDefinitionName=job_def_name or self.job_identifier,
             type="container",
             # parameters={
             #    'string': 'string'
@@ -693,10 +739,13 @@ class AwsBatchEnv(AwsJobBase):
                 "environment": self.generate_name_value_inputs(env_vars),
             },
             retryStrategy={"attempts": 2},
+            propagateTags=True,
             tags=self.get_tags(),
         )
 
-        self.job_definition_arn = response["jobDefinitionArn"]
+        if job_def_name is None:
+            self.job_definition_arn = response["jobDefinitionArn"]
+        return response["jobDefinitionArn"]
 
     def submit_job(self, array_size=4):
         """
@@ -715,42 +764,59 @@ class AwsBatchEnv(AwsJobBase):
         logger.info(f"Job {self.job_identifier} submitted.")
         return resp
 
+    def submit_postprocessing_job(self, job_definition_arn):
+        """
+        Submits a single (non-array) job that runs postprocessing in the cloud.
+        """
+        resp = backoff(
+            self.batch.submit_job,
+            jobName=f"{self.job_identifier}-postprocessing",
+            jobQueue=self.batch_job_queue_name,
+            jobDefinition=job_definition_arn,
+            tags=self.get_tags(),
+        )
+        logger.info(f"Postprocessing job {self.job_identifier}-postprocessing submitted.")
+        return resp
+
     def clean(self):
-        # Get our vpc:
+        # When using an existing VPC, don't touch it (or its security groups) during cleanup.
+        using_existing_vpc = bool(self.aws_config.get("vpc"))
 
-        response = self.ec2.describe_vpcs(
-            Filters=[
-                {
-                    "Name": "tag:Name",
-                    "Values": [
-                        self.vpc_name,
-                    ],
-                },
-            ]
-        )
-        try:
-            self.vpc_id = response["Vpcs"][0]["VpcId"]
-        except (KeyError, IndexError):
-            self.vpc_id = None
+        if not using_existing_vpc:
+            # Get our vpc:
+            response = self.ec2.describe_vpcs(
+                Filters=[
+                    {
+                        "Name": "tag:Name",
+                        "Values": [
+                            self.vpc_name,
+                        ],
+                    },
+                ]
+            )
+            try:
+                self.vpc_id = response["Vpcs"][0]["VpcId"]
+            except (KeyError, IndexError):
+                self.vpc_id = None
 
-        default_sg_response = self.ec2.describe_security_groups(
-            Filters=[
-                {
-                    "Name": "group-name",
-                    "Values": [
-                        "default",
-                    ],
-                },
-            ]
-        )
+            default_sg_response = self.ec2.describe_security_groups(
+                Filters=[
+                    {
+                        "Name": "group-name",
+                        "Values": [
+                            "default",
+                        ],
+                    },
+                ]
+            )
 
-        logger.info("Removing egress from default security group.")
-        for group in default_sg_response["SecurityGroups"]:
-            if group["VpcId"] == self.vpc_id:
-                default_group_id = group["GroupId"]
-                dsg = self.ec2r.SecurityGroup(default_group_id)
-                if len(dsg.ip_permissions_egress):
-                    response = dsg.revoke_egress(IpPermissions=dsg.ip_permissions_egress)
+            logger.info("Removing egress from default security group.")
+            for group in default_sg_response["SecurityGroups"]:
+                if group["VpcId"] == self.vpc_id:
+                    default_group_id = group["GroupId"]
+                    dsg = self.ec2r.SecurityGroup(default_group_id)
+                    if len(dsg.ip_permissions_egress):
+                        response = dsg.revoke_egress(IpPermissions=dsg.ip_permissions_egress)
 
         try:
             self.batch.update_job_queue(jobQueue=self.batch_job_queue_name, state="DISABLED")
@@ -815,18 +881,22 @@ class AwsBatchEnv(AwsJobBase):
 
         # Find Nat Gateways and VPCs
 
-        response = self.ec2.describe_vpcs(
-            Filters=[
-                {
-                    "Name": "tag:Name",
-                    "Values": [
-                        self.job_identifier,
-                    ],
-                },
-            ],
-        )
+        if using_existing_vpc:
+            vpcs_to_delete = []
+        else:
+            response = self.ec2.describe_vpcs(
+                Filters=[
+                    {
+                        "Name": "tag:Name",
+                        "Values": [
+                            self.job_identifier,
+                        ],
+                    },
+                ],
+            )
+            vpcs_to_delete = response["Vpcs"]
 
-        for vpc in response["Vpcs"]:
+        for vpc in vpcs_to_delete:
             this_vpc = vpc["VpcId"]
 
             s3gw_response = self.ec2.describe_vpc_endpoints(Filters=[{"Name": "vpc-id", "Values": [this_vpc]}])
@@ -934,18 +1004,18 @@ class AwsBatchEnv(AwsJobBase):
 
             response = self.ec2.release_address(AllocationId=this_address)
 
-        try:
-            self.ec2.delete_security_group(GroupName=f"dask-{self.job_identifier}")
-        except ClientError as error:
-            if error.response["Error"]["Code"] == "InvalidGroup.NotFound":
-                pass
-            else:
-                raise error
-
 
 class AwsBatch(docker_base.DockerBatchBase):
-    def __init__(self, project_filename):
-        super().__init__(project_filename)
+    DEFAULT_PP_VCPUS = 4
+    DEFAULT_PP_MEMORY_MIB = 30720
+
+    def __init__(self, project_filename, missing_only=False):
+        """
+        :param project_filename: Path to the project's configuration file.
+        :param missing_only: If true, use asset files from a previous job and only run the
+            simulation batches that don't already have results from a previous run.
+        """
+        super().__init__(project_filename, missing_only)
 
         self.job_identifier = re.sub("[^0-9a-zA-Z]+", "_", self.cfg["aws"]["job_identifier"])[:10]
 
@@ -960,40 +1030,9 @@ class AwsBatch(docker_base.DockerBatchBase):
         self.boto3_session = boto3.Session(region_name=self.region)
 
     @staticmethod
-    def validate_dask_settings(project_file):
-        cfg = get_project_configuration(project_file)
-        if "emr" in cfg["aws"]:
-            logger.warning("The `aws.emr` configuration is no longer used and is ignored. Recommend removing.")
-        dask_cfg = cfg["aws"]["dask"]
-        errors = []
-        mem_rules = {
-            1024: (2, 8, 1),
-            2048: (4, 16, 1),
-            4096: (8, 30, 1),
-            8192: (16, 60, 4),
-            16384: (32, 120, 8),
-        }
-        for node_type in ("scheduler", "worker"):
-            mem = dask_cfg.get(f"{node_type}_memory", 8 * 1024)
-            if mem % 1024 != 0:
-                errors.append(f"`aws.dask.{node_type}_memory` = {mem}, needs to be a multiple of 1024.")
-            mem_gb = mem // 1024
-            min_gb, max_gb, incr_gb = mem_rules[dask_cfg.get(f"{node_type}_cpu", 2 * 1024)]
-            if not (min_gb <= mem_gb <= max_gb and (mem_gb - min_gb) % incr_gb == 0):
-                errors.append(
-                    f"`aws.dask.{node_type}_memory` = {mem}, "
-                    f"should be between {min_gb * 1024} and {max_gb * 1024} in a multiple of {incr_gb * 1024}."
-                )
-        if errors:
-            errors.append("See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html")
-            raise ValidationError("\n".join(errors))
-
-        return True
-
-    @staticmethod
     def validate_project(project_file):
         super(AwsBatch, AwsBatch).validate_project(project_file)
-        AwsBatch.validate_dask_settings(project_file)
+        AwsBatch.validate_base_dockerfile(project_file, "aws")
 
     @property
     def docker_image(self):
@@ -1016,7 +1055,8 @@ class AwsBatch(docker_base.DockerBatchBase):
             if repo["repositoryName"] == repo_name:
                 break
         if repo is None:
-            resp = self.ecr.create_repository(repositoryName=repo_name)
+            tags = [{"Key": k, "Value": v} for k, v in self.cfg["aws"].get("tags", {}).items()]
+            resp = self.ecr.create_repository(repositoryName=repo_name, tags=tags)
             repo = resp["repository"]
         return repo
 
@@ -1039,15 +1079,25 @@ class AwsBatch(docker_base.DockerBatchBase):
         image = self.docker_client.images.get(self.docker_image)
         image.tag(repo_url, tag=self.job_identifier)
         last_status = None
-        for x in self.docker_client.images.push(repo_url, tag=self.job_identifier, stream=True):
+        push_error = None
+        # Pass the credentials explicitly; otherwise the push resolves auth from the
+        # machine's docker credential store, which may hold an expired token for ECR.
+        auth_config = {"username": dkr_user, "password": dkr_pass}
+        for x in self.docker_client.images.push(
+            repo_url, tag=self.job_identifier, stream=True, auth_config=auth_config
+        ):
             try:
                 y = json.loads(x)
             except json.JSONDecodeError:
                 continue
-            else:
-                if y.get("status") is not None and y.get("status") != last_status:
-                    logger.debug(y["status"])
-                    last_status = y["status"]
+            if y.get("error") is not None:
+                push_error = y["error"]
+                logger.error(f"Error pushing docker image: {push_error}")
+            elif y.get("status") is not None and y.get("status") != last_status:
+                logger.debug(y["status"])
+                last_status = y["status"]
+        if push_error:
+            raise RuntimeError(f"Failed to push docker image {repo_url}:{self.job_identifier}: {push_error}")
 
     def clean(self):
         """
@@ -1109,23 +1159,38 @@ class AwsBatch(docker_base.DockerBatchBase):
             S3_PREFIX=self.s3_bucket_prefix,
             JOB_NAME=self.job_identifier,
             REGION=self.region,
+            MISSING_ONLY=str(self.missing_only),
         )
 
         job_env_cfg = self.cfg["aws"].get("job_environment", {})
         batch_env.create_job_definition(
             self.image_url,
-            command=["python3", "-m", "buildstockbatch.aws.aws"],
+            command=[docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws"],
             vcpus=job_env_cfg.get("vcpus", 1),
             memory=job_env_cfg.get("memory", 1024),
             env_vars=env_vars,
         )
 
-        # start job
-        job_info = batch_env.submit_job(array_size=self.batch_array_size)
+        if self.missing_only:
+            # Save a list of task numbers to rerun in a file on S3. Task i of the new array job
+            # will read line i of this file to find the task of the original job it should rerun.
+            n_tasks = self.find_missing_tasks(batch_info.job_count)
+            if not n_tasks:
+                raise ValidationError(
+                    f"There are no tasks to retry. All {batch_info.job_count} results files are present."
+                )
+            logger.info(f"Found {n_tasks} out of {batch_info.job_count} tasks to rerun.")
+        else:
+            n_tasks = batch_info.job_count
+
+        # start job. AWS Batch requires array jobs to have at least 2 tasks; tasks with no
+        # assigned batch of simulations exit without doing anything.
+        array_size = max(n_tasks, 2)
+        job_info = batch_env.submit_job(array_size=array_size)
 
         # Monitor job status
         n_succeeded_last_time = 0
-        with tqdm.tqdm(desc="Running Simulations", total=self.batch_array_size) as progress_bar:
+        with tqdm.tqdm(desc="Running Simulations", total=array_size) as progress_bar:
             job_status = None
             while job_status not in ("SUCCEEDED", "FAILED"):
                 time.sleep(10)
@@ -1151,17 +1216,32 @@ class AwsBatch(docker_base.DockerBatchBase):
             raise RuntimeError("Batch Job Failed. Go look at the CloudWatch logs.")
 
     @classmethod
-    def run_job(cls, job_id, bucket, prefix, job_name, region):
+    def run_job(cls, job_id, bucket, prefix, job_name, region, missing_only=False):
         """
         Run a few simulations inside a container.
 
         This method is called from inside docker container in AWS. It will
         go get the necessary files from S3, run the simulation, and post the
         results back to S3.
+
+        :param missing_only: If True, rerun a task from a previous job. The provided job_id is
+            used as an index into the list of tasks that need to be rerun.
         """
 
         logger.debug(f"region: {region}")
         s3 = boto3.client("s3", config=boto_client_config)
+
+        if missing_only:
+            # Find the task number of the original task we're retrying.
+            with io.BytesIO() as f:
+                s3.download_fileobj(bucket, f"{prefix}/results/missing_tasks.txt", f)
+                tasks = f.getvalue().decode().split()
+            if job_id >= len(tasks):
+                # Extra task from padding the array job to AWS Batch's two-task minimum
+                logger.info(f"No missing task at index {job_id}; nothing to do.")
+                return
+            job_id = int(tasks[job_id])
+            logger.info(f"Rerunning task {job_id}")
 
         sim_dir = pathlib.Path("/var/simdata/openstudio")
 
@@ -1181,7 +1261,12 @@ class AwsBatch(docker_base.DockerBatchBase):
         jobs_file_path = sim_dir.parent / "jobs.tar.gz"
         s3.download_file(bucket, f"{prefix}/jobs.tar.gz", str(jobs_file_path))
         with tarfile.open(jobs_file_path, "r") as tar_f:
-            jobs_d = json.load(tar_f.extractfile(f"jobs/job{job_id:05d}.json"), encoding="utf-8")
+            try:
+                jobs_d = json.load(tar_f.extractfile(f"jobs/job{job_id:05d}.json"))
+            except KeyError:
+                # Extra task from padding the array job to AWS Batch's two-task minimum
+                logger.info(f"No job file for task {job_id}; nothing to do.")
+                return
         logger.debug("Number of simulations = {}".format(len(jobs_d["batch"])))
 
         logger.debug("Getting weather files")
@@ -1204,83 +1289,122 @@ class AwsBatch(docker_base.DockerBatchBase):
     def get_fs(self):
         return S3FileSystem()
 
-    def get_dask_client(self):
-        dask_cfg = self.cfg["aws"]["dask"]
-
-        batch_env = AwsBatchEnv(self.job_identifier, self.cfg["aws"], self.boto3_session)
-        m = 1024
-        self.dask_cluster = FargateCluster(
-            region_name=self.region,
-            fargate_spot=True,
-            image=self.image_url,
-            cluster_name_template=f"dask-{self.job_identifier}",
-            scheduler_cpu=dask_cfg.get("scheduler_cpu", 2 * m),
-            scheduler_mem=dask_cfg.get("scheduler_memory", 8 * m),
-            worker_cpu=dask_cfg.get("worker_cpu", 2 * m),
-            worker_mem=dask_cfg.get("worker_memory", 8 * m),
-            n_workers=dask_cfg["n_workers"],
-            task_role_policies=["arn:aws:iam::aws:policy/AmazonS3FullAccess"],
-            tags=batch_env.get_tags(),
-        )
-        self.dask_client = Client(self.dask_cluster)
-        return self.dask_client
-
-    def cleanup_dask(self):
-        self.dask_client.close()
-        self.dask_cluster.close()
-
     def upload_results(self, *args, **kwargs):
         """Do nothing because the results are already on S3"""
         return self.s3_bucket, self.s3_bucket_prefix + "/results/parquet"
 
-    def process_results(self, *args, **kwargs):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = pathlib.Path(tmpdir)
-            container_workpath = pathlib.PurePosixPath("/var/simdata/openstudio")
+    def process_results(self, skip_combine=False, use_dask_cluster=True):
+        """
+        Overrides `BuildStockBatchBase.process_results()`.
 
-            cfg = deepcopy(self.cfg)
-            container_buildstock_dir = str(container_workpath / "buildstock")
-            cfg["buildstock_directory"] = container_buildstock_dir
-            cfg["project_directory"] = str(pathlib.Path(self.project_dir).relative_to(self.buildstock_dir))
+        Instead of running `combine_results` on the machine that submitted the batch, this
+        submits an AWS Batch job that runs it in the cloud (the same approach GCP uses with
+        a Cloud Run job). The job reads from and writes to S3 directly, so nothing needs to
+        be transferred to or from this machine, and no connection back to it is required.
 
-            with open(tmppath / "project_config.yml", "w") as f:
-                f.write(yaml.dump(cfg, Dumper=yaml.SafeDumper))
-            container_cfg_path = str(container_workpath / "project_config.yml")
+        The Athena table creation step (if configured), which only makes AWS API calls,
+        still runs from this machine via the parent implementation.
+        """
+        if not skip_combine:
+            self.start_combine_results_job_on_cloud()
+        super().process_results(skip_combine=True, use_dask_cluster=False)
 
-            with open(tmppath / "args.json", "w") as f:
-                json.dump([args, kwargs], f)
+    def start_combine_results_job_on_cloud(self):
+        """Submit an AWS Batch job that runs `combine_results` in the cloud and wait for it."""
+        do_timeseries = False
+        wfg_args = self.cfg["workflow_generator"].get("args", {})
+        if self.cfg["workflow_generator"]["type"] == "residential_hpxml":
+            if "simulation_output_report" in wfg_args.keys():
+                if "timeseries_frequency" in wfg_args["simulation_output_report"].keys():
+                    do_timeseries = wfg_args["simulation_output_report"]["timeseries_frequency"] != "none"
+        else:
+            do_timeseries = "timeseries_csv_export" in wfg_args.keys()
 
-            credentials = boto3.Session().get_credentials().get_frozen_credentials()
-            env = {
-                "AWS_ACCESS_KEY_ID": credentials.access_key,
-                "AWS_SECRET_ACCESS_KEY": credentials.secret_key,
-            }
-            if credentials.token:
-                env["AWS_SESSION_TOKEN"] = credentials.token
-            env["POSTPROCESSING_INSIDE_DOCKER_CONTAINER"] = "true"
+        # Ensure the Batch environment exists. These are all no-ops right after a
+        # simulation run, but --postprocessonly may need to (re)create it.
+        batch_env = AwsBatchEnv(self.job_identifier, self.cfg["aws"], self.boto3_session)
+        batch_env.create_batch_service_roles()
+        batch_env.create_vpc()
+        batch_env.create_compute_environment()
+        batch_env.create_job_queue()
 
-            logger.info("Starting container for postprocessing")
-            container = self.docker_client.containers.run(
-                self.image_url,
-                ["python3", "-m", "buildstockbatch.aws.aws", container_cfg_path],
-                volumes={
-                    tmpdir: {"bind": str(container_workpath), "mode": "rw"},
-                    self.buildstock_dir: {"bind": container_buildstock_dir, "mode": "ro"},
-                },
-                environment=env,
-                name="bsb_post",
-                auto_remove=True,
-                detach=True,
+        pp_env_cfg = self.cfg["aws"].get("postprocessing_environment", {})
+        n_vcpus = pp_env_cfg.get("vcpus", self.DEFAULT_PP_VCPUS)
+        memory_mib = pp_env_cfg.get("memory", self.DEFAULT_PP_MEMORY_MIB)
+
+        env_vars = {
+            "JOB_TYPE": "POSTPROCESS",
+            "S3_BUCKET": self.s3_bucket,
+            "S3_PREFIX": self.s3_bucket_prefix,
+            "DO_TIMESERIES": "True" if do_timeseries else "False",
+            "DASK_N_WORKERS": str(n_vcpus),
+            "DASK_MEMORY_LIMIT_MB": str(memory_mib // n_vcpus),
+        }
+        job_def_arn = batch_env.create_job_definition(
+            self.image_url,
+            command=[docker_base.CONTAINER_BUILDSTOCKBATCH_PYTHON, "-m", "buildstockbatch.aws.aws"],
+            vcpus=n_vcpus,
+            memory=memory_mib,
+            env_vars=env_vars,
+            job_def_name=f"{self.job_identifier}_pp",
+        )
+        job_id = batch_env.submit_postprocessing_job(job_def_arn)["jobId"]
+
+        logger.info("Waiting for the postprocessing job to complete...")
+        logs = self.boto3_session.client("logs", config=boto_client_config)
+        log_stream_name = None
+        next_log_token = None
+        last_status = None
+        while True:
+            time.sleep(10)
+            job_desc = batch_env.batch.describe_jobs(jobs=[job_id])["jobs"][0]
+            job_status = job_desc["status"]
+            if job_status != last_status:
+                logger.info(f"Postprocessing job status: {job_status}")
+                last_status = job_status
+            if log_stream_name is None:
+                log_stream_name = job_desc.get("container", {}).get("logStreamName")
+            if log_stream_name is not None:
+                try:
+                    log_kwargs = {"nextToken": next_log_token} if next_log_token else {"startFromHead": True}
+                    resp = logs.get_log_events(
+                        logGroupName="/aws/batch/job", logStreamName=log_stream_name, **log_kwargs
+                    )
+                    for event in resp["events"]:
+                        logger.debug("[postprocessing] " + event["message"])
+                    next_log_token = resp["nextForwardToken"]
+                except logs.exceptions.ResourceNotFoundException:
+                    pass
+            if job_status in ("SUCCEEDED", "FAILED"):
+                break
+        if job_status == "FAILED":
+            raise RuntimeError(
+                "The postprocessing job failed. See the CloudWatch logs "
+                f"(log group /aws/batch/job, log stream {log_stream_name})."
             )
-            for msg in container.logs(stream=True):
-                logger.debug(msg)
 
-    def _process_results_inside_container(self):
-        with open("/var/simdata/openstudio/args.json", "r") as f:
-            args, kwargs = json.load(f)
+    @classmethod
+    def run_combine_results_on_cloud(cls, s3_bucket, s3_prefix, do_timeseries):
+        """Run `combine_results` in the cloud.
 
-        logger.info("Running postprocessing in container")
-        super().process_results(*args, **kwargs)
+        This runs inside the AWS Batch postprocessing job container submitted by
+        `start_combine_results_job_on_cloud`.
+        """
+        logger.info("run_combine_results_on_cloud starting")
+        s3 = boto3.client("s3", config=boto_client_config)
+        with io.BytesIO() as f:
+            s3.download_fileobj(s3_bucket, f"{s3_prefix}/config.json", f)
+            cfg = json.loads(f.getvalue())
+
+        # Size the dask cluster explicitly: from inside the container, dask sees the host
+        # instance's CPUs and memory, not the resources allotted to this Batch job.
+        n_workers = int(os.environ["DASK_N_WORKERS"])
+        memory_limit_mb = int(os.environ["DASK_MEMORY_LIMIT_MB"])
+        cluster = LocalCluster(n_workers=n_workers, threads_per_worker=2, memory_limit=f"{memory_limit_mb}MB")
+        Client(cluster)
+
+        results_dir = f"{s3_bucket}/{s3_prefix}/results"
+        postprocessing.combine_results(S3FileSystem(), results_dir, cfg, do_timeseries=do_timeseries)
 
 
 @log_error_details()
@@ -1324,13 +1448,13 @@ def main():
         s3_prefix = os.environ["S3_PREFIX"]
         job_name = os.environ["JOB_NAME"]
         region = os.environ["REGION"]
-        AwsBatch.run_job(job_id, s3_bucket, s3_prefix, job_name, region)
-    elif get_bool_env_var("POSTPROCESSING_INSIDE_DOCKER_CONTAINER"):
-        parser = argparse.ArgumentParser()
-        parser.add_argument("project_filename")
-        args = parser.parse_args()
-        batch = AwsBatch(args.project_filename)
-        batch._process_results_inside_container()
+        missing_only = os.environ.get("MISSING_ONLY") == "True"
+        AwsBatch.run_job(job_id, s3_bucket, s3_prefix, job_name, region, missing_only)
+    elif os.environ.get("JOB_TYPE") == "POSTPROCESS":
+        s3_bucket = os.environ["S3_BUCKET"]
+        s3_prefix = os.environ["S3_PREFIX"]
+        do_timeseries = os.environ.get("DO_TIMESERIES", "False") == "True"
+        AwsBatch.run_combine_results_on_cloud(s3_bucket, s3_prefix, do_timeseries)
     else:
         parser = argparse.ArgumentParser()
         parser.add_argument("project_filename")
@@ -1356,6 +1480,13 @@ def main():
             help="Only do the crawling in Athena. When simulations and postprocessing are done.",
             action="store_true",
         )
+        group.add_argument(
+            "--missingonly",
+            action="store_true",
+            help="Only run batches of simulations that are missing results from a previous job, then run "
+            "post-processing. Assumes that the project file is the same as the previous job. Will not rerun "
+            "individual failed simulations, only full batches that are missing results.",
+        )
         args = parser.parse_args()
 
         # validate the project, and in case of the --validateonly flag return True if validation passes
@@ -1363,7 +1494,7 @@ def main():
         if args.validateonly:
             return
 
-        batch = AwsBatch(args.project_filename)
+        batch = AwsBatch(args.project_filename, missing_only=args.missingonly)
         if args.clean:
             batch.clean()
         elif args.postprocessonly:
