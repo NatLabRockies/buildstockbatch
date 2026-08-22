@@ -12,6 +12,7 @@ A module containing utility functions for postprocessing
 
 import boto3
 import botocore.exceptions
+from botocore.config import Config
 import dask.bag as db
 from dask.distributed import performance_report
 import dask
@@ -36,6 +37,14 @@ import sys
 from buildstockbatch.utils import get_annual_publishing_pipeline
 
 logger = logging.getLogger(__name__)
+
+# Transient S3 connection failures (EndpointConnectionError/ConnectionClosedError) would otherwise
+# abort the entire dask upload, discarding all remaining files in that attempt. Retry them instead.
+S3_TRANSFER_CONFIG = Config(
+    retries={"max_attempts": 10, "mode": "standard"},
+    connect_timeout=30,
+    read_timeout=60,
+)
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
 MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using --replace_existing. We don't
@@ -781,7 +790,8 @@ def upload_results(
         return
     s3_prefix_output = s3_prefix + "/" + output_folder_name + "/"
 
-    s3 = boto3.resource("s3")
+    region_name = aws_conf.get("region_name", "us-west-2")
+    s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
     bucket = s3.Bucket(s3_bucket)
     existing_files = {f.key.removeprefix(s3_prefix_output) for f in bucket.objects.filter(Prefix=s3_prefix_output)}
 
@@ -804,7 +814,7 @@ def upload_results(
 
     def upload_file(filepath, s3key=None):
         full_path = filepath if filepath.is_absolute() else parquet_dir.joinpath(filepath)
-        s3 = boto3.resource("s3")
+        s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
         bucket = s3.Bucket(s3_bucket)
         if s3key is None:
             s3key = Path(s3_prefix_output).joinpath(filepath).as_posix()
@@ -839,7 +849,7 @@ def create_athena_tables(aws_conf, tbl_prefix, s3_bucket, s3_prefix):
     assert db_name, "athena:database_name not supplied"
 
     # Check that there are files in the s3 bucket before creating and running glue crawler
-    s3 = boto3.resource("s3")
+    s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
     bucket = s3.Bucket(s3_bucket)
     s3_path = f"s3://{s3_bucket}/{s3_prefix}"
     n_existing_files = len(list(bucket.objects.filter(Prefix=s3_prefix)))
