@@ -11,6 +11,7 @@ A module containing utility functions for postprocessing
 """
 
 import boto3
+import boto3.exceptions
 import botocore.exceptions
 from botocore.config import Config
 import dask.bag as db
@@ -45,6 +46,9 @@ S3_TRANSFER_CONFIG = Config(
     connect_timeout=30,
     read_timeout=60,
 )
+
+# Number of attempts for an upload that fails with SignatureDoesNotMatch (see upload_file).
+S3_SIGNING_MAX_ATTEMPTS = 5
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
 MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using --replace_existing. We don't
@@ -812,13 +816,28 @@ def upload_results(
             all_files = [file for file in all_files if str(file) not in existing_files]
             logger.info(f"Only uploading the rest of the {len(all_files)} files")
 
+    # botocore's standard retry mode treats SignatureDoesNotMatch (HTTP 403) as fatal, so a single
+    # transient signing failure on a multipart UploadPart aborts the whole dask graph and discards
+    # every remaining upload. Retry those here with a fresh client and exponential backoff.
     def upload_file(filepath, s3key=None):
         full_path = filepath if filepath.is_absolute() else parquet_dir.joinpath(filepath)
-        s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
-        bucket = s3.Bucket(s3_bucket)
         if s3key is None:
             s3key = Path(s3_prefix_output).joinpath(filepath).as_posix()
-        bucket.upload_file(str(full_path), str(s3key))
+        for attempt in range(1, S3_SIGNING_MAX_ATTEMPTS + 1):
+            s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
+            bucket = s3.Bucket(s3_bucket)
+            try:
+                bucket.upload_file(str(full_path), str(s3key))
+                return
+            except (boto3.exceptions.S3UploadFailedError, botocore.exceptions.ClientError) as ex:
+                if "SignatureDoesNotMatch" not in str(ex) or attempt == S3_SIGNING_MAX_ATTEMPTS:
+                    raise
+                delay = 2**attempt + random.uniform(0, 1)
+                logger.warning(
+                    f"SignatureDoesNotMatch uploading {s3key} (attempt {attempt} of "
+                    f"{S3_SIGNING_MAX_ATTEMPTS}); retrying in {delay:.1f}s"
+                )
+                time.sleep(delay)
 
     tasks = list(map(dask.delayed(upload_file), all_files))
     if buildstock_csv_filename is not None:
