@@ -11,11 +11,14 @@ A module containing utility functions for postprocessing
 """
 
 import boto3
+import boto3.exceptions
 import botocore.exceptions
+from botocore.config import Config
 import dask.bag as db
 from dask.distributed import performance_report
 import dask
 import dask.dataframe as dd
+from fsspec.implementations.local import LocalFileSystem
 from functools import partial
 import gzip
 import json
@@ -28,13 +31,24 @@ import pyarrow as pa
 from pyarrow import parquet
 import random
 import re
+import s3fs
 import tempfile
 import time
 import sys
-from buildstockbatch.utils import get_annual_publishing_functions
-import polars as pl
+from buildstockbatch.utils import get_annual_publishing_pipeline
 
 logger = logging.getLogger(__name__)
+
+# Transient S3 connection failures (EndpointConnectionError/ConnectionClosedError) would otherwise
+# abort the entire dask upload, discarding all remaining files in that attempt. Retry them instead.
+S3_TRANSFER_CONFIG = Config(
+    retries={"max_attempts": 10, "mode": "standard"},
+    connect_timeout=30,
+    read_timeout=60,
+)
+
+# Number of attempts for an upload that fails with SignatureDoesNotMatch (see upload_file).
+S3_SIGNING_MAX_ATTEMPTS = 5
 
 MAX_PARQUET_MEMORY = 1000  # maximum size (MB) of the parquet file in memory when combining multiple parquets
 MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using --replace_existing. We don't
@@ -42,6 +56,29 @@ MAX_REPLACE_FILES = 9999  # maximum number of files to replace in s3 when using 
 # 1. It is inefficient
 # 2. It is easy to make mistakes and wipe out a significant run
 MAX_STR_LEN = 100000  # some strings such as eplusout_err and step_errors can be very long, truncate to this length
+
+# Maps buildstockbatch sampler types to the sampler_type expected by resstockpostproc's
+# publication pipeline (how weights are allocated to geographies).
+SAMPLER_TO_PUBLICATION_TYPE = {
+    "residential_stratified": "stratified",
+    "residential_quota": "quota",
+    "residential_quota_downselect": "quota",
+    "precomputed": "quota",
+}
+
+# Published columns the quota-sampler weights-allocation path selects; publication is
+# skipped with a warning when the raw results can't produce them.
+QUOTA_REQUIRED_PUBLISHED_COLUMNS = [
+    "weight",
+    "in.sampling_region_id",
+    "in.as_simulated_state",
+    "in.tenure",
+    "in.vacancy_status",
+    "in.geometry_building_type_recs",
+    "in.vintage",
+    "in.heating_fuel",
+    "in.federal_poverty_level",
+]
 
 
 def read_data_point_out_json(fs, reporting_measures, filename):
@@ -403,26 +440,11 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     sim_output_dir = f"{results_dir}/simulation_output"
     ts_in_dir = f"{sim_output_dir}/timeseries"
     results_csvs_dir = f"{results_dir}/results_csvs"
-    results_csvs_pub_dir = None
-    parquet_pub_dir = None
     parquet_dir = f"{results_dir}/parquet"
     ts_dir = f"{results_dir}/parquet/timeseries"
     dirs = [results_csvs_dir, parquet_dir]
     if do_timeseries:
         dirs.append(ts_dir)
-
-    process_simulation_outputs = None
-    get_upgrade_rename_dict = None
-    setup_fsspec_filesystem = None
-    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
-        results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
-        parquet_pub_dir = f"{parquet_dir}/pub_annual"
-        dirs.append(results_csvs_pub_dir)
-        dirs.append(parquet_pub_dir)
-        stock_type = cfg.get("stock_type", "residential")
-        process_simulation_outputs, get_upgrade_rename_dict, setup_fsspec_filesystem = get_annual_publishing_functions(
-            stock_type
-        )
 
     # create the postprocessing results directories
     for dr in dirs:
@@ -449,28 +471,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         dask.delayed(partial(read_results_json, fs, all_cols=all_results_cols))(x) for x in results_json_files
     ]
     results_df = dd.from_delayed(delayed_results_dfs, verify_meta=False)
-
-    failed_bldgs = []
-    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
-        logger.info("Collecting all the failed simulations buildings")
-
-        def get_failed_baseline_bldg_ids(filename):
-            with fs.open(filename, "rb") as f1:
-                with gzip.open(f1, "rt", encoding="utf-8") as f2:
-                    dpouts = json.load(f2)
-            failed_bldgs = []
-            for dpout in dpouts:
-                if dpout.get("upgrade") == 0 and dpout.get("completed_status") != "Success":
-                    failed_bldgs.append(dpout["building_id"])
-            return failed_bldgs
-
-        failed_bldgs = db.from_sequence(results_json_files).map(get_failed_baseline_bldg_ids).compute()
-
-        failed_bldgs = set([int(bldg_id) for sublist in failed_bldgs for bldg_id in sublist if bldg_id is not None])
-        logger.info(
-            f"Found {len(failed_bldgs)} failed baseline simulations. Excluding them from all upgrades. "
-            f"The buildings are: {failed_bldgs}"
-        )
 
     if do_timeseries:
         # Look at all the parquet files to see what columns are in all of them.
@@ -512,53 +512,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
 
     logger.info(f"Will postprocess the following upgrades {upgrade_list}")
 
-    # Initialize variables for process_simulation_outputs if enabled
-    upgrade_renamer = None
-    col_schema = None
-    baseline_raw_df_lazy = None
-    processed_baseline_df_lazy = None
-
-    # If process_simulation_outputs is not None we are in resstock and using resstockpostproc to process
-    if process_simulation_outputs is not None:
-        if get_upgrade_rename_dict is None or setup_fsspec_filesystem is None:
-            raise ImportError(
-                "resstockpostproc functions are required for publish_annual_results but could not be imported"
-            )
-
-        # Create filesystem dict structure using setup_fsspec_filesystem
-        # Use parquet_dir as the base path for the filesystem
-        # Pass None for aws_profile_name as it's not used in buildstockbatch
-        filesystem_dict = setup_fsspec_filesystem(parquet_dir, None)
-
-        # Get upgrade renamer dictionary
-        logger.info("Getting upgrade rename dictionary")
-        upgrade_renamer = get_upgrade_rename_dict(filesystem_dict)
-
-        # Convert PyArrow schema to Polars schema
-        # The all_schema_dict contains PyArrow types, but resstockpostproc expects Polars types
-        logger.info("Converting schema from PyArrow to Polars types")
-        col_schema = {}
-        for col_name, pa_type in all_schema_dict.items():
-            try:
-                # Convert PyArrow type to Polars type using polars' from_arrow
-                pl_type = pl.from_arrow(pa.array([], type=pa_type)).dtype
-                col_schema[col_name] = pl_type
-            except Exception as e:
-                logger.warning(f"Could not convert type for column {col_name}: {e}")
-                # Fall back to String type if conversion fails
-                col_schema[col_name] = pl.String
-
-        # Extract baseline dataframe before the loop
-        # We need the raw baseline before any column filtering
-        logger.info("Extracting baseline dataframe for process_simulation_outputs")
-        baseline_df_raw = dask.compute(results_df_groups.get_group(0))[0]
-        baseline_df_raw = baseline_df_raw.copy()
-        baseline_df_raw.rename(columns=to_camelcase, inplace=True)
-        baseline_df_raw = clean_up_results_df(baseline_df_raw, cfg, keep_upgrade_id=False)
-        baseline_df_raw.set_index("building_id", inplace=True)
-        baseline_df_raw.sort_index(inplace=True)
-        baseline_raw_df_lazy = pl.from_pandas(baseline_df_raw, include_index=True).lazy()
-
     for upgrade_id in upgrade_list:
         logger.info(f"Processing upgrade {upgrade_id}. ")
         df = dask.compute(results_df_groups.get_group(upgrade_id))[0]
@@ -575,12 +528,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
             inplace=True,
         )
 
-        # Convert current upgrade dataframe to LazyFrame for process_simulation_outputs
-        # This needs to be done before column removal for upgrades
-        upgrade_raw_df_lazy = None
-        if process_simulation_outputs is not None:
-            upgrade_raw_df_lazy = pl.from_pandas(df, include_index=True).lazy()
-
         if upgrade_id > 0:
             # Remove building characteristics for upgrade scenarios.
             cols_to_keep = list(filter(lambda x: not x.startswith("build_existing_model."), df.columns))
@@ -595,34 +542,6 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                     logger.info(f"The types for {unresolved} columns couldn't be determined.")
                 else:
                     logger.info("All columns were successfully assigned a datatype based on other upgrades.")
-        if process_simulation_outputs is not None:
-            pub_df_lazy = process_simulation_outputs(
-                failed_bldgs,
-                baseline_raw_df_lazy,
-                processed_baseline_df_lazy,
-                upgrade_raw_df_lazy,
-                upgrade_id,
-                upgrade_renamer,
-                col_schema,
-            )
-
-            # Store processed baseline for use in subsequent upgrades
-            if upgrade_id == 0:
-                processed_baseline_df_lazy = pub_df_lazy
-
-            pub_df = pub_df_lazy.collect()
-            csv_filename = f"{results_csvs_pub_dir}/results_up{upgrade_id:02d}.csv.gz"
-            logger.info(f"Writing {csv_filename}")
-            with fs.open(csv_filename, "wb") as f:
-                with gzip.open(f, "wb") as gf:  # Use wb here because polars writes in binary mode to file
-                    pub_df.write_csv(file=gf, line_terminator="\n")
-
-            dir = f"{parquet_pub_dir}/upgrade={upgrade_id}"
-            fs.makedirs(dir)
-            parquet_filename = f"{dir}/results_up{upgrade_id:02d}.parquet"
-            logger.info(f"Writing {parquet_filename}")
-            pub_df.write_parquet(parquet_filename)
-
         # Write CSV
         csv_filename = f"{results_csvs_dir}/results_up{upgrade_id:02d}.csv.gz"
         logger.info(f"Writing {csv_filename}")
@@ -728,6 +647,115 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
         logger.info("Writing timeseries metadata files")
         write_metadata_files(fs, ts_dir, partition_columns)
 
+    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+        publish_annual_results(fs, results_dir, cfg)
+
+
+def _get_publication_col_maps():
+    # Deferred import: resstockpostproc is only required when publish_annual_results is enabled
+    from resstockpostproc.utils import get_col_maps
+
+    return get_col_maps()
+
+
+def _missing_quota_publication_columns(fs, baseline_parquet_path):
+    """Return the published columns required by the quota-sampler publication path that
+    cannot be produced from the raw baseline results.
+
+    The publication pipeline renames raw columns to published names per resstockpostproc's
+    sdr_column_definitions.csv, so each required published column is translated back to
+    its raw source column and checked against the baseline parquet schema.
+    """
+    published_to_raw = {
+        col_map["published_name"]: col_map["column_name"]
+        for col_map in _get_publication_col_maps()
+        if col_map["column_name"] and col_map["import_from_raw"] == "yes"
+    }
+    raw_cols = get_cols(fs, baseline_parquet_path)
+    missing = []
+    for published_name in QUOTA_REQUIRED_PUBLISHED_COLUMNS:
+        raw_name = published_to_raw.get(published_name)
+        if raw_name is None or raw_name not in raw_cols:
+            missing.append(published_name)
+    return missing
+
+
+def publish_annual_results(fs, results_dir, cfg):
+    """Run the resstockpostproc publication pipeline on the combined annual results.
+
+    Reads the results_upXX.parquet files written by combine_results and writes the
+    publication output tree (cached simulation outputs, allocated weights, and the
+    metadata_and_annual_results geographic exports).
+
+    :param fs: fsspec filesystem (local or s3 only)
+    :param results_dir: directory where results are stored and written
+    :type results_dir: str
+    :param cfg: project configuration (contents of yaml file)
+    :type cfg: dict
+    """
+    stock_type = cfg.get("stock_type", "residential")
+    export_metadata_and_annual_results = get_annual_publishing_pipeline(stock_type)
+
+    sampler_name = cfg["sampler"]["type"]
+    publication_sampler_type = SAMPLER_TO_PUBLICATION_TYPE.get(sampler_name)
+    if publication_sampler_type is None:
+        raise ValueError(
+            f"Sampler type '{sampler_name}' is not supported by publish_annual_results. "
+            f"Supported samplers: {sorted(SAMPLER_TO_PUBLICATION_TYPE)}"
+        )
+
+    if not isinstance(fs, (LocalFileSystem, s3fs.S3FileSystem)):
+        raise NotImplementedError(
+            f"publish_annual_results only supports local and S3 filesystems, got {type(fs).__name__}"
+        )
+
+    parquet_dir = f"{results_dir}/parquet"
+    baseline_path = f"{parquet_dir}/baseline/results_up00.parquet"
+    upgrade_paths = [
+        f"{parquet_dir}/upgrades/upgrade={upgrade_id}/results_up{upgrade_id:02d}.parquet"
+        for upgrade_id in get_upgrade_list(cfg)
+        if upgrade_id > 0
+    ]
+
+    if publication_sampler_type == "quota":
+        missing_cols = _missing_quota_publication_columns(fs, baseline_path)
+        if missing_cols:
+            logger.warning(
+                "Skipping publish_annual_results: the results are missing columns required "
+                f"by the quota-sampler publication path: {missing_cols}. "
+                "The rest of postprocessing is unaffected."
+            )
+            return
+
+    publication_cfg = cfg.get("postprocessing", {}).get("publication", {})
+    output_dir = publication_cfg.get("output_dir", f"{results_dir}/publication")
+
+    raw_results_url = parquet_dir
+    if isinstance(fs, s3fs.S3FileSystem) and not raw_results_url.startswith("s3://"):
+        raw_results_url = f"s3://{raw_results_url}"
+
+    # Only pass optional knobs the user configured so the pipeline's defaults apply otherwise
+    optional_kwargs = {}
+    if "seed" in publication_cfg:
+        optional_kwargs["allocation_seed"] = publication_cfg["seed"]
+    if "rename_upgrades" in publication_cfg:
+        optional_kwargs["rename_upgrades_path"] = publication_cfg["rename_upgrades"]
+    if "write_workers" in publication_cfg:
+        optional_kwargs["write_workers"] = publication_cfg["write_workers"]
+    if "slice_rows" in publication_cfg:
+        optional_kwargs["slice_rows"] = publication_cfg["slice_rows"]
+
+    logger.info(f"Publishing annual results to {output_dir}")
+    export_metadata_and_annual_results(
+        raw_results_url,
+        output_dir,
+        sampler_type=publication_sampler_type,
+        baseline_file=baseline_path,
+        upgrade_files=upgrade_paths,
+        **optional_kwargs,
+    )
+    logger.info("Publishing annual results completed.")
+
 
 def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False):
     # Remove aggregated files to save space
@@ -766,7 +794,8 @@ def upload_results(
         return
     s3_prefix_output = s3_prefix + "/" + output_folder_name + "/"
 
-    s3 = boto3.resource("s3")
+    region_name = aws_conf.get("region_name", "us-west-2")
+    s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
     bucket = s3.Bucket(s3_bucket)
     existing_files = {f.key.removeprefix(s3_prefix_output) for f in bucket.objects.filter(Prefix=s3_prefix_output)}
 
@@ -787,13 +816,28 @@ def upload_results(
             all_files = [file for file in all_files if str(file) not in existing_files]
             logger.info(f"Only uploading the rest of the {len(all_files)} files")
 
+    # botocore's standard retry mode treats SignatureDoesNotMatch (HTTP 403) as fatal, so a single
+    # transient signing failure on a multipart UploadPart aborts the whole dask graph and discards
+    # every remaining upload. Retry those here with a fresh client and exponential backoff.
     def upload_file(filepath, s3key=None):
         full_path = filepath if filepath.is_absolute() else parquet_dir.joinpath(filepath)
-        s3 = boto3.resource("s3")
-        bucket = s3.Bucket(s3_bucket)
         if s3key is None:
             s3key = Path(s3_prefix_output).joinpath(filepath).as_posix()
-        bucket.upload_file(str(full_path), str(s3key))
+        for attempt in range(1, S3_SIGNING_MAX_ATTEMPTS + 1):
+            s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
+            bucket = s3.Bucket(s3_bucket)
+            try:
+                bucket.upload_file(str(full_path), str(s3key))
+                return
+            except (boto3.exceptions.S3UploadFailedError, botocore.exceptions.ClientError) as ex:
+                if "SignatureDoesNotMatch" not in str(ex) or attempt == S3_SIGNING_MAX_ATTEMPTS:
+                    raise
+                delay = 2**attempt + random.uniform(0, 1)
+                logger.warning(
+                    f"SignatureDoesNotMatch uploading {s3key} (attempt {attempt} of "
+                    f"{S3_SIGNING_MAX_ATTEMPTS}); retrying in {delay:.1f}s"
+                )
+                time.sleep(delay)
 
     tasks = list(map(dask.delayed(upload_file), all_files))
     if buildstock_csv_filename is not None:
@@ -824,7 +868,7 @@ def create_athena_tables(aws_conf, tbl_prefix, s3_bucket, s3_prefix):
     assert db_name, "athena:database_name not supplied"
 
     # Check that there are files in the s3 bucket before creating and running glue crawler
-    s3 = boto3.resource("s3")
+    s3 = boto3.resource("s3", region_name=region_name, config=S3_TRANSFER_CONFIG)
     bucket = s3.Bucket(s3_bucket)
     s3_path = f"s3://{s3_bucket}/{s3_prefix}"
     n_existing_files = len(list(bucket.objects.filter(Prefix=s3_prefix)))

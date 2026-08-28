@@ -44,6 +44,9 @@ def test_resstock_local_batch(project_filename):
         else:
             n_datapoints = 2
         batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
+    elif batch.cfg["sampler"]["type"] == "residential_stratified":
+        n_datapoints = 8  # if less than 8, it seems to sample 0 due to "rounding"
+        batch.cfg["sampler"]["args"]["n_datapoints"] = n_datapoints
     else:
         sample_file = batch.cfg["sampler"]["args"]["sample_file"]
         if not os.path.isabs(sample_file):

@@ -24,7 +24,7 @@ fi
 
 MY_PYTHON_ENV="$PYTHON_ENVS_DIR/$MY_PYTHON_ENV_NAME"
 echo "Creating $MY_PYTHON_ENV"
-module load python
+module load python/3.12
 python -m venv --clear --upgrade-deps --prompt "$MY_PYTHON_ENV_NAME" "$MY_PYTHON_ENV"
 source "$MY_PYTHON_ENV/bin/activate"
 which pip

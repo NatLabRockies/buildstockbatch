@@ -13,6 +13,7 @@ This is the base class mixed into the deployment specific classes (i.e. kestrel,
 from dask.distributed import Client
 import difflib
 from fsspec.implementations.local import LocalFileSystem
+import importlib.util
 import logging
 from lxml import objectify
 import os
@@ -294,6 +295,7 @@ class BuildStockBatchBase(object):
         assert cls.validate_logic(project_file)
         assert cls.validate_measure_references(project_file)
         assert cls.validate_postprocessing_spec(project_file)
+        assert cls.validate_publish_annual_results(project_file)
         assert cls.validate_resstock_or_comstock_version(project_file)
         assert cls.validate_openstudio_version(project_file)
         assert cls.validate_number_of_options(project_file)
@@ -411,6 +413,36 @@ class BuildStockBatchBase(object):
         invalid_cols = [c for c in partition_cols if c not in param_option_dict.keys()]
         if invalid_cols:
             raise ValidationError(f"The following partition columns are not valid: {invalid_cols}")
+        return True
+
+    @staticmethod
+    def validate_publish_annual_results(project_file):
+        """Validate requirements of the annual-results publication pipeline before a run starts."""
+        cfg = get_project_configuration(project_file)
+        if not cfg.get("postprocessing", {}).get("publish_annual_results", False):
+            return True
+        errors = []
+        if cfg.get("baseline", {}).get("skip_sims", False):
+            errors.append(
+                "postprocessing:publish_annual_results requires baseline simulations, but "
+                "baseline:skip_sims is set. The publication pipeline allocates weights from "
+                "baseline characteristics."
+            )
+        sampler_name = cfg.get("sampler", {}).get("type")
+        if sampler_name not in postprocessing.SAMPLER_TO_PUBLICATION_TYPE:
+            errors.append(
+                f"Sampler type '{sampler_name}' is not supported by publish_annual_results. "
+                f"Supported samplers: {sorted(postprocessing.SAMPLER_TO_PUBLICATION_TYPE)}"
+            )
+        if importlib.util.find_spec("resstockpostproc") is None:
+            errors.append(
+                "publish_annual_results requires the resstockpostproc package, which is not "
+                "installed. Install it with `pip install <path-to-resstock>/postprocessing` "
+                "(install.sh and create_kestrel_env.sh install it automatically when a resstock "
+                "checkout with a postprocessing folder is found)."
+            )
+        if errors:
+            raise ValidationError("\n".join(errors))
         return True
 
     @staticmethod

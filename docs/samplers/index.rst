@@ -8,5 +8,6 @@ A sampler is a class thats main function is to enumerate the buildings and build
 
    residential_quota
    residential_quota_downselect
+   residential_stratified
    precomputed
    commercial_sobol

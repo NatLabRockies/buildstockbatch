@@ -44,11 +44,11 @@ setuptools.setup(
         "": ["LICENSE"],
     },
     install_requires=[
-        "pyyaml",
+        "pyyaml>=6.0.2",
         "requests",
         "numpy",
         "pandas>=2",
-        "polars>=1.2.0",
+        "polars>=1.8.2",
         "geopandas>=1.0.0",
         "joblib",
         "pyarrow",
@@ -62,6 +62,8 @@ setuptools.setup(
         "semver",
         "tqdm",
         "boto3",
+        "click",
+        "networkx",
     ],
     extras_require={
         "dev": [
