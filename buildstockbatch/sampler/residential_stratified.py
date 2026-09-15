@@ -25,20 +25,27 @@ logger = logging.getLogger(__name__)
 
 
 class ResidentialStratifiedSampler(BuildStockSampler):
+    # Defaults match ResStock's samplers/stratified/sampler/sampler_config.yaml. The segment
+    # variables are the characteristics the allocation step joins on; Geometry Floor Area Bin
+    # flows downhill through the TSVs and is invisible to the allocator, so it must not split
+    # segments.
+    DEFAULT_SEGMENT_VARS = (
+        "Federal Poverty Level",
+        "Geometry Building Type RECS",
+        "Vintage",
+        "Heating Fuel",
+        "Sampling Region",
+    )
+    DEFAULT_SEGMENT_SELECTION_SAMPLE_SIZE = 10000000
+    DEFAULT_NUM_SAMPLES_PER_SEGMENT = 12
+
     def __init__(
         self,
         parent,
         n_datapoints,
-        segment_vars=[
-            "Federal Poverty Level",
-            "Geometry Floor Area Bin",
-            "Geometry Building Type RECS",
-            "Vintage",
-            "Heating Fuel",
-            "Sampling Region",
-        ],
-        segment_selection_sample_size=10000000,
-        num_samples_per_segment=8,
+        segment_vars=None,
+        segment_selection_sample_size=DEFAULT_SEGMENT_SELECTION_SAMPLE_SIZE,
+        num_samples_per_segment=DEFAULT_NUM_SAMPLES_PER_SEGMENT,
     ):
         """Residential Stratified Sampler
 
@@ -46,7 +53,8 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         :type parent: BuildStockBatchBase (or subclass)
         :param n_datapoints: number of datapoints to sample
         :type n_datapoints: int
-        :param segment_vars: parameter for sampling written to sampler_config.yaml
+        :param segment_vars: parameter for sampling written to sampler_config.yaml; defaults to
+            DEFAULT_SEGMENT_VARS
         :type segment_vars: list[str]
         :param segment_selection_sample_size: parameter for sampling written to sampler_config.yaml
         :type segment_selection_sample_size: int
@@ -56,6 +64,8 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         super().__init__(parent)
         self.validate_args(self.parent().project_filename, n_datapoints=n_datapoints)
         self.n_datapoints = n_datapoints
+        if segment_vars is None:
+            segment_vars = list(self.DEFAULT_SEGMENT_VARS)
         self.sampler_config = self.create_sampler_config(
             os.path.dirname(self.parent().project_filename),
             segment_vars,
