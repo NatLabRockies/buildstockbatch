@@ -4,6 +4,7 @@ import tempfile
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 from buildstockbatch.exc import ValidationError
 from buildstockbatch.sampler.residential_stratified import ResidentialStratifiedSampler
@@ -21,6 +22,20 @@ def _make_parent(container_runtime, project_dir, buildstock_dir=None, output_dir
     parent.docker_image = "buildstockbatch:latest"
     parent.apptainer_image = "/path/to/image.sif"
     return parent
+
+
+def _make_sampler(tmp_path, **kwargs):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    project_filename = tmp_path / "project.yml"
+    project_filename.write_text("")
+    parent = _make_parent(
+        ContainerRuntime.LOCAL_OPENSTUDIO,
+        project_dir=str(tmp_path),
+        output_dir=str(tmp_path / "out"),
+    )
+    parent.project_filename = str(project_filename)
+    sampler = ResidentialStratifiedSampler(parent, n_datapoints=100, **kwargs)
+    return sampler, tmp_path / "sampler_config.yaml"
 
 
 def test_residential_stratified_validate_args():
@@ -55,6 +70,47 @@ def test_residential_stratified_initialization():
     sampler = ResidentialStratifiedSampler(parent, n_datapoints=100)
     assert sampler.n_datapoints == 100
     assert sampler.parent() == parent
+
+
+def test_default_segment_vars_are_allocation_keys(tmp_path):
+    # Geometry Floor Area Bin flows downhill through the TSVs and is invisible to the allocator,
+    # so it must not split segments; the defaults must match ResStock's sampler_config.yaml.
+    sampler, config_path = _make_sampler(tmp_path)
+
+    config = yaml.safe_load(config_path.read_text())
+    assert config["segment_vars"] == [
+        "Federal Poverty Level",
+        "Geometry Building Type RECS",
+        "Vintage",
+        "Heating Fuel",
+        "Sampling Region",
+    ]
+    assert "Geometry Floor Area Bin" not in config["segment_vars"]
+    assert config["segment_selection_sample_size"] == 10000000
+    assert config["num_samples_per_segment"] == 12
+    assert sampler.sampler_config == str(config_path)
+
+
+def test_explicit_args_override_defaults(tmp_path):
+    _, config_path = _make_sampler(
+        tmp_path,
+        segment_vars=["Vintage", "Heating Fuel", "Sampling Region"],
+        segment_selection_sample_size=5000000,
+        num_samples_per_segment=10,
+    )
+
+    config = yaml.safe_load(config_path.read_text())
+    assert config["segment_vars"] == ["Vintage", "Heating Fuel", "Sampling Region"]
+    assert config["segment_selection_sample_size"] == 5000000
+    assert config["num_samples_per_segment"] == 10
+
+
+def test_default_segment_vars_are_not_shared_between_instances(tmp_path):
+    sampler_a, _ = _make_sampler(tmp_path / "a")
+    sampler_b, _ = _make_sampler(tmp_path / "b")
+
+    assert isinstance(ResidentialStratifiedSampler.DEFAULT_SEGMENT_VARS, tuple)
+    assert sampler_a.sampler_config != sampler_b.sampler_config
 
 
 @pytest.mark.parametrize(
