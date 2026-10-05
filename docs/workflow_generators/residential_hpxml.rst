@@ -8,6 +8,7 @@ Configuration Example
 
     workflow_generator:
       type: residential_hpxml
+      version: "2026.10.05"
       args:
         build_existing_model:
           simulation_control_run_period_calendar_year: 2010
@@ -17,6 +18,9 @@ Configuration Example
           - scenario_name: Scenario1
             type: CO2e
             elec_folder: data/cambium/LRMER_MidCase_15
+          - scenario_name: Fuel
+            type: CO2e
+            elec_value: 0.0
 
         utility_bills:
           - scenario_name: Bills1
@@ -63,7 +67,8 @@ Arguments
 
   - ``scenario_name``: Name of the emissions scenario.
   - ``type``: Type of emission (e.g., CO2e, NOx, etc.).
-  - ``elec_folder``: Folder of schedule files with hourly electricity emissions factors values. Units are kg/MWh. Folder path is relative to buildstock_directory's `resources`_ folder. File names must contain GEA region names.
+  - ``elec_folder``: Folder of schedule files with hourly electricity emissions factors values. Units are kg/MWh. Folder path is relative to buildstock_directory's `resources`_ folder. File names must contain GEA region names. May be omitted when ``elec_value`` is specified.
+  - ``elec_value``: Constant electricity emissions factor applied to every hour of the year. Units are kg/MWh. A value of ``0.0`` sets electricity emissions to zero without requiring a schedule file; it does not disable fossil fuel emissions. Specify exactly one of ``elec_folder`` or ``elec_value`` for each scenario.
   - ``gas_value``: Annual emissions factor for natural gas. Units are lb/MBtu (million Btu).
   - ``propane_value``: Annual emissions factor for propane. Units are lb/MBtu (million Btu).
   - ``oil_value``: Annual emissions factor for fuel oil. Units are lb/MBtu (million Btu).
