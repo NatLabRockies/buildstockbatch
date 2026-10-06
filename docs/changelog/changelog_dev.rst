@@ -84,11 +84,12 @@ Development Changelog
 
     .. change::
         :tags: WorkflowGenerator, feature
+        :pullreq: 528
 
         Adds Residential HPXML Workflow Generator version ``2026.10.05`` with
         support for constant electricity emissions factors using ``elec_value``.
         Each scenario must specify exactly one electricity factor source: an hourly
-        schedule folder or a constant value, including zero. A project can include
+        schedule folder or a constant value. A project can include
         both scenarios that use hourly schedules and scenarios that use constant
         values. The previous
         ``2025.12.03`` generator remains available for existing projects.
