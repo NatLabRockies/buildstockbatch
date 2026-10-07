@@ -107,11 +107,18 @@ class BuildStockBatchBase(object):
 
     def _get_weather_files(self):
         if "weather_files_path" in self.cfg:
-            logger.debug("Copying weather files")
             weather_file_path = self.cfg["weather_files_path"]
-            with zipfile.ZipFile(weather_file_path, "r") as zf:
-                logger.debug("Extracting weather files to: {}".format(self.weather_dir))
-                zf.extractall(self.weather_dir)
+            if os.path.isdir(weather_file_path):
+                if os.path.isdir(self.weather_dir) and os.path.samefile(self.weather_dir, weather_file_path):
+                    logger.debug(f"Weather files already exist at {self.weather_dir}")
+                    return
+                else:
+                    logger.debug(f"Copying weather files from directory: {weather_file_path} to {self.weather_dir}")
+                    shutil.copytree(weather_file_path, self.weather_dir, dirs_exist_ok=True)
+            else:
+                with zipfile.ZipFile(weather_file_path, "r") as zf:
+                    logger.debug(f"Extracting weather files to: {self.weather_dir}")
+                    zf.extractall(self.weather_dir)
         else:
             logger.debug("Downloading weather files")
             r = requests.get(self.cfg["weather_files_url"], stream=True)
@@ -299,6 +306,53 @@ class BuildStockBatchBase(object):
         assert cls.validate_number_of_options(project_file)
         logger.info("Base Validation Successful")
         return True
+
+    @classmethod
+    def validate_upgrade_ids_and_get_idxs(cls, project_file, upgrade_ids):
+        """
+        Validate 1-based upgrade ids and return 0-based upgrade idxs
+
+        :param project_file: path to project file
+        :param upgrade_ids: list of upgrade ids
+        :return: list of upgrade idxs
+        """
+        cfg = get_project_configuration(project_file)
+        num_upgrades = len(cfg.get("upgrades", []))
+        upgrade_idxs = []
+        if upgrade_ids:
+            if not isinstance(upgrade_ids, list) or not all(isinstance(x, int) for x in upgrade_ids):
+                raise ValidationError("upgrade_ids must be a list of integers")
+            for upgrade_id in upgrade_ids:
+                if upgrade_id <= 0 or upgrade_id > num_upgrades:  # should use > instead of >= because baseline is 0
+                    raise ValidationError(
+                        f"upgrade_id {upgrade_id} is out of range. Valid range is 1 to {num_upgrades}"
+                    )
+                upgrade_idxs.append(upgrade_id - 1)
+            return upgrade_idxs
+        return []
+
+    @classmethod
+    def validate_upgrade_names_and_get_idxs(cls, project_file, upgrade_names):
+        """
+        Validate upgrade names and return 0-based upgrade idxs
+
+        :param project_file: path to project file
+        :param upgrade_names: list of upgrade names
+        :return: list of upgrade idxs
+        """
+        cfg = get_project_configuration(project_file)
+        valid_upgrade_names = [upgrade["upgrade_name"] for upgrade in cfg.get("upgrades", [])]
+        if upgrade_names:
+            if not isinstance(upgrade_names, list) or not all(isinstance(x, str) for x in upgrade_names):
+                raise ValidationError("upgrade_names must be a list of strings")
+            upgrade_idxs = []
+            for upgrade_name in upgrade_names:
+                if upgrade_name in valid_upgrade_names:
+                    upgrade_idxs.append(valid_upgrade_names.index(upgrade_name))
+                else:
+                    raise ValidationError(f"upgrade_name {upgrade_name} is not in the project file")
+            return upgrade_idxs
+        return []
 
     @staticmethod
     def get_buildstock_dir(project_file, cfg):

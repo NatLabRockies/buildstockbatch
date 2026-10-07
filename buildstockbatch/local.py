@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import tarfile
 import time
+from buildstockbatch.exc import ValidationError
 
 from buildstockbatch.base import BuildStockBatchBase, SimulationExists
 from buildstockbatch import postprocessing
@@ -221,7 +222,7 @@ class LocalBatch(BuildStockBatchBase):
                 )
                 return dpout
 
-    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=False):
+    def run_batch(self, n_jobs=None, measures_only=False, sampling_only=False, low_disk=False, upgrade_indices=None):
         buildstock_csv_filename = self.sampler.run_sampling()
 
         if sampling_only:
@@ -244,7 +245,7 @@ class LocalBatch(BuildStockBatchBase):
         df = read_csv(buildstock_csv_filename, index_col=0, dtype=str)
         df.index = df.index.astype(int)
         self.validate_buildstock_csv(self.project_filename, df)
-
+        logger.debug(f"Validated {len(df)} rows from {buildstock_csv_filename}")
         building_ids = df.index.tolist()
         n_datapoints = len(building_ids)
         run_building_d = functools.partial(
@@ -257,14 +258,22 @@ class LocalBatch(BuildStockBatchBase):
             self.cfg,
             low_disk,
         )
+
+        if not upgrade_indices:
+            upgrade_indices = list(range(self.num_upgrades))
         upgrade_sims = []
-        for i in range(self.num_upgrades):
+        for i in upgrade_indices:
             upgrade_sims.append(map(functools.partial(run_building_d, upgrade_idx=i), building_ids))
-        if not self.skip_baseline_sims:
-            baseline_sims = map(run_building_d, building_ids)
-            all_sims = itertools.chain(baseline_sims, *upgrade_sims)
+            logger.info(f"Running simulations for upgrades (0-based indices) {upgrade_indices}")
+        if self.skip_baseline_sims:
+            logger.debug("Skipping baseline simulations")
+            all_sims = list(itertools.chain(*upgrade_sims))
         else:
-            all_sims = itertools.chain(*upgrade_sims)
+            baseline_sims = list(map(run_building_d, building_ids))
+            logger.debug(f"Running {len(baseline_sims)} baseline simulations")
+            all_sims = list(itertools.chain(baseline_sims, *upgrade_sims))
+
+        logger.debug(f"Running {len(all_sims)} total simulations.")
         if n_jobs is None:
             n_jobs = -1
         dpouts = Parallel(n_jobs=n_jobs, verbose=10)(all_sims)
@@ -445,6 +454,22 @@ def main():
     parser = argparse.ArgumentParser()
     print(BuildStockBatchBase.LOGO)
     parser.add_argument("project_filename")
+
+    # Create a mutually exclusive group for upgrade selection
+    upgrade_group = parser.add_mutually_exclusive_group()
+    upgrade_group.add_argument(
+        "--upgrade_ids",
+        type=str,
+        help="Comma-separated list of upgrade IDs to run (e.g., '1,2,3')",
+        default=None,
+    )
+    upgrade_group.add_argument(
+        "--upgrade_names",
+        action="append",
+        dest="upgrade_names",
+        help="Name of upgrade to run (can be specified multiple times)",
+        default=[],
+    )
     parser.add_argument(
         "-j",
         type=int,
@@ -499,12 +524,32 @@ def main():
     if args.validateonly:
         return
     batch = LocalBatch(args.project_filename)
+
+    upgrade_indices = None
+    if hasattr(args, "upgrade_ids") and args.upgrade_ids is not None:
+        try:
+            upgrade_ids = [int(x.strip()) for x in args.upgrade_ids.split(",")]
+            upgrade_indices = batch.validate_upgrade_ids_and_get_idxs(batch.project_filename, upgrade_ids)
+        except (ValueError, ValidationError) as e:
+            logger.warning(f"Invalid upgrade_ids: {e}. Running all upgrades.")
+            raise
+    elif hasattr(args, "upgrade_names") and args.upgrade_names is not None:
+        try:
+            upgrade_indices = batch.validate_upgrade_names_and_get_idxs(batch.project_filename, args.upgrade_names)
+        except ValidationError as e:
+            logger.warning(f"Invalid upgrade names: {e}. Running all upgrades.")
+            raise
+
     if not (args.postprocessonly or args.uploadonly or args.validateonly or args.continue_upload):
+        if upgrade_indices:
+            logger.info(f"Running simulation for only upgrade index (0-based): {upgrade_indices}")
+
         batch.run_batch(
             n_jobs=args.j,
             measures_only=args.measures_only,
             sampling_only=args.samplingonly,
             low_disk=args.low_disk,
+            upgrade_indices=upgrade_indices,
         )
     if args.measures_only or args.samplingonly:
         return
