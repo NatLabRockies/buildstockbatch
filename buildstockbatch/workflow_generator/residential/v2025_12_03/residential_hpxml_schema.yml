@@ -18,8 +18,7 @@ build-existing-model-spec:
 emission-scenario-spec:
     scenario_name: str(required=True)
     type: str(required=True)
-    elec_folder: str(required=False)
-    elec_value: num(required=False)
+    elec_folder: str(required=True)
     gas_value: num(required=False)
     propane_value: num(required=False)
     oil_value: num(required=False)

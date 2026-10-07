@@ -49,13 +49,6 @@ class ResidentialHpxmlWorkflowGenerator(WorkflowGeneratorBase):
         schema = yamale.make_schema(schema_yml, parser="ruamel")
         data = yamale.make_data(content=json.dumps(workflow_generator_args), parser="ruamel")
         yamale.validate(schema, data, strict=True)
-        for scenario in workflow_generator_args.get("emissions", []):
-            has_folder = bool((scenario.get("elec_folder") or "").strip())
-            has_value = scenario.get("elec_value") is not None
-            if has_folder == has_value:
-                raise ValidationError(
-                    f"Emissions scenario '{scenario['scenario_name']}' must specify exactly one of elec_folder or elec_value."
-                )
         return self.validate_measures_and_arguments()
 
     def reporting_measures(self):

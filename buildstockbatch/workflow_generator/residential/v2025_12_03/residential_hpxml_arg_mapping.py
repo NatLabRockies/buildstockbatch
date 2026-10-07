@@ -32,7 +32,6 @@ ARG_MAP = {
             "scenario_name": "emissions_scenario_names",
             "type": "emissions_types",
             "elec_folder": "emissions_electricity_folders",
-            "elec_value": "emissions_electricity_values",
             "gas_value": "emissions_natural_gas_values",
             "propane_value": "emissions_propane_values",
             "oil_value": "emissions_fuel_oil_values",
