@@ -1,7 +1,8 @@
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml import ResidentialHpxmlWorkflowGenerator
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml_defaults import DEFAULT_MEASURE_ARGS
-from buildstockbatch.workflow_generator.residential.latest.residential_hpxml_arg_mapping import ARG_MAP
-from buildstockbatch.exc import ValidationError
+from buildstockbatch.workflow_generator.residential.v2025_12_03.residential_hpxml import (
+    ResidentialHpxmlWorkflowGenerator,
+)
+from buildstockbatch.workflow_generator.residential.v2025_12_03.residential_hpxml_defaults import DEFAULT_MEASURE_ARGS
+from buildstockbatch.workflow_generator.residential.v2025_12_03.residential_hpxml_arg_mapping import ARG_MAP
 from testfixtures import LogCapture
 import os
 import yamale
@@ -168,54 +169,6 @@ def pytest_generate_tests(metafunc):
                 cfg_variants.append(cfg)
 
         metafunc.parametrize("dynamic_cfg", cfg_variants)
-
-
-@pytest.mark.parametrize("upgrade", [0, None])
-@pytest.mark.parametrize(
-    "emissions,expected_folders,expected_values",
-    [
-        ([{"scenario_name": "Fuel", "type": "CO2e", "elec_value": 0.0}], "", "0.0"),
-        ([{"scenario_name": "Constant", "type": "CO2e", "elec_value": 392.6}], "", "392.6"),
-        (
-            [
-                {"scenario_name": "Fuel", "type": "CO2e", "elec_value": 0.0},
-                {"scenario_name": "Schedule", "type": "CO2e", "elec_folder": "data/emissions/schedule"},
-                {"scenario_name": "Constant", "type": "CO2e", "elec_value": 392.6},
-            ],
-            ",data/emissions/schedule,",
-            "0.0,,392.6",
-        ),
-    ],
-)
-def test_emissions_electricity_values(upgrade, emissions, expected_folders, expected_values):
-    cfg = copy.deepcopy(test_cfg)
-    cfg["workflow_generator"]["args"] = {"emissions": emissions}
-    generator = ResidentialHpxmlWorkflowGenerator(cfg, 10)
-    assert generator.validate()
-    osw = generator.create_osw("bldg1", 1, upgrade)
-    arguments = osw["steps"][0]["arguments"]
-    assert arguments["emissions_scenario_names"] == ",".join(scenario["scenario_name"] for scenario in emissions)
-    assert arguments["emissions_electricity_folders"] == expected_folders
-    assert arguments["emissions_electricity_values"] == expected_values
-
-
-@pytest.mark.parametrize(
-    "electricity_factor",
-    [
-        {},
-        {"elec_folder": " "},
-        {"elec_folder": "data/emissions/schedule", "elec_value": 0.0},
-        {"elec_folder": "data/emissions/schedule", "elec_value": 392.6},
-    ],
-)
-def test_emissions_requires_electricity_factor(electricity_factor):
-    cfg = copy.deepcopy(test_cfg)
-    cfg["workflow_generator"]["args"] = {
-        "emissions": [{"scenario_name": "Invalid", "type": "CO2e", **electricity_factor}]
-    }
-    generator = ResidentialHpxmlWorkflowGenerator(cfg, 10)
-    with pytest.raises(ValidationError, match="must specify exactly one of elec_folder or elec_value"):
-        generator.validate()
 
 
 @pytest.mark.parametrize("upgrade", [0, None])

@@ -32,6 +32,10 @@ from .residential.v2025_04_29.residential_hpxml import (
     ResidentialHpxmlWorkflowGenerator as v2025_04_29_ResidentialHpxmlWorkflowGenerator,
 )  # noqa F401
 from .residential import v2025_04_29 as residential_v2025_04_29  # noqa F401
+from .residential.v2025_12_03.residential_hpxml import (
+    ResidentialHpxmlWorkflowGenerator as v2025_12_03_ResidentialHpxmlWorkflowGenerator,
+)  # noqa F401
+from .residential import v2025_12_03 as residential_v2025_12_03  # noqa F401
 
 version2GeneratorClass = {
     "commercial_default": {
@@ -42,6 +46,7 @@ version2GeneratorClass = {
     "residential_hpxml": {
         "latest": latestResGenerator,
         residential_latest.__version__: latestResGenerator,
+        residential_v2025_12_03.__version__: v2025_12_03_ResidentialHpxmlWorkflowGenerator,
         residential_v2025_04_29.__version__: v2025_04_29_ResidentialHpxmlWorkflowGenerator,
         residential_v2025_02_25.__version__: v2025_02_25_ResidentialHpxmlWorkflowGenerator,
         residential_v2025_01_29.__version__: v2025_01_29_ResidentialHpxmlWorkflowGenerator,
@@ -59,6 +64,7 @@ version2info = {
     "residential_hpxml": {
         "latest": residential_latest.version_info,
         residential_latest.__version__: residential_latest.version_info,
+        residential_v2025_12_03.__version__: residential_v2025_12_03.version_info,
         residential_v2025_04_29.__version__: residential_v2025_04_29.version_info,
         residential_v2025_02_25.__version__: residential_v2025_02_25.version_info,
         residential_v2025_01_29.__version__: residential_v2025_01_29.version_info,

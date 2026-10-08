@@ -48,7 +48,7 @@ setuptools.setup(
         "requests",
         "numpy",
         "pandas>=2",
-        "polars>=1.8.2",
+        "polars>=1.8.2,<2.0",
         "geopandas>=1.0.0",
         "joblib",
         "pyarrow",
