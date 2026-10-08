@@ -7,11 +7,11 @@ import pathlib
 import re
 import pytest
 import shutil
-import sys
 from unittest.mock import patch, MagicMock
 
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase
+from buildstockbatch.exc import ValidationError
 from buildstockbatch.utils import get_project_configuration, read_csv
 
 postprocessing.performance_report = MagicMock()
@@ -115,84 +115,143 @@ def test_upgrade_missing_ts(basic_residential_project_file, mocker, caplog):
 
 
 def test_publish_annual_results(basic_residential_project_file, mocker):
-    """Test that when publish_annual_results is True, the expected folders and files are created."""
-    # Create project with schema v0.6 and publish_annual_results set to True
+    """publish_annual_results invokes the resstockpostproc pipeline with the files bsb wrote."""
+    project_filename, results_dir = basic_residential_project_file(
+        {
+            "schema_version": "0.6",
+            "postprocessing": {"publish_annual_results": True, "publication": {"seed": 99}},
+        }
+    )
+
+    mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
+    mocker.patch.object(BuildStockBatchBase, "get_dask_client")
+    mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
+    mock_pipeline = mocker.MagicMock()
+    mocker.patch.object(postprocessing, "get_annual_publishing_pipeline", return_value=mock_pipeline)
+    # The fixture project uses the residential_quota sampler; pretend the results
+    # have all the columns the quota publication path needs
+    mocker.patch.object(postprocessing, "_missing_quota_publication_columns", return_value=[])
+
+    bsb = BuildStockBatchBase(project_filename)
+    bsb.process_results()
+
+    assert mock_pipeline.call_count == 1
+    args, kwargs = mock_pipeline.call_args
+    assert args[0] == f"{results_dir}/parquet"
+    assert args[1] == f"{results_dir}/publication"
+    assert kwargs["sampler_type"] == "quota"
+    assert kwargs["baseline_file"] == f"{results_dir}/parquet/baseline/results_up00.parquet"
+    assert kwargs["upgrade_files"] == [f"{results_dir}/parquet/upgrades/upgrade=1/results_up01.parquet"]
+    assert kwargs["allocation_seed"] == 99
+
+    # The old partial-publication outputs must no longer be written
+    results_path = pathlib.Path(results_dir)
+    assert not (results_path / "results_csvs_pub").exists()
+    assert not (results_path / "parquet" / "pub_annual").exists()
+
+
+def test_publish_annual_results_skips_when_quota_columns_missing(basic_residential_project_file, mocker, caplog):
+    """Missing quota-required columns produce a warning and skip publication only."""
+    caplog.set_level(logging.WARNING, logger="buildstockbatch.postprocessing")
     project_filename, results_dir = basic_residential_project_file(
         {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
     )
 
-    # Mock necessary objects for testing
     mocker.patch.object(BuildStockBatchBase, "weather_dir", None)
     mocker.patch.object(BuildStockBatchBase, "get_dask_client")
     mocker.patch.object(BuildStockBatchBase, "results_dir", results_dir)
+    mock_pipeline = mocker.MagicMock()
+    mocker.patch.object(postprocessing, "get_annual_publishing_pipeline", return_value=mock_pipeline)
+    mocker.patch.object(
+        postprocessing, "_missing_quota_publication_columns", return_value=["weight", "in.sampling_region_id"]
+    )
 
-    # Create a simple mock module and add it to sys.modules
-    class MockResstockpostproc:
-        @staticmethod
-        def process_simulation_outputs(
-            failed_bldgs, base, base_proc_df, upgrade, upgrade_num, upgrade_renamer, upgrade_col_schema
-        ):
-            # Simply rename columns with pub_ prefix
-            cols = upgrade.collect_schema().names()
-            rename_map = {col: f"pub_{col}" for col in cols}
-            return upgrade.rename(rename_map)
+    bsb = BuildStockBatchBase(project_filename)
+    bsb.process_results()  # must complete despite skipping publication
 
-        @staticmethod
-        def get_upgrade_rename_dict(raw_results_dir):
-            pass
+    mock_pipeline.assert_not_called()
+    assert any(
+        "Skipping publish_annual_results" in record.message and "weight" in record.message for record in caplog.records
+    )
+    # Regular outputs are unaffected
+    assert (pathlib.Path(results_dir) / "results_csvs" / "results_up00.csv.gz").exists()
 
-        @staticmethod
-        def setup_fsspec_filesystem(output_dir, aws_profile_name):
-            pass
 
-    # Add the mock module to sys.modules
-    original_resstockpostproc = sys.modules.get("resstockpostproc")
-    original_resstockpostproc_process_metadata = sys.modules.get("resstockpostproc")
-    original_resstockpostproc_utils = sys.modules.get("resstockpostproc")
-    sys.modules["resstockpostproc"] = MockResstockpostproc
-    sys.modules["resstockpostproc.process_metadata"] = MockResstockpostproc
-    sys.modules["resstockpostproc.utils"] = MockResstockpostproc
-    try:
-        # Create and run the BuildStockBatchBase instance
-        bsb = BuildStockBatchBase(project_filename)
-        bsb.process_results()
+def test_publish_annual_results_unsupported_filesystem(basic_residential_project_file, mocker):
+    """Non-local, non-S3 filesystems (e.g. GCS) are rejected with a clear error."""
+    project_filename, results_dir = basic_residential_project_file(
+        {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
+    )
+    mocker.patch.object(postprocessing, "get_annual_publishing_pipeline", return_value=mocker.MagicMock())
+    cfg = get_project_configuration(project_filename)
 
-        # Check that the expected directories and files exist
-        results_path = pathlib.Path(results_dir)
-    finally:
-        # Restore the original state of sys.modules
-        if original_resstockpostproc is not None:
-            sys.modules["resstockpostproc"] = original_resstockpostproc
-        else:
-            del sys.modules["resstockpostproc"]
-        if original_resstockpostproc_process_metadata is not None:
-            sys.modules["resstockpostproc.process_metadata"] = original_resstockpostproc_process_metadata
-        else:
-            del sys.modules["resstockpostproc.process_metadata"]
-        if original_resstockpostproc_utils is not None:
-            sys.modules["resstockpostproc.utils"] = original_resstockpostproc_utils
-        else:
-            del sys.modules["resstockpostproc.utils"]
-    # Check for results_csvs_pub folder with CSV files
-    results_csvs_pub_path = results_path / "results_csvs_pub"
-    assert results_csvs_pub_path.exists(), "results_csvs_pub folder should exist"
-    assert len(list(results_csvs_pub_path.glob("*.csv.gz"))) > 0, "results_csvs_pub should contain CSV files"
+    class FakeGCSFileSystem:
+        pass
 
-    # Check for pub_annual folder inside parquet_dir with files
-    parquet_dir = results_path / "parquet"
-    pub_annual_path = parquet_dir / "pub_annual"
-    assert pub_annual_path.exists(), "pub_annual folder should exist inside parquet_dir"
-    assert len(list(pub_annual_path.rglob("*.parquet"))) > 0, "pub_annual should contain parquet files"
+    with pytest.raises(NotImplementedError, match="local and S3"):
+        postprocessing.publish_annual_results(FakeGCSFileSystem(), results_dir, cfg)
 
-    # Verify the structure - there should be upgrade=X folders inside pub_annual
-    upgrade_folders = list(pub_annual_path.glob("upgrade=*"))
-    assert len(upgrade_folders) > 0, "pub_annual should contain upgrade folders"
 
-    # Check each upgrade folder has the expected parquet files
-    for upgrade_folder in upgrade_folders:
-        upgrade_id = int(upgrade_folder.name.split("=")[1])
-        expected_file = upgrade_folder / f"results_up{upgrade_id:02d}.parquet"
-        assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"
+def test_publish_annual_results_unsupported_sampler(basic_residential_project_file, mocker):
+    project_filename, results_dir = basic_residential_project_file(
+        {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
+    )
+    mocker.patch.object(postprocessing, "get_annual_publishing_pipeline", return_value=mocker.MagicMock())
+    cfg = get_project_configuration(project_filename)
+    cfg["sampler"]["type"] = "commercial_sobol"
+
+    with pytest.raises(ValueError, match="not supported by publish_annual_results"):
+        postprocessing.publish_annual_results(LocalFileSystem(), results_dir, cfg)
+
+
+def test_validate_publish_annual_results_not_enabled(basic_residential_project_file):
+    # Not enabled: passes regardless of other settings
+    project_filename, _ = basic_residential_project_file({"baseline": {"skip_sims": True}})
+    assert BuildStockBatchBase.validate_publish_annual_results(project_filename)
+
+
+def test_validate_publish_annual_results_ok(basic_residential_project_file, mocker):
+    # Enabled with everything satisfied (resstockpostproc presence mocked)
+    mocker.patch("importlib.util.find_spec", return_value=object())
+    project_filename, _ = basic_residential_project_file(
+        {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
+    )
+    assert BuildStockBatchBase.validate_publish_annual_results(project_filename)
+
+
+def test_validate_publish_annual_results_skip_sims(basic_residential_project_file, mocker):
+    mocker.patch("importlib.util.find_spec", return_value=object())
+    project_filename, _ = basic_residential_project_file(
+        {
+            "schema_version": "0.6",
+            "baseline": {"skip_sims": True},
+            "postprocessing": {"publish_annual_results": True},
+        }
+    )
+    with pytest.raises(ValidationError, match="skip_sims"):
+        BuildStockBatchBase.validate_publish_annual_results(project_filename)
+
+
+def test_validate_publish_annual_results_unsupported_sampler(basic_residential_project_file, mocker):
+    mocker.patch("importlib.util.find_spec", return_value=object())
+    project_filename, _ = basic_residential_project_file(
+        {
+            "schema_version": "0.6",
+            "sampler": {"type": "commercial_sobol", "args": {}},
+            "postprocessing": {"publish_annual_results": True},
+        }
+    )
+    with pytest.raises(ValidationError, match="not supported by publish_annual_results"):
+        BuildStockBatchBase.validate_publish_annual_results(project_filename)
+
+
+def test_validate_publish_annual_results_missing_package(basic_residential_project_file, mocker):
+    mocker.patch("importlib.util.find_spec", return_value=None)
+    project_filename, _ = basic_residential_project_file(
+        {"schema_version": "0.6", "postprocessing": {"publish_annual_results": True}}
+    )
+    with pytest.raises(ValidationError, match="resstockpostproc"):
+        BuildStockBatchBase.validate_publish_annual_results(project_filename)
 
 
 @pytest.mark.parametrize(

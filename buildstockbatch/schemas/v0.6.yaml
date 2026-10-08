@@ -153,6 +153,14 @@ postprocessing-spec:
   aws: include('aws-postprocessing-spec', required=False)
   keep_individual_timeseries: bool(required=False)
   publish_annual_results: bool(required=False)  # Polish the results further for publication
+  publication: include('publication-spec', required=False)  # Options for publish_annual_results
+
+publication-spec:
+  output_dir: str(required=False)  # Local path or s3:// URI; defaults to <results_dir>/publication
+  write_workers: int(min=1, required=False)  # Parallel workers for writing publication files
+  slice_rows: int(min=1, required=False)  # Rows per slice when writing publication files
+  seed: int(required=False)  # Seed for the random building-to-geography allocation (stratified sampler)
+  rename_upgrades: str(required=False)  # Path to a rename_upgrades.json mapping YML upgrade names to published names
 
 aws-postprocessing-spec:
   region_name: str(required=False)

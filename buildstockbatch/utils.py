@@ -145,13 +145,20 @@ def get_bool_env_var(varname):
     return os.environ.get(varname, "0").lower() in ("true", "t", "1", "y", "yes")
 
 
-def get_annual_publishing_functions(stock_type):
-    if stock_type == "residential":
-        from resstockpostproc import process_simulation_outputs
-        from resstockpostproc.process_metadata import get_upgrade_rename_dict
-        from resstockpostproc.utils import setup_fsspec_filesystem
+def get_annual_publishing_pipeline(stock_type):
+    """Return resstockpostproc's publication entry point.
 
-        # If process_simulation_outputs is not None, we need get_upgrade_rename_dict and setup_fsspec_filesystem
-        return process_simulation_outputs, get_upgrade_rename_dict, setup_fsspec_filesystem
-    else:
-        raise ValueError(f"Stock type: {stock_type} currently does not support postprocessing transform")
+    The import is deferred so that buildstockbatch works without resstockpostproc
+    installed; the package is only needed when publish_annual_results is enabled.
+    """
+    if stock_type != "residential":
+        raise ValueError(f"Stock type: {stock_type} currently does not support publish_annual_results")
+    try:
+        from resstockpostproc.process_bsb_results import export_metadata_and_annual_results
+    except ImportError as err:
+        raise ImportError(
+            "publish_annual_results requires the resstockpostproc package. Install it with "
+            "`pip install <path-to-resstock>/postprocessing` (install.sh and create_kestrel_env.sh "
+            "install it automatically when a resstock checkout with a postprocessing folder is found)."
+        ) from err
+    return export_metadata_and_annual_results
