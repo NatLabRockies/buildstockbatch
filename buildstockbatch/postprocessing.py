@@ -29,6 +29,8 @@ import pyarrow as pa
 from pyarrow import parquet
 import random
 import re
+import io
+import socket
 import tempfile
 import time
 import sys
@@ -399,9 +401,50 @@ def concat_and_normalize(fs, all_cols, src_path, dst_path, partition_columns, in
 
     fs.makedirs(dst_filepath, exist_ok=True)
     dst_filename = f"{dst_filepath}/group{indx}.parquet"
-    with fs.open(dst_filename, "wb") as f:
-        df.to_parquet(f, index=True)
+    write_parquet_with_retry(fs, df, dst_filename)
     return len(bldg_ids)
+
+
+def write_parquet_with_retry(fs, df, dst_filename, attempts=4):
+    """Write df to dst_filename, retrying on transient OSError.
+
+    On Kestrel's /kfs2 Lustre filesystem (Oct 2026) a small fraction of concurrent parquet
+    writes fail with OSError errno 7 (E2BIG), mostly on the largest partitions, and the
+    failure tends to repeat on the same worker for minutes. Each attempt writes to a fresh
+    temporary name and renames it into place; even-numbered attempts serialize to memory
+    first and write in fixed 4 MB chunks instead of pyarrow's streaming writes. If all
+    attempts fail the error propagates so dask can retry the task elsewhere.
+    """
+    for attempt in range(1, attempts + 1):
+        tmp_filename = f"{dst_filename}.tmp{attempt}"
+        try:
+            with fs.open(tmp_filename, "wb") as f:
+                if attempt % 2:
+                    df.to_parquet(f, index=True)
+                else:
+                    buf = io.BytesIO()
+                    df.to_parquet(buf, index=True)
+                    view = buf.getbuffer()
+                    for pos in range(0, len(view), 4 << 20):
+                        f.write(view[pos : pos + (4 << 20)])
+            fs.mv(tmp_filename, dst_filename)
+            return
+        except OSError as e:
+            try:
+                fs.rm(tmp_filename)
+            except Exception:
+                pass
+            if attempt == attempts:
+                logger.error(
+                    f"Write of {dst_filename} failed on final attempt {attempt}/{attempts} with errno {e.errno} "
+                    f"({e.strerror}) on {socket.gethostname()}; giving up on this worker"
+                )
+                raise
+            logger.warning(
+                f"Write of {dst_filename} failed on attempt {attempt}/{attempts} with errno {e.errno} "
+                f"({e.strerror}) on {socket.gethostname()}; retrying"
+            )
+            time.sleep(random.uniform(5, 15) * attempt)
 
 
 def get_null_cols(df):
@@ -757,7 +800,8 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
                                 concat_partial,
                                 *zip(*enumerate(bldg_id_groups)),
                                 partition_vals_list,
-                            )
+                            ),
+                            retries=3,  # reschedule partitions whose writes keep failing on one worker
                         )
                     except:
                         logger.warning("Exception `dask.compute(map(concat_partial, ...` exception", exc_info=True)

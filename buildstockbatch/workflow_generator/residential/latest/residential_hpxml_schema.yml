@@ -108,4 +108,5 @@ ochre-spec:
     start_month: int(required=False)
     start_day: int(required=False)
     export_res: int(required=False)
+    defco_mode: enum('Standard', 'Time', 'IdealNoFrost', required=False)
     debug: bool(required=False)
