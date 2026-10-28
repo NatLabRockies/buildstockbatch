@@ -1,7 +1,6 @@
 import logging
 from botocore.config import Config
 
-
 logger = logging.getLogger(__name__)
 
 boto_client_config = Config(retries={"max_attempts": 5, "mode": "standard"})

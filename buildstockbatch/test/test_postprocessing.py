@@ -248,3 +248,58 @@ def test_replace_existing(basic_residential_project_file, mocker, scenario):
         else:
             # Assert that the mock S3's rm method was not called
             mock_bucket.objects.filter.return_value.delete.assert_not_called()
+
+
+def test_trim_step_errors():
+    from buildstockbatch.postprocessing import trim_step_errors
+
+    # Python traceback
+    python_tb = (
+        "Output:\nTraceback (most recent call last):\n"
+        '  File "/app/.venv/lib/click/core.py", line 10, in main\n'
+        "    cli()\n"
+        '  File "/long/path/ochre/utils/hpxml.py", line 837, in parse_hvac\n'
+        '    name = hvac["HeatPumpType"]\n'
+        "KeyError: 'HeatingSystemType'"
+    )
+    result = trim_step_errors([python_tb])
+    assert len(result) == 1
+    assert "KeyError: 'HeatingSystemType'" in result[0]
+    assert 'File "ochre/utils/hpxml.py"' in result[0]  # path shortened
+    assert "Traceback" not in result[0]
+    assert ".venv" not in result[0]  # skips venv frames
+    assert "/long/path" not in result[0]  # absolute path shortened
+
+    # Ruby trace: first line + last frame (path shortened to last 3 components)
+    ruby_err = (
+        "Measure Failed with Error: X\n"
+        "/long/path/measures/ResStockArguments/measure.rb:423:in `run'\n"
+        "/long/path/measures/BuildExistingModel/measure.rb:333:in `run'"
+    )
+    result = trim_step_errors([ruby_err])
+    assert "Measure Failed with Error: X" in result[0]
+    assert "BuildExistingModel/measure.rb:333" in result[0]
+    assert "/long/path/measures" not in result[0]  # absolute path is shortened
+
+    # Short error stays as-is
+    assert trim_step_errors(["OCHRE simulation failed"]) == ["OCHRE simulation failed"]
+
+    # Empty list
+    assert trim_step_errors([]) == []
+
+    # Two errors differing only by building ID should be identical after normalization
+    python_tb_template = (
+        "Output:\nTraceback (most recent call last):\n"
+        '  File "/path/up00/bldg{bldg}/run/ochre/utils/base.py", line 41, in load_csv\n'
+        "    return pd.read_csv(file_name, **kwargs)\n"
+        "FileNotFoundError: [Errno 2] No such file or directory: "
+        "'/path/up00/bldg{bldg}/run/in.schedules.csv'"
+    )
+    err1 = python_tb_template.format(bldg="3727956")
+    err2 = python_tb_template.format(bldg="2543739")
+    result = trim_step_errors([err1, err2])
+    assert result[0] == result[1]  # identical after normalization
+    assert "bldg{ID}" in result[0]
+    assert "up{NN}" in result[0]
+    assert "3727956" not in result[0]
+    assert "2543739" not in result[1]

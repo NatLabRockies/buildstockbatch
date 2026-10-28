@@ -28,7 +28,20 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: sdr_2025_ochre_support
+      - uses: actions/checkout@v4
+        with:
+          repository: NREL/OCHRE.git
+          path: OCHRE
+          ref: resstock_support
+      - name: Install UV
+        run: |
+          python -m pip install --progress-bar off --upgrade pip
+          pip install uv
+      - name: Set up OCHRE
+        run: |
+          cd OCHRE
+          uv sync
       - name: Remove AWS from resstock yaml
         run: |
           cd resstock
@@ -104,7 +117,7 @@ jobs:
         with:
           repository: NREL/resstock
           path: resstock
-          ref: develop
+          ref: sdr_2025_ochre_support
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11

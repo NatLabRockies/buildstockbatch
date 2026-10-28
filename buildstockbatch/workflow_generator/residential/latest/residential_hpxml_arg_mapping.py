@@ -71,4 +71,12 @@ ARG_MAP = {
             "include_monthly_bills": "register_monthly_bills",
         },
     },
+    "OCHRE": {
+        "build_existing_model": {
+            "simulation_control_timestep": "time_res_minutes",
+            "simulation_control_run_period_calendar_year": "start_year",
+            "simulation_control_run_period_begin_month": "start_month",
+            "simulation_control_run_period_begin_day_of_month": "start_day",
+        },
+    },
 }

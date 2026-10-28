@@ -9,6 +9,7 @@ This class contains the object & methods that allow for usage of the library wit
 :copyright: (c) 2018 by The Alliance for Sustainable Energy
 :license: BSD-3
 """
+
 import argparse
 import base64
 import boto3

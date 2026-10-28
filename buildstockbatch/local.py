@@ -154,6 +154,11 @@ class LocalBatch(BuildStockBatchBase):
             #     run_cmd.insert(8, '--measures_only')
             # else:
             run_cmd.insert(2, "--measures_only")
+        else:
+            # Check if use_ochre is enabled in the workflow_generator config
+            use_ochre = cfg.get("workflow_generator", {}).get("args", {}).get("use_ochre", False)
+            if use_ochre:
+                run_cmd.insert(2, "--measures_only")
 
         env_vars = {}
         env_vars.update(os.environ)
@@ -281,13 +286,13 @@ class LocalBatch(BuildStockBatchBase):
         if low_disk:
             return
 
-        sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
-        logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
-        with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
-            for dirname in os.listdir(sim_out_path):
-                if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
-                    tarf.add(sim_out_path / dirname, arcname=dirname)
-                    shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
+        # sim_out_tarfile_name = sim_out_path / "simulations_job0.tar.gz"
+        # logger.debug(f"Compressing simulation outputs to {sim_out_tarfile_name}")
+        # with tarfile.open(sim_out_tarfile_name, "w:gz") as tarf:
+        #     for dirname in os.listdir(sim_out_path):
+        #         if re.match(r"up\d+", dirname) and (sim_out_path / dirname).is_dir():
+        #             tarf.add(sim_out_path / dirname, arcname=dirname)
+        #             shutil.rmtree(sim_out_path / dirname, ignore_errors=True)
 
     @property
     def output_dir(self):

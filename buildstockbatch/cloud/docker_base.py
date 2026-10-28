@@ -8,6 +8,7 @@ This is the base class mixed into classes that deploy using a docker container.
 :author: Natalie Weires
 :license: BSD-3
 """
+
 import collections
 import csv
 from dataclasses import dataclass
