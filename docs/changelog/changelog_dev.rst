@@ -105,3 +105,14 @@ Development Changelog
         stock, and the key was being silently ignored. ``n_buildings_represented`` is still required with every
         other sampler, and schema versions ``0.3`` to ``0.6`` are unchanged. The latest residential workflow
         generator omits ``sample_weight`` when the key is absent.
+
+    .. change::
+        :tags: sampler, bugfix
+
+        The ``residential_stratified`` sampler passes ``segment_family_vars`` to ResStock's sampler. Its
+        generated ``sampler_config.yaml`` replaces ResStock's, and it carried only ``segment_vars``,
+        ``segment_selection_sample_size`` and ``num_samples_per_segment``, so ResStock's guarantee that every
+        sampling region x building type x heating fuel family keeps a segment was silently off. The new
+        optional ``segment_family_vars`` argument defaults to ``Sampling Region``, ``Geometry Building Type
+        RECS`` and ``Heating Fuel`` (those that are also segment variables); an empty list turns the
+        guarantee off. ResStock branches without the guarantee ignore the key.

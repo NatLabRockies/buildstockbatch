@@ -36,6 +36,15 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         "Heating Fuel",
         "Sampling Region",
     )
+    # Every combination (family) of these keeps its most populous segment before the rest are
+    # ranked by size. They are the keys the allocator's fallback never releases, so a family with
+    # no segment leaves its housing units without a building. The sampler config written here
+    # replaces ResStock's, so the key must be passed through or the guarantee is silently lost.
+    DEFAULT_SEGMENT_FAMILY_VARS = (
+        "Sampling Region",
+        "Geometry Building Type RECS",
+        "Heating Fuel",
+    )
     DEFAULT_SEGMENT_SELECTION_SAMPLE_SIZE = 10000000
     DEFAULT_NUM_SAMPLES_PER_SEGMENT = 12
 
@@ -44,6 +53,7 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         parent,
         n_datapoints,
         segment_vars=None,
+        segment_family_vars=None,
         segment_selection_sample_size=DEFAULT_SEGMENT_SELECTION_SAMPLE_SIZE,
         num_samples_per_segment=DEFAULT_NUM_SAMPLES_PER_SEGMENT,
     ):
@@ -56,22 +66,44 @@ class ResidentialStratifiedSampler(BuildStockSampler):
         :param segment_vars: parameter for sampling written to sampler_config.yaml; defaults to
             DEFAULT_SEGMENT_VARS
         :type segment_vars: list[str]
+        :param segment_family_vars: parameter for sampling written to sampler_config.yaml; a subset
+            of segment_vars. Defaults to the DEFAULT_SEGMENT_FAMILY_VARS that are in segment_vars;
+            an empty list ranks segments on size alone.
+        :type segment_family_vars: list[str]
         :param segment_selection_sample_size: parameter for sampling written to sampler_config.yaml
         :type segment_selection_sample_size: int
         :param num_samples_per_segment: parameter for sampling written to sampler_config.yaml
         :type num_samples_per_segment: int
         """
         super().__init__(parent)
-        self.validate_args(self.parent().project_filename, n_datapoints=n_datapoints)
+        self.validate_args(
+            self.parent().project_filename,
+            n_datapoints=n_datapoints,
+            segment_vars=segment_vars,
+            segment_family_vars=segment_family_vars,
+        )
         self.n_datapoints = n_datapoints
-        if segment_vars is None:
-            segment_vars = list(self.DEFAULT_SEGMENT_VARS)
+        segment_vars = self.resolve_segment_vars(segment_vars)
+        segment_family_vars = self.resolve_segment_family_vars(segment_vars, segment_family_vars)
         self.sampler_config = self.create_sampler_config(
             os.path.dirname(self.parent().project_filename),
             segment_vars,
             segment_selection_sample_size,
             num_samples_per_segment,
+            segment_family_vars,
         )
+
+    @classmethod
+    def resolve_segment_vars(cls, segment_vars):
+        return list(cls.DEFAULT_SEGMENT_VARS) if segment_vars is None else list(segment_vars)
+
+    @classmethod
+    def resolve_segment_family_vars(cls, segment_vars, segment_family_vars):
+        """The family variables to write: explicit ones as given, otherwise the defaults that are
+        also segment variables (a family variable must be a segment variable)."""
+        if segment_family_vars is not None:
+            return list(segment_family_vars)
+        return [v for v in cls.DEFAULT_SEGMENT_FAMILY_VARS if v in segment_vars]
 
     @classmethod
     def validate_args(cls, project_filename, **kw):
@@ -83,8 +115,9 @@ class ResidentialStratifiedSampler(BuildStockSampler):
                     raise ValidationError("n_datapoints needs to be an integer")
                 if v <= 0:
                     raise ValidationError("n_datapoints need to be >= 1")
-            elif k == "segment_vars":
-                pass
+            elif k in ("segment_vars", "segment_family_vars"):
+                if v is not None and (not isinstance(v, list) or not all(isinstance(x, str) for x in v)):
+                    raise ValidationError(f"{k} needs to be a list of housing characteristic names")
             elif k == "segment_selection_sample_size":
                 pass
             elif k == "num_samples_per_segment":
@@ -93,12 +126,25 @@ class ResidentialStratifiedSampler(BuildStockSampler):
                 raise ValidationError(f"Unknown argument for sampler: {k}")
         if len(expected_args) > 0:
             raise ValidationError("The following sampler arguments are required: " + ", ".join(expected_args))
+        if kw.get("segment_family_vars") is not None:
+            segment_vars = cls.resolve_segment_vars(kw.get("segment_vars"))
+            missing = [v for v in kw["segment_family_vars"] if v not in segment_vars]
+            if missing:
+                raise ValidationError(f"segment_family_vars {missing} are not in segment_vars {segment_vars}")
         return True
 
     @classmethod
-    def create_sampler_config(self, folderpath, segment_vars, segment_selection_sample_size, num_samples_per_segment):
+    def create_sampler_config(
+        self,
+        folderpath,
+        segment_vars,
+        segment_selection_sample_size,
+        num_samples_per_segment,
+        segment_family_vars=(),
+    ):
         data = {}
         data["segment_vars"] = segment_vars
+        data["segment_family_vars"] = list(segment_family_vars)
         data["segment_selection_sample_size"] = segment_selection_sample_size
         data["num_samples_per_segment"] = num_samples_per_segment
         filename = pathlib.Path(folderpath) / "sampler_config.yaml"

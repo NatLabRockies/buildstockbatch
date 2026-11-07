@@ -91,6 +91,52 @@ def test_default_segment_vars_are_allocation_keys(tmp_path):
     assert sampler.sampler_config == str(config_path)
 
 
+def test_default_segment_family_vars_written(tmp_path):
+    # The written config replaces ResStock's, so the family guarantee is lost unless the key is here.
+    _, config_path = _make_sampler(tmp_path)
+
+    config = yaml.safe_load(config_path.read_text())
+    assert config["segment_family_vars"] == ["Sampling Region", "Geometry Building Type RECS", "Heating Fuel"]
+    assert set(config["segment_family_vars"]) <= set(config["segment_vars"])
+
+
+def test_default_segment_family_vars_follow_custom_segment_vars(tmp_path):
+    _, config_path = _make_sampler(tmp_path, segment_vars=["Vintage", "Heating Fuel", "Sampling Region"])
+
+    config = yaml.safe_load(config_path.read_text())
+    assert config["segment_family_vars"] == ["Sampling Region", "Heating Fuel"]
+
+
+@pytest.mark.parametrize("family_vars", [[], ["Sampling Region"]])
+def test_explicit_segment_family_vars(tmp_path, family_vars):
+    _, config_path = _make_sampler(tmp_path, segment_family_vars=family_vars)
+
+    config = yaml.safe_load(config_path.read_text())
+    assert config["segment_family_vars"] == family_vars
+
+
+def test_segment_family_vars_must_be_segment_vars():
+    with pytest.raises(ValidationError, match=r"segment_family_vars \['County'\] are not in segment_vars"):
+        ResidentialStratifiedSampler.validate_args(
+            "dummy_project.yml", n_datapoints=10, segment_family_vars=["Heating Fuel", "County"]
+        )
+    with pytest.raises(ValidationError, match="are not in segment_vars"):
+        ResidentialStratifiedSampler.validate_args(
+            "dummy_project.yml",
+            n_datapoints=10,
+            segment_vars=["Vintage", "Sampling Region"],
+            segment_family_vars=["Heating Fuel"],
+        )
+    assert ResidentialStratifiedSampler.validate_args(
+        "dummy_project.yml", n_datapoints=10, segment_family_vars=["Sampling Region", "Heating Fuel"]
+    )
+
+
+def test_segment_family_vars_must_be_a_list():
+    with pytest.raises(ValidationError, match="segment_family_vars needs to be a list"):
+        ResidentialStratifiedSampler.validate_args("dummy_project.yml", n_datapoints=10, segment_family_vars="Vintage")
+
+
 def test_explicit_args_override_defaults(tmp_path):
     _, config_path = _make_sampler(
         tmp_path,
