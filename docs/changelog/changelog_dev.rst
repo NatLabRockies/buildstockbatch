@@ -93,3 +93,26 @@ Development Changelog
         both scenarios that use hourly schedules and scenarios that use constant
         values. The previous
         ``2025.12.03`` generator remains available for existing projects.
+
+
+    .. change::
+        :tags: validation, feature
+
+        Adds project schema version ``0.7``, in which ``baseline`` and ``baseline: n_buildings_represented`` are
+        optional. The ``residential_stratified`` sampler requires schema version ``0.7`` or later and rejects
+        ``n_buildings_represented``: that sampler's buildings are weighted by allocating the ACS housing unit
+        catalogue to them in ``publish_annual_results``, so the catalogue, not this key, sets the size of the
+        stock, and the key was being silently ignored. ``n_buildings_represented`` is still required with every
+        other sampler, and schema versions ``0.3`` to ``0.6`` are unchanged. The latest residential workflow
+        generator omits ``sample_weight`` when the key is absent.
+
+    .. change::
+        :tags: sampler, bugfix
+
+        The ``residential_stratified`` sampler passes ``segment_family_vars`` to ResStock's sampler. Its
+        generated ``sampler_config.yaml`` replaces ResStock's, and it carried only ``segment_vars``,
+        ``segment_selection_sample_size`` and ``num_samples_per_segment``, so ResStock's guarantee that every
+        sampling region x building type x heating fuel family keeps a segment was silently off. The new
+        optional ``segment_family_vars`` argument defaults to ``Sampling Region``, ``Geometry Building Type
+        RECS`` and ``Heating Fuel`` (those that are also segment variables); an empty list turns the
+        guarantee off. ResStock branches without the guarantee ignore the key.

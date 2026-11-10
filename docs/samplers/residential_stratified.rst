@@ -34,6 +34,16 @@ Arguments
   - Heating Fuel
   - Sampling Region
 
+- ``segment_family_vars`` (optional): A subset of ``segment_vars``. Every combination of these
+  (a family) keeps its most populous segment before the remaining segments are ranked by size.
+  They are the characteristics the allocation fallback never releases, so a family left without a
+  segment leaves its housing units without a building. Default is the following, keeping only
+  those that are also in ``segment_vars``; an empty list ranks segments on size alone:
+
+  - Sampling Region
+  - Geometry Building Type RECS
+  - Heating Fuel
+
 - ``segment_selection_sample_size`` (optional): Size of the initial sample used to rank segments
   by how much of the stock they cover. Default is 10000000.
 - ``num_samples_per_segment`` (optional): Buildings kept per segment. This one value sets both how
