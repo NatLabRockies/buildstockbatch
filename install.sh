@@ -59,8 +59,13 @@ else
     echo "ResStock folder not found."
   fi
 
-  # Ask for alternative path
-  read -p "Enter path to ResStock with postprocessing (or press Enter to skip): " ALT_PATH
+  # Ask for alternative path (skip the prompt when running non-interactively, e.g. in CI)
+  if [ -t 0 ]; then
+    read -p "Enter path to ResStock with postprocessing (or press Enter to skip): " ALT_PATH
+  else
+    echo "Non-interactive shell detected; not prompting for a ResStock path."
+    ALT_PATH="${RESSTOCK_POSTPROCESSING_PATH:-}"
+  fi
 
   if [ -z "$ALT_PATH" ]; then
     echo "No path provided. Skipping installation of postprocessing related library to buildstockbatch."

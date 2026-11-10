@@ -63,7 +63,7 @@ class ResidentialQuotaSampler(BuildStockSampler):
             self.parent().docker_image,
             [
                 "ruby",
-                "resources/run_sampling.rb",
+                "samplers/quota/run_sampling.rb",
                 "-p",
                 self.cfg["project_directory"],
                 "-n",
@@ -100,7 +100,7 @@ class ResidentialQuotaSampler(BuildStockSampler):
             "{}:/outbind".format(os.path.dirname(self.csv_path)),
             self.parent().apptainer_image,
             "ruby",
-            "resources/run_sampling.rb",
+            "samplers/quota/run_sampling.rb",
             "-p",
             self.cfg["project_directory"],
             "-n",
@@ -113,11 +113,11 @@ class ResidentialQuotaSampler(BuildStockSampler):
         logger.debug("Apptainer sampling completed.")
         return self.csv_path
 
-    def _run_sampling_local_openstudio(self):
+    def _run_sampling_local(self):
         subprocess.run(
             [
-                self.parent().openstudio_exe(),
-                str(pathlib.Path("resources", "run_sampling.rb")),
+                "ruby",
+                str(pathlib.Path("samplers", "quota", "run_sampling.rb")),
                 "-p",
                 self.cfg["project_directory"],
                 "-n",

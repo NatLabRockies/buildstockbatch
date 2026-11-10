@@ -13,6 +13,7 @@ This is the base class mixed into the deployment specific classes (i.e. kestrel,
 from dask.distributed import Client
 import difflib
 from fsspec.implementations.local import LocalFileSystem
+import importlib.util
 import logging
 from lxml import objectify
 import os
@@ -26,6 +27,7 @@ import shutil
 import subprocess
 import tempfile
 import yamale
+import yaml
 import zipfile
 import csv
 from collections import defaultdict, Counter
@@ -284,16 +286,19 @@ class BuildStockBatchBase(object):
 
     @classmethod
     def validate_project(cls, project_file):
+        assert cls.validate_stratified_schema_version(project_file)
         assert cls.validate_project_schema(project_file)
         assert cls.validate_sampler(project_file)
         assert cls.validate_workflow_generator(project_file)
         assert cls.validate_misc_constraints(project_file)
+        assert cls.validate_n_buildings_represented(project_file)
         assert cls.validate_xor_nor_schema_keys(project_file)
         assert cls.validate_reference_scenario(project_file)
         assert cls.validate_options_lookup(project_file)
         assert cls.validate_logic(project_file)
         assert cls.validate_measure_references(project_file)
         assert cls.validate_postprocessing_spec(project_file)
+        assert cls.validate_publish_annual_results(project_file)
         assert cls.validate_resstock_or_comstock_version(project_file)
         assert cls.validate_openstudio_version(project_file)
         assert cls.validate_number_of_options(project_file)
@@ -404,6 +409,58 @@ class BuildStockBatchBase(object):
         return True
 
     @staticmethod
+    def validate_stratified_schema_version(project_file):
+        """Require schema_version 0.7 or later with the residential_stratified sampler.
+
+        Schemas before 0.7 require baseline:n_buildings_represented, which the stratified sampler rejects (see
+        validate_n_buildings_represented). Runs before the schema check, so that a stratified project on an
+        older schema gets this message rather than the schema's "n_buildings_represented: Required field missing".
+        """
+        with open(project_file) as f:
+            cfg = yaml.safe_load(f)
+        if (cfg.get("sampler") or {}).get("type") != "residential_stratified":
+            return True
+        schema_version = str(cfg.get("schema_version", ""))
+        try:
+            schema_major_minor = tuple(int(x) for x in schema_version.split("."))
+        except ValueError:
+            return True  # Not a version number; the schema check reports it
+        if schema_major_minor < (0, 7):
+            raise ValidationError(
+                f"The residential_stratified sampler requires schema_version 0.7 or later (got {schema_version}). "
+                "Set schema_version: '0.7' and remove baseline:n_buildings_represented: building weights come "
+                "from allocating the ACS housing unit catalogue to the sample, not from that key."
+            )
+        return True
+
+    @staticmethod
+    def validate_n_buildings_represented(project_file):
+        """Require baseline:n_buildings_represented, except with the stratified sampler, which rejects it.
+
+        The residential_stratified sampler's buildings are weighted by allocating the ACS housing unit
+        catalogue to them in the publication pipeline, so the size of the published stock is set by the
+        catalogue. A uniform n_buildings_represented / n_datapoints weight would be wrong for a stratified
+        sample, so rather than silently ignore the key, refuse it.
+        """
+        cfg = get_project_configuration(project_file)
+        sampler_name = cfg.get("sampler", {}).get("type")
+        has_n_bldgs = "n_buildings_represented" in cfg["baseline"]
+        if sampler_name == "residential_stratified":
+            if has_n_bldgs:
+                raise ValidationError(
+                    "baseline:n_buildings_represented is not used with the residential_stratified sampler. "
+                    "Building weights come from allocating the ACS housing unit catalogue to the sample "
+                    "(postprocessing:publish_annual_results), so the catalogue sets the size of the stock. "
+                    "Remove baseline:n_buildings_represented from the project file."
+                )
+        elif not has_n_bldgs:
+            raise ValidationError(
+                f"baseline:n_buildings_represented is required with the {sampler_name} sampler. "
+                "It sets the weight of each simulated building (n_buildings_represented / n_datapoints)."
+            )
+        return True
+
+    @staticmethod
     def validate_postprocessing_spec(project_file):
         cfg = get_project_configuration(project_file)  # noqa F841
         param_option_dict, _ = BuildStockBatchBase.get_param_option_dict(project_file)
@@ -411,6 +468,36 @@ class BuildStockBatchBase(object):
         invalid_cols = [c for c in partition_cols if c not in param_option_dict.keys()]
         if invalid_cols:
             raise ValidationError(f"The following partition columns are not valid: {invalid_cols}")
+        return True
+
+    @staticmethod
+    def validate_publish_annual_results(project_file):
+        """Validate requirements of the annual-results publication pipeline before a run starts."""
+        cfg = get_project_configuration(project_file)
+        if not cfg.get("postprocessing", {}).get("publish_annual_results", False):
+            return True
+        errors = []
+        if cfg.get("baseline", {}).get("skip_sims", False):
+            errors.append(
+                "postprocessing:publish_annual_results requires baseline simulations, but "
+                "baseline:skip_sims is set. The publication pipeline allocates weights from "
+                "baseline characteristics."
+            )
+        sampler_name = cfg.get("sampler", {}).get("type")
+        if sampler_name not in postprocessing.SAMPLER_TO_PUBLICATION_TYPE:
+            errors.append(
+                f"Sampler type '{sampler_name}' is not supported by publish_annual_results. "
+                f"Supported samplers: {sorted(postprocessing.SAMPLER_TO_PUBLICATION_TYPE)}"
+            )
+        if importlib.util.find_spec("resstockpostproc") is None:
+            errors.append(
+                "publish_annual_results requires the resstockpostproc package, which is not "
+                "installed. Install it with `pip install <path-to-resstock>/postprocessing` "
+                "(install.sh and create_kestrel_env.sh install it automatically when a resstock "
+                "checkout with a postprocessing folder is found)."
+            )
+        if errors:
+            raise ValidationError("\n".join(errors))
         return True
 
     @staticmethod
