@@ -220,6 +220,35 @@ def test_qos_high_job_submit(basic_residential_project_file, monkeypatch, mocker
     assert "--qos=high" in mock_subprocess.run.call_args[0][0]
 
 
+@pytest.mark.parametrize(
+    "mode,partition,tmp",
+    [
+        ({}, "nvme", "--tmp=1000000"),
+        ({"upload_only": True}, "standard", "--tmp=0"),
+        ({"continue_upload": True}, "standard", "--tmp=0"),
+    ],
+)
+def test_postprocessing_node_request(basic_residential_project_file, monkeypatch, mocker, mode, partition, tmp):
+    """Only a job that combines timeseries needs nvme nodes and local scratch."""
+    mock_subprocess = mocker.patch("buildstockbatch.hpc.subprocess")
+    mock_subprocess.run.return_value.stdout = "Submitted batch job 1\n"
+    mock_subprocess.PIPE = None
+    mocker.patch.object(SlurmBatch, "get_apptainer_image", return_value="/path/to/openstudio.sif")
+    mocker.patch.object(SlurmBatch, "weather_dir", None)
+    project_filename, results_dir = basic_residential_project_file(hpc_name="kestrel")
+    shutil.rmtree(results_dir)
+    monkeypatch.setenv("VIRTUAL_ENV", "something")
+    monkeypatch.delenv("SLURM_JOB_QOS", raising=False)
+
+    KestrelBatch(project_filename).queue_post_processing(**mode)
+    args = mock_subprocess.run.call_args[0][0]
+    head, workers = args[: args.index(":")], args[args.index(":") + 1 :]
+    assert f"--partition={partition}" in head
+    assert tmp in head
+    assert tmp in workers
+    assert not any(a.startswith("--partition") for a in workers)
+
+
 @pytest.mark.parametrize("hpc_name", ["kestrel"])
 def test_queue_jobs_minutes_per_sim(mocker, basic_residential_project_file, monkeypatch, hpc_name):
     mock_subprocess = mocker.patch("buildstockbatch.hpc.subprocess")

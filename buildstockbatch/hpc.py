@@ -643,18 +643,28 @@ class SlurmBatch(BuildStockBatchBase):
         here = os.path.dirname(os.path.abspath(__file__))
         hpc_post_sh = os.path.join(here, f"{self.HPC_NAME}_postprocessing.sh")
 
+        # Combining timeseries needs node-local scratch, so a full postprocessing job asks for an
+        # nvme head node and 1 TB of local disk everywhere. An upload-only job just reads the
+        # finished parquet from the shared filesystem and sends it to S3, so it runs on standard
+        # nodes and does not wait for the scarce nvme partition. --tmp=0 overrides the
+        # "#SBATCH --tmp" directive in the job script.
+        if upload_only or continue_upload:
+            tmp_arg, partition = "--tmp=0", "standard"
+        else:
+            tmp_arg, partition = "--tmp=1000000", "nvme"
+
         args = [
             "sbatch",
-            "--tmp=1000000",
+            tmp_arg,
             "--account={}".format(account),
-            "--partition=nvme",
+            "--partition={}".format(partition),
             "--time={}".format(walltime),
             "--export={}".format(",".join(env_export.keys())),
             "--job-name=bstkpost",
             "--output=postprocessing.out",
             "--nodes=1",
             ":",
-            "--tmp=1000000",
+            tmp_arg,
             "--mem={}".format(memory),
             "--output=dask_workers.out",
             "--nodes={}".format(n_workers),
