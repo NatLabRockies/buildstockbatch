@@ -153,6 +153,12 @@ postprocessing-spec:
   aws: include('aws-postprocessing-spec', required=False)
   keep_individual_timeseries: bool(required=False)
   publish_annual_results: bool(required=False)  # Polish the results further for publication
+  comstock: include('comstock-postprocessing-spec', required=False)
+
+comstock-postprocessing-spec:
+  stock_estimation_version: str(required=True)
+  truth_data_version: str(required=True)
+  comstock_year: int(required=True)
 
 aws-postprocessing-spec:
   region_name: str(required=False)

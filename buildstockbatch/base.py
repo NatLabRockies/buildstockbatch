@@ -958,7 +958,14 @@ class BuildStockBatchBase(object):
 
             fs = self.get_fs()
             if not skip_combine:
-                postprocessing.combine_results(fs, self.results_dir, self.cfg, do_timeseries=do_timeseries)
+                combine_kwargs = {}
+                if self.cfg["workflow_generator"]["type"] == "commercial_default" and self.cfg.get(
+                    "postprocessing", {}
+                ).get("publish_annual_results", False):
+                    combine_kwargs["buildstock_csv_filename"] = self.sampler.csv_path
+                postprocessing.combine_results(
+                    fs, self.results_dir, self.cfg, do_timeseries=do_timeseries, **combine_kwargs
+                )
 
             aws_conf = self.cfg.get("postprocessing", {}).get("aws", {})
             if "s3" in aws_conf or "aws" in self.cfg:

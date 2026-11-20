@@ -393,6 +393,19 @@ The configuration options for postprocessing and AWS upload are:
       publishing functions to transform the data. The processed results are stored in a ``results_csvs_pub`` directory and
       a ``pub_annual`` subdirectory within the parquet directory. Default is ``false``.
 
+    * ``comstock``: Required for commercial annual publication (schema version 0.6).
+      Install the matching
+      ``comstockpostproc`` package and configure AWS credentials with access to the
+      ComStock truth data. The local backend uses the sampled building CSV and the
+      baseline results to allocate stock weights, scale to CBECS, and calculate
+      utility bills. Its full weighted export is grouped by state and climate zone.
+      Baseline simulations must not be skipped. Commercial publication is not
+      supported by the GCP postprocessing backend.
+
+        * ``stock_estimation_version``: Stock estimate version matching the sample.
+        * ``truth_data_version``: ComStock truth data version.
+        * ``comstock_year``: Simulation year, for example ``2018``.
+
     * ``aws``: (optional) configuration related to uploading to and managing
       data in amazon web services. For this to work, please `configure aws`_.
       Including this key will cause your datasets to be uploaded to AWS,
