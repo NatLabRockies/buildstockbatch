@@ -388,7 +388,7 @@ def write_metadata_files(fs, parquet_root_dir, partition_columns):
     logger.info(f"Written _common_metadata to {parquet_root_dir}")
 
 
-def combine_results(fs, results_dir, cfg, do_timeseries=True):
+def combine_results(fs, results_dir, cfg, do_timeseries=True, buildstock_csv_filename=None):
     """Combine the results of the batch simulations.
 
     :param fs: fsspec filesystem (currently supports local, s3, gcs)
@@ -399,6 +399,8 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     :type cfg: dict
     :param do_timeseries: process timeseries results, defaults to True
     :type do_timeseries: bool, optional
+    :param buildstock_csv_filename: sampled building characteristics, required for commercial publication
+    :type buildstock_csv_filename: str, optional
     """
     sim_output_dir = f"{results_dir}/simulation_output"
     ts_in_dir = f"{sim_output_dir}/timeseries"
@@ -414,7 +416,11 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     process_simulation_outputs = None
     get_upgrade_rename_dict = None
     setup_fsspec_filesystem = None
-    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+    publish_annual = cfg.get("postprocessing", {}).get("publish_annual_results", False)
+    publish_commercial = publish_annual and cfg.get("workflow_generator", {}).get("type") == "commercial_default"
+    if publish_commercial and not buildstock_csv_filename:
+        raise ValueError("Commercial annual publication requires the sampled buildstock CSV.")
+    if publish_annual and not publish_commercial:
         results_csvs_pub_dir = f"{results_dir}/results_csvs_pub"
         parquet_pub_dir = f"{parquet_dir}/pub_annual"
         dirs.append(results_csvs_pub_dir)
@@ -451,7 +457,7 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     results_df = dd.from_delayed(delayed_results_dfs, verify_meta=False)
 
     failed_bldgs = []
-    if cfg.get("postprocessing", {}).get("publish_annual_results", False):
+    if publish_annual and not publish_commercial:
         logger.info("Collecting all the failed simulations buildings")
 
         def get_failed_baseline_bldg_ids(filename):
@@ -727,6 +733,10 @@ def combine_results(fs, results_dir, cfg, do_timeseries=True):
     if do_timeseries:
         logger.info("Writing timeseries metadata files")
         write_metadata_files(fs, ts_dir, partition_columns)
+    if publish_commercial:
+        from comstockpostproc.buildstockbatch import publish_results
+
+        publish_results(fs, results_dir, buildstock_csv_filename, cfg)
 
 
 def remove_intermediate_files(fs, results_dir, keep_individual_timeseries=False):

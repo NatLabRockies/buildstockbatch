@@ -195,6 +195,40 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
         assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"
 
 
+def test_commercial_publication_runs_after_raw_results(basic_residential_project_file, monkeypatch):
+    project_filename, results_dir = basic_residential_project_file(
+        {"workflow_generator": {"type": "commercial_default"}, "postprocessing": {"publish_annual_results": True}}
+    )
+    cfg = get_project_configuration(project_filename)
+    sample_file = str(pathlib.Path(results_dir) / "buildstock.csv")
+    calls = []
+
+    def publish_results(fs, output_dir, buildstock_csv, config):
+        assert pathlib.Path(output_dir, "results_csvs", "results_up00.csv.gz").exists()
+        assert pathlib.Path(output_dir, "results_csvs", "results_up01.csv.gz").exists()
+        calls.append((buildstock_csv, config))
+
+    monkeypatch.setitem(sys.modules, "comstockpostproc", MagicMock())
+    module = MagicMock()
+    module.publish_results = publish_results
+    monkeypatch.setitem(sys.modules, "comstockpostproc.buildstockbatch", module)
+    postprocessing.combine_results(
+        LocalFileSystem(), results_dir, cfg, do_timeseries=False, buildstock_csv_filename=sample_file
+    )
+
+    assert calls == [(sample_file, cfg)]
+
+
+def test_commercial_publication_requires_buildstock_csv(basic_residential_project_file):
+    project_filename, results_dir = basic_residential_project_file(
+        {"workflow_generator": {"type": "commercial_default"}, "postprocessing": {"publish_annual_results": True}}
+    )
+    cfg = get_project_configuration(project_filename)
+
+    with pytest.raises(ValueError, match="requires the sampled buildstock CSV"):
+        postprocessing.combine_results(LocalFileSystem(), results_dir, cfg, do_timeseries=False)
+
+
 @pytest.mark.parametrize(
     "scenario",
     [
