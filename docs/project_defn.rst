@@ -388,10 +388,11 @@ The configuration options for postprocessing and AWS upload are:
       must match the parameters found in options_lookup.tsv. This allows for efficient athena queries. Only recommended
       for moderate or large sized runs (ndatapoints > 10K)
 
-    * ``publish_annual_results``: (optional, bool) When set to ``true``, additional processed annual results will be generated
-      in both CSV and Parquet formats. For residential projects, this functionality uses the ``resstockpostproc`` module's
-      publishing functions to transform the data. The processed results are stored in a ``results_csvs_pub`` directory and
-      a ``pub_annual`` subdirectory within the parquet directory. Default is ``false``.
+    * ``publish_annual_results``: (optional, bool) When set to ``true``, additional processed annual results are generated
+      in CSV and Parquet formats. Residential projects use ``resstockpostproc``; commercial projects use
+      ``comstockpostproc`` and require the ``comstock`` settings described below. The processed results are stored in a
+      ``results_csvs_pub`` directory and a ``pub_annual`` subdirectory within the parquet directory. This option controls
+      result generation, not S3 upload; configure ``aws`` separately to upload. Default is ``false``.
 
     * ``comstock``: Required for commercial annual publication (schema version 0.6).
       Install the matching
