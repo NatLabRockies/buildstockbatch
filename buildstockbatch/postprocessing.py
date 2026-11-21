@@ -192,7 +192,7 @@ def clean_up_results_df(df, cfg, keep_upgrade_id=False):
             )
     reference_scenarios = dict([(i, x.get("reference_scenario")) for i, x in enumerate(cfg.get("upgrades", []), 1)])
     results_df["apply_upgrade.reference_scenario"] = (
-        results_df["upgrade"].map(reference_scenarios).fillna("").astype(str)
+        results_df["upgrade"].map(reference_scenarios).astype("string").fillna("").astype(str)
     )
 
     # standardize the column orders

@@ -3,7 +3,9 @@ import gzip
 import json
 import logging
 import os
+import pandas as pd
 import pathlib
+import pyarrow as pa
 import re
 import pytest
 import shutil
@@ -15,6 +17,26 @@ from buildstockbatch.base import BuildStockBatchBase
 from buildstockbatch.utils import get_project_configuration, read_csv
 
 postprocessing.performance_report = MagicMock()
+
+
+def test_clean_up_results_df_with_null_arrow_reference_scenarios():
+    df = pd.DataFrame({"building_id": [1, 2], "upgrade": [0, 1]})
+    cfg = {"upgrades": [{"upgrade_name": "Upgrade"}]}
+    mapped = pd.Series([None, None], dtype=pd.ArrowDtype(pa.null()))
+
+    with patch.object(pd.Series, "map", return_value=mapped):
+        result = postprocessing.clean_up_results_df(df, cfg)
+
+    assert result["apply_upgrade.reference_scenario"].tolist() == ["", ""]
+
+
+def test_clean_up_results_df_preserves_reference_scenarios():
+    df = pd.DataFrame({"building_id": [1, 2, 3], "upgrade": [0, 1, 2]})
+    cfg = {"upgrades": [{"reference_scenario": "Reference"}, {}]}
+
+    result = postprocessing.clean_up_results_df(df, cfg)
+
+    assert result["apply_upgrade.reference_scenario"].tolist() == ["", "Reference", ""]
 
 
 def test_report_additional_results_csv_columns(basic_residential_project_file):
