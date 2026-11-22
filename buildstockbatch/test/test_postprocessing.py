@@ -3,18 +3,42 @@ import gzip
 import json
 import logging
 import os
+import pandas as pd
 import pathlib
+import pyarrow as pa
 import re
 import pytest
 import shutil
 import sys
+import yaml
 from unittest.mock import patch, MagicMock
+from yamale.yamale_error import YamaleError
 
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase
 from buildstockbatch.utils import get_project_configuration, read_csv
 
 postprocessing.performance_report = MagicMock()
+
+
+def test_clean_up_results_df_with_null_arrow_reference_scenarios():
+    df = pd.DataFrame({"building_id": [1, 2], "upgrade": [0, 1]})
+    cfg = {"upgrades": [{"upgrade_name": "Upgrade"}]}
+    mapped = pd.Series([None, None], dtype=pd.ArrowDtype(pa.null()))
+
+    with patch.object(pd.Series, "map", return_value=mapped):
+        result = postprocessing.clean_up_results_df(df, cfg)
+
+    assert result["apply_upgrade.reference_scenario"].tolist() == ["", ""]
+
+
+def test_clean_up_results_df_preserves_reference_scenarios():
+    df = pd.DataFrame({"building_id": [1, 2, 3], "upgrade": [0, 1, 2]})
+    cfg = {"upgrades": [{"reference_scenario": "Reference"}, {}]}
+
+    result = postprocessing.clean_up_results_df(df, cfg)
+
+    assert result["apply_upgrade.reference_scenario"].tolist() == ["", "Reference", ""]
 
 
 def test_report_additional_results_csv_columns(basic_residential_project_file):
@@ -193,6 +217,61 @@ def test_publish_annual_results(basic_residential_project_file, mocker):
         upgrade_id = int(upgrade_folder.name.split("=")[1])
         expected_file = upgrade_folder / f"results_up{upgrade_id:02d}.parquet"
         assert expected_file.exists(), f"Expected parquet file missing for {upgrade_folder.name}"
+
+
+def test_commercial_publication_runs_after_raw_results(basic_residential_project_file, monkeypatch):
+    project_filename, results_dir = basic_residential_project_file(
+        {"workflow_generator": {"type": "commercial_default"}, "postprocessing": {"publish_annual_results": True}}
+    )
+    cfg = get_project_configuration(project_filename)
+    sample_file = str(pathlib.Path(results_dir) / "buildstock.csv")
+    calls = []
+
+    def publish_results(fs, output_dir, buildstock_csv, config):
+        assert pathlib.Path(output_dir, "results_csvs", "results_up00.csv.gz").exists()
+        assert pathlib.Path(output_dir, "results_csvs", "results_up01.csv.gz").exists()
+        calls.append((buildstock_csv, config))
+
+    monkeypatch.setitem(sys.modules, "comstockpostproc", MagicMock())
+    module = MagicMock()
+    module.publish_results = publish_results
+    monkeypatch.setitem(sys.modules, "comstockpostproc.buildstockbatch", module)
+    postprocessing.combine_results(
+        LocalFileSystem(), results_dir, cfg, do_timeseries=False, buildstock_csv_filename=sample_file
+    )
+
+    assert calls == [(sample_file, cfg)]
+
+
+def test_commercial_publication_requires_buildstock_csv(basic_residential_project_file):
+    project_filename, results_dir = basic_residential_project_file(
+        {"workflow_generator": {"type": "commercial_default"}, "postprocessing": {"publish_annual_results": True}}
+    )
+    cfg = get_project_configuration(project_filename)
+
+    with pytest.raises(ValueError, match="requires the sampled buildstock CSV"):
+        postprocessing.combine_results(LocalFileSystem(), results_dir, cfg, do_timeseries=False)
+
+
+def test_commercial_publication_schema_needs_no_comstock_settings(tmp_path):
+    with open(pathlib.Path(__file__).parent / "test_inputs" / "minimal-schema.yml") as stream:
+        cfg = yaml.safe_load(stream)
+    cfg["schema_version"] = "0.6"
+    cfg["workflow_generator"]["version"] = "2024.07.18"
+    cfg["postprocessing"] = {"publish_annual_results": True}
+    project_file = tmp_path / "project.yml"
+    project_file.write_text(yaml.safe_dump(cfg))
+
+    assert BuildStockBatchBase.validate_project_schema(str(project_file))
+
+    cfg["postprocessing"]["comstock"] = {
+        "stock_estimation_version": "2025R3",
+        "truth_data_version": "v01",
+        "comstock_year": 2018,
+    }
+    project_file.write_text(yaml.safe_dump(cfg))
+    with pytest.raises(YamaleError):
+        BuildStockBatchBase.validate_project_schema(str(project_file))
 
 
 @pytest.mark.parametrize(

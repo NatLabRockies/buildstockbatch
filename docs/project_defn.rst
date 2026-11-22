@@ -388,10 +388,22 @@ The configuration options for postprocessing and AWS upload are:
       must match the parameters found in options_lookup.tsv. This allows for efficient athena queries. Only recommended
       for moderate or large sized runs (ndatapoints > 10K)
 
-    * ``publish_annual_results``: (optional, bool) When set to ``true``, additional processed annual results will be generated
-      in both CSV and Parquet formats. For residential projects, this functionality uses the ``resstockpostproc`` module's
-      publishing functions to transform the data. The processed results are stored in a ``results_csvs_pub`` directory and
-      a ``pub_annual`` subdirectory within the parquet directory. Default is ``false``.
+    * ``publish_annual_results``: (optional, bool) When set to ``true``, additional processed annual results are generated
+      in CSV and Parquet formats. Residential projects use ``resstockpostproc``; commercial projects use
+      ``comstockpostproc``. The processed results are stored in a
+      ``results_csvs_pub`` directory and a ``pub_annual`` subdirectory within the parquet directory. This option controls
+      result generation, not S3 upload; configure ``aws`` separately to upload. Default is ``false``.
+
+      For commercial publication, install the matching
+      ``comstockpostproc`` package and configure AWS credentials with access to the
+      ComStock truth data. The local backend uses the sampled building CSV and the
+      baseline results to allocate stock weights, scale to CBECS, and calculate
+      utility bills. Its full weighted export is grouped by state and climate zone.
+      Baseline simulations must not be skipped. Commercial publication is not
+      supported by the GCP postprocessing backend. The publication hook currently
+      uses stock estimate ``2025R3``, truth data version ``v01``, and ComStock year
+      ``2018``. The sample must match the stock estimate; using a sample generated
+      from a different estimate can produce incorrect weights.
 
     * ``aws``: (optional) configuration related to uploading to and managing
       data in amazon web services. For this to work, please `configure aws`_.
