@@ -10,7 +10,9 @@ import re
 import pytest
 import shutil
 import sys
+import yaml
 from unittest.mock import patch, MagicMock
+from yamale.yamale_error import YamaleError
 
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase
@@ -249,6 +251,27 @@ def test_commercial_publication_requires_buildstock_csv(basic_residential_projec
 
     with pytest.raises(ValueError, match="requires the sampled buildstock CSV"):
         postprocessing.combine_results(LocalFileSystem(), results_dir, cfg, do_timeseries=False)
+
+
+def test_commercial_publication_schema_needs_no_comstock_settings(tmp_path):
+    with open(pathlib.Path(__file__).parent / "test_inputs" / "minimal-schema.yml") as stream:
+        cfg = yaml.safe_load(stream)
+    cfg["schema_version"] = "0.6"
+    cfg["workflow_generator"]["version"] = "2024.07.18"
+    cfg["postprocessing"] = {"publish_annual_results": True}
+    project_file = tmp_path / "project.yml"
+    project_file.write_text(yaml.safe_dump(cfg))
+
+    assert BuildStockBatchBase.validate_project_schema(str(project_file))
+
+    cfg["postprocessing"]["comstock"] = {
+        "stock_estimation_version": "2025R3",
+        "truth_data_version": "v01",
+        "comstock_year": 2018,
+    }
+    project_file.write_text(yaml.safe_dump(cfg))
+    with pytest.raises(YamaleError):
+        BuildStockBatchBase.validate_project_schema(str(project_file))
 
 
 @pytest.mark.parametrize(

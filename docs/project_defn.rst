@@ -390,22 +390,20 @@ The configuration options for postprocessing and AWS upload are:
 
     * ``publish_annual_results``: (optional, bool) When set to ``true``, additional processed annual results are generated
       in CSV and Parquet formats. Residential projects use ``resstockpostproc``; commercial projects use
-      ``comstockpostproc`` and require the ``comstock`` settings described below. The processed results are stored in a
+      ``comstockpostproc``. The processed results are stored in a
       ``results_csvs_pub`` directory and a ``pub_annual`` subdirectory within the parquet directory. This option controls
       result generation, not S3 upload; configure ``aws`` separately to upload. Default is ``false``.
 
-    * ``comstock``: Required for commercial annual publication (schema version 0.6).
-      Install the matching
+      For commercial publication, install the matching
       ``comstockpostproc`` package and configure AWS credentials with access to the
       ComStock truth data. The local backend uses the sampled building CSV and the
       baseline results to allocate stock weights, scale to CBECS, and calculate
       utility bills. Its full weighted export is grouped by state and climate zone.
       Baseline simulations must not be skipped. Commercial publication is not
-      supported by the GCP postprocessing backend.
-
-        * ``stock_estimation_version``: Stock estimate version matching the sample.
-        * ``truth_data_version``: ComStock truth data version.
-        * ``comstock_year``: Simulation year, for example ``2018``.
+      supported by the GCP postprocessing backend. The publication hook currently
+      uses stock estimate ``2025R3``, truth data version ``v01``, and ComStock year
+      ``2018``. The sample must match the stock estimate; using a sample generated
+      from a different estimate can produce incorrect weights.
 
     * ``aws``: (optional) configuration related to uploading to and managing
       data in amazon web services. For this to work, please `configure aws`_.
