@@ -336,8 +336,10 @@ S3-compatible object store for inputs and results. It requires ``schema_version:
    (e.g. ``registry.example.org/myproject/buildstockbatch``).
 *  ``image_pull_secret``: Optional. Name of an image pull secret in the namespace, for private registries.
 *  ``batch_array_size``: Number of tasks (pods) to divide the simulations into. Max: 100,000.
-*  ``parallelism``: Optional. Maximum number of pods running at once. Default: ``batch_array_size``
-   (the cluster schedules as many as fit).
+*  ``parallelism``: Maximum number of simulation pods running at once. Required, so that a run
+   cannot take all free capacity on a cluster shared with other work. Choose a value that leaves
+   room for other workloads (for example, about the number of CPUs you can spare divided by
+   ``job_environment.cpus``). For a hard limit, also give the namespace a `ResourceQuota`_.
 *  ``retries_per_task``: Optional. How many times a failed pod is retried before its task counts as
    failed. Uses ``backoffLimitPerIndex``, which needs Kubernetes 1.29 or later. Default: 2.
 *  ``s3``: Object store settings.
@@ -360,6 +362,7 @@ S3-compatible object store for inputs and results. It requires ``schema_version:
     *  ``cpus``: Optional. CPUs, also the number of dask workers. Default: 2.
     *  ``memory_mib``: Optional. Memory in MiB, shared evenly between the dask workers. Default: 8192.
 
+.. _ResourceQuota: https://kubernetes.io/docs/concepts/policy/resource-quotas/
 .. _GCP's default behavior: https://cloud.google.com/python/docs/reference/batch/latest/google.cloud.batch_v1.types.TaskGroup
 .. _job limits: https://cloud.google.com/batch/quotas
 .. _Batch OS environment docs: https://cloud.google.com/batch/docs/vm-os-environment-overview#default

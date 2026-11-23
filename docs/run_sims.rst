@@ -260,7 +260,7 @@ Kubernetes specific project configuration
       namespace: buildstock
       image_repository: registry.example.org/myproject/buildstockbatch
       batch_array_size: 1000
-      parallelism: 200
+      parallelism: 50  # maximum pods running at once; leave room for other work on the cluster
       s3:
         endpoint_url: https://object-store.example.org:6780
         bucket: buildstockbatch

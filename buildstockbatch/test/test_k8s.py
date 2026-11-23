@@ -82,6 +82,18 @@ def test_schema_accepts_k8s_section(k8s_project):
     assert BuildStockBatchBase.validate_project_schema(k8s_project())
 
 
+def test_schema_requires_parallelism(k8s_project):
+    cfg = {k: v for k, v in K8S_CFG.items() if k != "parallelism"}
+    project_filename = k8s_project()
+    with open(project_filename) as f:
+        full = yaml.safe_load(f)
+    full["k8s"] = cfg
+    with open(project_filename, "w") as f:
+        yaml.dump(full, f)
+    with pytest.raises(ValueError, match="parallelism"):
+        BuildStockBatchBase.validate_project_schema(project_filename)
+
+
 @pytest.mark.parametrize("bad_id", ["Upper", "ends-with-", "x" * 51, "under_score"])
 def test_schema_rejects_bad_job_identifier(k8s_project, bad_id):
     with pytest.raises(ValueError):

@@ -87,7 +87,8 @@ k8s-spec:
   image_repository: str(required=True)
   image_pull_secret: str(required=False)
   batch_array_size: int(min=1, max=100000, required=True)
-  parallelism: int(min=1, required=False)
+  # Required so a run never takes every free slot on a shared cluster by default.
+  parallelism: int(min=1, required=True)
   retries_per_task: int(min=0, max=10, required=False)
   s3: include('k8s-s3-spec', required=True)
   job_environment: include('k8s-job-environment-spec', required=False)

@@ -242,7 +242,7 @@ class K8sBatch(DockerBatchBase):
             cpus=job_env.get("cpus", self.DEFAULT_TASK_CPUS),
             memory_mib=job_env.get("memory_mib", self.DEFAULT_TASK_MEMORY_MIB),
             completions=job_count,
-            parallelism=self.k8s_cfg.get("parallelism"),
+            parallelism=self.k8s_cfg["parallelism"],
             indexed=True,
             # Ten minutes of overhead for downloads and uploads, plus the expected simulation time.
             deadline_s=60 * (10 + batch_info.n_sims_per_job * minutes_per_sim),
