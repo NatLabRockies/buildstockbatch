@@ -101,4 +101,6 @@ Development Changelog
         Adds a Kubernetes backend, ``buildstock_k8s``, that runs simulations as an Indexed Job and
         postprocessing as a second Job, with inputs and results on any S3-compatible object store
         (for example Ceph RGW on OpenStack). Configure it with the new ``k8s`` section of schema
-        version 0.6. The Docker image now puts its Python virtual environment on ``PATH``.
+        version 0.6. The Docker image now puts its Python virtual environment on ``PATH``. Cloud
+        backends now build the image with ``docker buildx build`` (instead of the Docker SDK's
+        legacy builder), so builds work with Docker Desktop's containerd image store.

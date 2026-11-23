@@ -225,3 +225,29 @@ def test_log_summary(basic_residential_project_file, mocker, caplog):
         assert "Upgrade 01   Success: 3        Fail: 1" in caplog.text
         assert "Baseline     Success: 3        Fail: 1" in caplog.text
         assert "Total        Success: 6        Fail: 2" in caplog.text
+
+
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_build_image_uses_buildx(tmp_path, mocker, returncode):
+    """build_image builds linux/amd64 with the buildx CLI and raises on a failed build."""
+    run = mocker.patch.object(docker_base.subprocess, "run", return_value=MagicMock(returncode=returncode))
+    dbb = DockerBatchBase.__new__(DockerBatchBase)
+    dbb.cfg = {}
+    dbb.buildstock_dir = str(tmp_path)
+    dbb.os_version = "3.10.0"
+    dbb.docker_client = MagicMock()
+    dbb.docker_client.containers.run.return_value = b"3.10.0"
+
+    if returncode:
+        with pytest.raises(RuntimeError, match="docker image build failed"):
+            dbb.build_image("k8s")
+    else:
+        dbb.build_image("k8s")
+    cmd = run.call_args.args[0]
+    assert cmd[:3] == ["docker", "buildx", "build"]
+    for flag, value in [("--platform", "linux/amd64"), ("--target", "buildstockbatch"), ("--tag", dbb.docker_image)]:
+        assert cmd[cmd.index(flag) + 1] == value
+    assert "CLOUD_PLATFORM=k8s" in cmd and "OS_VER=3.10.0" in cmd and "--load" in cmd
+    assert dbb.docker_client.containers.run.called == (returncode == 0)
+    for call in dbb.docker_client.containers.run.call_args_list:
+        assert call.kwargs["log_config"] == {"type": "json-file"}
