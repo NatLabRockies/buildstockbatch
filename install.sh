@@ -8,7 +8,7 @@ DEV_MODE=false
 # Check if an argument was provided
 if [ $# -gt 0 ]; then
   # Validate the argument
-  if [ "$1" = "dev" ] || [ "$1" = "aws" ] || [ "$1" = "gcp" ]; then
+  if [ "$1" = "dev" ] || [ "$1" = "aws" ] || [ "$1" = "gcp" ] || [ "$1" = "k8s" ]; then
     EXTRAS="[$1]"
     echo "Installing buildstockbatch with $1 extras..."
 
@@ -17,7 +17,7 @@ if [ $# -gt 0 ]; then
       DEV_MODE=true
     fi
   else
-    echo "Error: Invalid argument. Use 'dev', 'aws', or 'gcp'."
+    echo "Error: Invalid argument. Use 'dev', 'aws', 'gcp', or 'k8s'."
     exit 1
   fi
 else

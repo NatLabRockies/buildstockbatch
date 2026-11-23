@@ -167,9 +167,9 @@ class DockerBatchBase(BuildStockBatchBase):
         """
         Build the docker image to use in the batch simulation
 
-        :param platform: String specifying the platform to build for. Must be "aws" or "gcp".
+        :param platform: String specifying the platform to build for. Must be "aws", "gcp", or "k8s".
         """
-        assert platform in ("aws", "gcp")
+        assert platform in ("aws", "gcp", "k8s")
         root_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent
         if not (root_path / "Dockerfile").exists():
             raise RuntimeError(f"The needs to be run from the root of the repo, found {root_path}")

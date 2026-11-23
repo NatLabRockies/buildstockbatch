@@ -93,3 +93,11 @@ Development Changelog
         both scenarios that use hourly schedules and scenarios that use constant
         values. The previous
         ``2025.12.03`` generator remains available for existing projects.
+
+    .. change::
+        :tags: general, feature
+
+        Adds a Kubernetes backend, ``buildstock_k8s``, that runs simulations as an Indexed Job and
+        postprocessing as a second Job, with inputs and results on any S3-compatible object store
+        (for example Ceph RGW on OpenStack). Configure it with the new ``k8s`` section of schema
+        version 0.6. The Docker image now puts its Python virtual environment on ``PATH``.

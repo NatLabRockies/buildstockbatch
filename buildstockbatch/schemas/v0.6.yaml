@@ -8,6 +8,7 @@ workflow_generator: include('workflow-generator-spec', required=True)
 kestrel: include('hpc-spec', required=False)
 gcp: include('gcp-spec', required=False)
 aws: include('aws-spec', required=False)
+k8s: include('k8s-spec', required=False)
 output_directory: regex('^(.*\/)?[a-z][a-z0-9_]*\/?$', required=True)
 sys_image_dir: str(required=False)
 baseline: include('sim-spec', required=True)
@@ -77,6 +78,35 @@ aws-dask-spec:
   worker_cpu: enum(1024, 2048, 4096, 8192, 16384, required=False)
   worker_memory: int(min=1024, required=False)
   n_workers: int(min=1, required=True)
+
+k8s-spec:
+  # Kubernetes Job names are limited to 63 characters; "-pp" is appended for the postprocessing Job.
+  job_identifier: regex('^[a-z]([a-z0-9-]{0,48}[a-z0-9])?$', required=True)
+  namespace: str(required=False)
+  kube_context: str(required=False)
+  image_repository: str(required=True)
+  image_pull_secret: str(required=False)
+  batch_array_size: int(min=1, max=100000, required=True)
+  parallelism: int(min=1, required=False)
+  retries_per_task: int(min=0, max=10, required=False)
+  s3: include('k8s-s3-spec', required=True)
+  job_environment: include('k8s-job-environment-spec', required=False)
+  postprocessing_environment: include('k8s-postprocessing-environment-spec', required=False)
+
+k8s-s3-spec:
+  endpoint_url: str(required=True)
+  bucket: str(required=True)
+  prefix: str(required=True)
+  credentials_secret: str(required=True)
+
+k8s-job-environment-spec:
+  cpus: num(min=0.1, required=False)
+  memory_mib: int(min=512, required=False)
+  minutes_per_sim: num(min=0.05, max=480, required=False)
+
+k8s-postprocessing-environment-spec:
+  cpus: int(min=1, max=64, required=False)
+  memory_mib: int(min=1024, required=False)
 
 hpc-spec:
   account: str(required=True)

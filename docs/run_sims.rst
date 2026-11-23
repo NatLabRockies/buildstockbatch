@@ -214,3 +214,76 @@ If you make code changes between runs, you may want to occasionally clean up the
 images created for each run with ``docker image prune``.
 
 .. _GCP Console: https://console.cloud.google.com/storage/browser
+
+
+.. _k8s-run:
+
+Running on Kubernetes
+~~~~~~~~~~~~~~~~~~~~~
+
+Run a project on any Kubernetes cluster (for example an Azimuth or Magnum cluster on OpenStack)
+with the ``buildstock_k8s`` command line tool. Inputs and results are stored in an S3-compatible
+object store (for example Ceph RGW, MinIO, or AWS S3).
+
+.. command-output:: buildstock_k8s --help
+   :ellipsis: 0,8
+
+``buildstock_k8s`` builds the Docker image locally, pushes it to your registry, runs the simulations
+as one `Indexed Job`_ (one pod per batch of simulations), and then runs postprocessing as a second
+Job. It waits for both and logs a summary of the results.
+
+One-time setup
+..............
+
+1. Install with the Kubernetes extra: ``bash install.sh k8s``.
+2. Make your cluster's kubeconfig available (``KUBECONFIG`` or ``~/.kube/config``) and, if it holds
+   several contexts, set ``k8s.kube_context``.
+3. Log in to your container registry so the local Docker client can push: ``docker login REGISTRY``.
+   If the registry is private, create an image pull secret in the namespace and set
+   ``k8s.image_pull_secret``.
+4. Create the bucket in your object store. Give your local machine S3 credentials through the usual
+   AWS settings (``AWS_PROFILE``, or ``AWS_ACCESS_KEY_ID`` and ``AWS_SECRET_ACCESS_KEY``). On OpenStack,
+   ``openstack ec2 credentials create`` makes a key pair for Ceph RGW.
+5. Give the pods the same credentials through a Secret, and set ``k8s.s3.credentials_secret`` to its name::
+
+    kubectl -n NAMESPACE create secret generic bsb-s3 \
+      --from-literal=AWS_ACCESS_KEY_ID=... --from-literal=AWS_SECRET_ACCESS_KEY=...
+
+Kubernetes specific project configuration
+.........................................
+
+.. code-block:: yaml
+
+    schema_version: '0.6'
+    k8s:
+      job_identifier: national01
+      namespace: buildstock
+      image_repository: registry.example.org/myproject/buildstockbatch
+      batch_array_size: 1000
+      parallelism: 200
+      s3:
+        endpoint_url: https://object-store.example.org:6780
+        bucket: buildstockbatch
+        prefix: national01_run01
+        credentials_secret: bsb-s3
+
+See :ref:`k8s-config` for details and other optional settings. As with GCP, you can override
+``job_identifier`` on the command line (``buildstock_k8s project.yml [job_identifier]``).
+
+Retry, postprocess only, and clean up
+.....................................
+
+* Pods that fail (for example when a node goes away) are retried ``retries_per_task`` times. If a
+  task still fails, the Job fails and postprocessing does not run. Run ``--clean`` to delete the Job,
+  then rerun with ``--missingonly`` to run only the batches that have no results, followed by
+  postprocessing. Your project file must not have changed since the first run.
+* If ``buildstock_k8s`` is interrupted while the simulations run, the Job keeps running.
+  Run ``--postprocessonly`` once it has finished.
+* ``--clean`` deletes the simulation and postprocessing Jobs and their pods (cancelling them if they
+  are still running). Files in the object store are kept. Watch progress and logs with
+  ``kubectl -n NAMESPACE get jobs`` and ``kubectl -n NAMESPACE logs -l job-name=JOB_IDENTIFIER``.
+
+A new run refuses to start if results already exist at the configured ``prefix``; use a new prefix
+or delete the old results first.
+
+.. _Indexed Job: https://kubernetes.io/docs/concepts/workloads/controllers/job/#completion-mode

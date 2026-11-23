@@ -99,6 +99,7 @@ The script accepts optional arguments for different installation types:
 * Developer install: ``bash install.sh dev`` (also installs pre-commit hooks)
 * AWS support: ``bash install.sh aws``
 * GCP support: ``bash install.sh gcp``
+* Kubernetes support: ``bash install.sh k8s`` (see :ref:`k8s-run`)
 
 .. _aws-user-config-local:
 
