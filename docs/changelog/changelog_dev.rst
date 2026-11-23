@@ -96,6 +96,7 @@ Development Changelog
 
     .. change::
         :tags: general, feature
+        :pullreq: 532
 
         Adds a Kubernetes backend, ``buildstock_k8s``, that runs simulations as an Indexed Job and
         postprocessing as a second Job, with inputs and results on any S3-compatible object store
