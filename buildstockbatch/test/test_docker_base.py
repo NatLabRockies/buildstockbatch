@@ -105,6 +105,12 @@ def test_run_batch_prep(basic_residential_project_file, mocker):
                 # Building with upgrade 0
                 assert [building, 0] in simulations
 
+        # Measures find resources both next to measures/ (current ResStock) and under lib/ (older ResStock).
+        with tarfile.open(tmppath / "assets.tar.gz", "r") as tar_f:
+            names = set(tar_f.getnames())
+        for path in ("measures", "resources/options_lookup.tsv", "lib/resources/options_lookup.tsv"):
+            assert path in names
+
 
 def test_get_weather_files_to_download():
     resources_dir_path = pathlib.Path(resources_dir)
