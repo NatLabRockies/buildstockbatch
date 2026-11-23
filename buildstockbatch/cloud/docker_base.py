@@ -573,6 +573,9 @@ class DockerBatchBase(BuildStockBatchBase):
         :param output_path: File path (typically `bucket/prefix`) to write outputs to.
         """
         local_fs = LocalFileSystem()
+        # The assets tarball unpacks measures/ and resources/hpxml-measures/ into sim_dir; point the workflow
+        # generator there instead of the submitting machine's buildstock_directory.
+        cfg = {**cfg, "buildstock_directory": str(sim_dir)}
         reporting_measures = cls.get_reporting_measures(cfg)
         dpouts = []
         simulation_output_tar_filename = sim_dir.parent / "simulation_outputs.tar.gz"

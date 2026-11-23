@@ -164,6 +164,13 @@ def test_run_simulations(basic_residential_project_file):
         temp_path = pathlib.Path(temp_dir_str)
         sim_dir = temp_path / "simdata" / "openstudio"
         os.makedirs(sim_dir)
+        # Lay out the measures as the assets tarball does in the container, and make the configured
+        # buildstock_directory unusable so the test fails if run_simulations reads from it.
+        buildstock_path = pathlib.Path(cfg["buildstock_directory"])
+        for measure_path in ("measures", "resources/hpxml-measures"):
+            if (buildstock_path / measure_path).is_dir():
+                shutil.copytree(buildstock_path / measure_path, sim_dir / measure_path)
+        cfg["buildstock_directory"] = str(temp_path / "not_in_the_container")
         # sim_dir is also the working directory (defined in the nrel/openstudio
         # Dockerfile), which some file operations depend on.
         old_cwd = os.getcwd()
