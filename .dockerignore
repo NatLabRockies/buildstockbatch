@@ -1,0 +1,19 @@
+# Keep local environments, VCS data, secrets and build/test leftovers out of the image's `COPY . /buildstock-batch/`.
+.git
+.venv
+venv
+.env
+**/__pycache__
+**/*.pyc
+*.egg-info
+build/
+docs/_build
+.pytest_cache
+.coverage
+coverage/
+buildstockbatch_crash_details.log
+.idea
+.vscode
+.history
+.DS_Store
+.claude
