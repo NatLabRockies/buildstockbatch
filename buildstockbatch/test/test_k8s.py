@@ -20,6 +20,7 @@ from buildstockbatch.k8s.k8s import K8sBatch
 
 K8S_CFG = {
     "job_identifier": "bsb-test",
+    "kube_context": "test-admin@test-cluster",
     "namespace": "bsb",
     "image_repository": "registry.example.org/bsb/buildstockbatch",
     "image_pull_secret": "regcred",
@@ -82,15 +83,16 @@ def test_schema_accepts_k8s_section(k8s_project):
     assert BuildStockBatchBase.validate_project_schema(k8s_project())
 
 
-def test_schema_requires_parallelism(k8s_project):
-    cfg = {k: v for k, v in K8S_CFG.items() if k != "parallelism"}
+@pytest.mark.parametrize("required_key", ["parallelism", "kube_context"])
+def test_schema_requires_safety_settings(k8s_project, required_key):
+    cfg = {k: v for k, v in K8S_CFG.items() if k != required_key}
     project_filename = k8s_project()
     with open(project_filename) as f:
         full = yaml.safe_load(f)
     full["k8s"] = cfg
     with open(project_filename, "w") as f:
         yaml.dump(full, f)
-    with pytest.raises(ValueError, match="parallelism"):
+    with pytest.raises(ValueError, match=required_key):
         BuildStockBatchBase.validate_project_schema(project_filename)
 
 
@@ -113,7 +115,7 @@ def test_paths(batch):
     assert batch.output_dir == "bsb-bucket/runs/test"
     assert batch.results_dir == "bsb-bucket/runs/test/results"
     assert batch.image_uri == "registry.example.org/bsb/buildstockbatch:bsb-test"
-    k8s.k8s_config.load_kube_config.assert_called_once_with(context=None)
+    k8s.k8s_config.load_kube_config.assert_called_once_with(context="test-admin@test-cluster")
 
 
 def test_simulation_job_manifest(batch):

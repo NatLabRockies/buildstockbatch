@@ -331,7 +331,9 @@ S3-compatible object store for inputs and results. It requires ``schema_version:
    characters long, and only has lowercase letters, numbers and/or hyphens. Names the simulation
    Job; the postprocessing Job adds ``-pp``. Also used as the image tag.
 *  ``namespace``: Optional. Kubernetes namespace for the Jobs. Default: ``default``.
-*  ``kube_context``: Optional. kubeconfig context to use. Default: the current context.
+*  ``kube_context``: The kubeconfig context (cluster) to run on, as listed by
+   ``kubectl config get-contexts -o name``. Required, so a run never goes to whatever cluster the
+   kubeconfig's current context happens to be.
 *  ``image_repository``: Registry repository the image is pushed to and pulled from, without a tag
    (e.g. ``registry.example.org/myproject/buildstockbatch``).
 *  ``image_pull_secret``: Optional. Name of an image pull secret in the namespace, for private registries.

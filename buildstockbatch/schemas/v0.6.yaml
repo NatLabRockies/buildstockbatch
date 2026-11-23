@@ -83,7 +83,8 @@ k8s-spec:
   # Kubernetes Job names are limited to 63 characters; "-pp" is appended for the postprocessing Job.
   job_identifier: regex('^[a-z]([a-z0-9-]{0,48}[a-z0-9])?$', required=True)
   namespace: str(required=False)
-  kube_context: str(required=False)
+  # Required so a run never lands on whatever cluster the kubeconfig happens to point at.
+  kube_context: str(required=True)
   image_repository: str(required=True)
   image_pull_secret: str(required=False)
   batch_array_size: int(min=1, max=100000, required=True)

@@ -75,7 +75,8 @@ class K8sBatch(DockerBatchBase):
         self.s3_prefix = s3_cfg["prefix"].strip("/")
         self.batch_array_size = self.k8s_cfg["batch_array_size"]
 
-        k8s_config.load_kube_config(context=self.k8s_cfg.get("kube_context"))
+        k8s_config.load_kube_config(context=self.k8s_cfg["kube_context"])
+        logger.info(f"Using kubeconfig context {self.k8s_cfg['kube_context']}, namespace {self.namespace}")
         self.batch_api = k8s_client.BatchV1Api()
 
     @staticmethod

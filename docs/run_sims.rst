@@ -236,8 +236,8 @@ One-time setup
 ..............
 
 1. Install with the Kubernetes extra: ``bash install.sh k8s``.
-2. Make your cluster's kubeconfig available (``KUBECONFIG`` or ``~/.kube/config``) and, if it holds
-   several contexts, set ``k8s.kube_context``.
+2. Make your cluster's kubeconfig available (``KUBECONFIG`` or ``~/.kube/config``) and set
+   ``k8s.kube_context`` to the context of that cluster (``kubectl config get-contexts -o name``).
 3. Log in to your container registry so the local Docker client can push: ``docker login REGISTRY``.
    If the registry is private, create an image pull secret in the namespace and set
    ``k8s.image_pull_secret``.
@@ -257,6 +257,7 @@ Kubernetes specific project configuration
     schema_version: '0.6'
     k8s:
       job_identifier: national01
+      kube_context: my-cluster-admin@my-cluster
       namespace: buildstock
       image_repository: registry.example.org/myproject/buildstockbatch
       batch_array_size: 1000
