@@ -200,7 +200,6 @@ def test_failed_job_raises(batch):
         batch._wait_for_job("bsb-test", 4, "Running Simulations")
 
 
-
 @pytest.mark.parametrize("error", [ApiException(status=503), urllib3.exceptions.ProtocolError("reset")])
 def test_wait_for_job_retries_transient_errors(batch, error):
     batch.batch_api.read_namespaced_job_status.side_effect = [error, job_status(succeeded=4, condition="Complete")]
@@ -211,6 +210,7 @@ def test_wait_for_job_raises_client_errors(batch):
     batch.batch_api.read_namespaced_job_status.side_effect = ApiException(status=404)
     with pytest.raises(ApiException):
         batch._wait_for_job("bsb-test", 4, "Running Simulations")
+
 
 def test_existing_job_gives_clear_error(batch):
     batch.batch_api.create_namespaced_job.side_effect = ApiException(status=409)

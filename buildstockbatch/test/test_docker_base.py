@@ -122,6 +122,7 @@ def test_run_batch_prep(basic_residential_project_file, mocker):
         assert (extract_dir / "lib/resources").is_symlink()
         assert (extract_dir / "lib/housing_characteristics").is_symlink()
 
+
 def test_get_weather_files_to_download():
     resources_dir_path = pathlib.Path(resources_dir)
     options_file = resources_dir_path / "options_lookup.tsv"
