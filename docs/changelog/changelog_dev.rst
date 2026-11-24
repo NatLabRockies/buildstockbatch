@@ -96,6 +96,7 @@ Development Changelog
 
     .. change::
         :tags: aws, gcp, bugfix
+        :pullreq: 534
 
         Cloud backends now build the image with ``docker buildx build`` instead of the Docker SDK's
         legacy builder, so builds work with Docker Desktop's containerd image store (for example on
