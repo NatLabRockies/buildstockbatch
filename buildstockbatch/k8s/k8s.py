@@ -59,6 +59,7 @@ class K8sBatch(DockerBatchBase):
     DEFAULT_PP_CPUS = 2
     DEFAULT_PP_MEMORY_MIB = 8192
     POLL_SECONDS = 10
+    CLEAN_TIMEOUT_SECONDS = 600
 
     def __init__(self, project_filename, job_identifier=None, missing_only=False):
         super().__init__(project_filename, missing_only)
@@ -136,8 +137,7 @@ class K8sBatch(DockerBatchBase):
         """
         sim_job = self._read_job(self.job_identifier)
         if sim_job and postprocess_only:
-            conditions = {c.type: c.status for c in (sim_job.status.conditions or [])}
-            if "True" not in (conditions.get("Complete"), conditions.get("Failed")):
+            if not self._finished(sim_job):
                 raise ValidationError(
                     f"Job {self.job_identifier} is still running in namespace {self.namespace}. "
                     "Wait for it to finish (or run --clean to cancel it) before --postprocessonly."
@@ -146,6 +146,26 @@ class K8sBatch(DockerBatchBase):
             self._raise_job_exists(self.job_identifier)
         if self._read_job(self.postprocessing_job_name):
             self._raise_job_exists(self.postprocessing_job_name)
+        # A run with another job_identifier must not overwrite inputs a running Job still reads.
+        # shortcut: only sees Jobs in this namespace, not runs from other namespaces or clusters.
+        others = self.batch_api.list_namespaced_job(
+            self.namespace, label_selector="app.kubernetes.io/name=buildstockbatch"
+        )
+        for other in others.items:
+            if other.metadata.name in (self.job_identifier, self.postprocessing_job_name) or self._finished(other):
+                continue
+            env = {e.name: e.value for c in other.spec.template.spec.containers for e in (c.env or [])}
+            if (env.get("S3_BUCKET"), env.get("S3_PREFIX")) == (self.s3_bucket, self.s3_prefix):
+                raise ValidationError(
+                    f"Job {other.metadata.name} in namespace {self.namespace} is still running with the same "
+                    f"storage location, s3://{self.output_dir}. Wait for it to finish, or use a different "
+                    "k8s.s3.prefix."
+                )
+
+    @staticmethod
+    def _finished(job):
+        conditions = {c.type: c.status for c in (job.status.conditions or [])}
+        return "True" in (conditions.get("Complete"), conditions.get("Failed"))
 
     def _raise_job_exists(self, name):
         raise ValidationError(
@@ -205,7 +225,9 @@ class K8sBatch(DockerBatchBase):
                 "limits": {"memory": f"{memory_mib}Mi"},
             },
         }
-        pod_spec = {"restartPolicy": "Never", "containers": [container]}
+        # The image is built for linux/amd64 only.
+        node_selector = {"kubernetes.io/os": "linux", "kubernetes.io/arch": "amd64"}
+        pod_spec = {"restartPolicy": "Never", "nodeSelector": node_selector, "containers": [container]}
         if deadline_s:
             pod_spec["activeDeadlineSeconds"] = int(deadline_s)
         if pull_secret := self.k8s_cfg.get("image_pull_secret"):
@@ -258,10 +280,13 @@ class K8sBatch(DockerBatchBase):
                 progress.set_postfix_str(f"active={status.active or 0} failed={status.failed or 0}")
                 conditions = {c.type: c.status for c in (status.conditions or [])}
                 if conditions.get("Failed") == "True":
+                    if name == self.postprocessing_job_name:
+                        retry = "After --clean, rerun with --postprocessonly to retry postprocessing."
+                    else:
+                        retry = "After --clean, rerun with --missingonly to retry the missing batches."
                     raise RuntimeError(
                         f"Job {name} failed (failed indexes: {status.failed_indexes or 'n/a'}). "
-                        f"See `kubectl -n {self.namespace} logs -l job-name={name}`. "
-                        "After --clean, rerun with --missingonly to retry the missing batches."
+                        f"See `kubectl -n {self.namespace} logs -l job-name={name}`. {retry}"
                     )
                 if conditions.get("Complete") == "True":
                     return status
@@ -379,13 +404,25 @@ class K8sBatch(DockerBatchBase):
 
     def clean(self):
         """Delete the simulation and postprocessing Jobs and their pods. Files in S3 are kept."""
+        deleted = []
         for name in (self.job_identifier, self.postprocessing_job_name):
             try:
-                self.batch_api.delete_namespaced_job(name, self.namespace, propagation_policy="Background")
-                logger.info(f"Deleted Job {name}")
+                # Foreground keeps the Job until its pods are gone, so check_jobs blocks a new run until then.
+                self.batch_api.delete_namespaced_job(name, self.namespace, propagation_policy="Foreground")
+                deleted.append(name)
             except ApiException as e:
                 if e.status != 404:
                     raise
+        deadline = time.monotonic() + self.CLEAN_TIMEOUT_SECONDS
+        for name in deleted:
+            while self._read_job(name):
+                if time.monotonic() > deadline:
+                    raise RuntimeError(
+                        f"Job {name} still exists {self.CLEAN_TIMEOUT_SECONDS} s after deletion. "
+                        f"Check `kubectl -n {self.namespace} get job,pods -l job-name={name}`."
+                    )
+                time.sleep(self.POLL_SECONDS)
+            logger.info(f"Deleted Job {name} and its pods")
 
 
 def run_in_pod(environ):

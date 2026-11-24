@@ -279,12 +279,15 @@ Retry, postprocess only, and clean up
   then rerun with ``--missingonly`` to run only the batches that have no results, followed by
   postprocessing. Your project file must not have changed since the first run.
 * If ``buildstock_k8s`` is interrupted while the simulations run, the Job keeps running.
-  Run ``--postprocessonly`` once it has finished.
+  Run ``--postprocessonly`` once it has finished. If the postprocessing Job fails, run ``--clean``
+  and then ``--postprocessonly`` to retry it.
 * ``--clean`` deletes the simulation and postprocessing Jobs and their pods (cancelling them if they
-  are still running). Files in the object store are kept. Watch progress and logs with
+  are still running) and waits until the pods are gone. Files in the object store are kept. Watch progress and logs with
   ``kubectl -n NAMESPACE get jobs`` and ``kubectl -n NAMESPACE logs -l job-name=JOB_IDENTIFIER``.
 
-A new run refuses to start if results already exist at the configured ``prefix``; use a new prefix
-or delete the old results first.
+A new run refuses to start if results already exist at the configured ``prefix``, or if another
+buildstockbatch Job in the namespace is still running with the same ``bucket`` and ``prefix``; use a
+new prefix or delete the old results first. Pods are scheduled only on ``linux/amd64`` nodes, the
+platform the image is built for.
 
 .. _Indexed Job: https://kubernetes.io/docs/concepts/workloads/controllers/job/#completion-mode

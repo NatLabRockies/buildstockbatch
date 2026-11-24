@@ -139,6 +139,7 @@ def test_simulation_job_manifest(batch):
     assert "backoffLimit" not in spec
     pod = spec["template"]["spec"]
     assert pod["restartPolicy"] == "Never"
+    assert pod["nodeSelector"] == {"kubernetes.io/os": "linux", "kubernetes.io/arch": "amd64"}
     assert pod["activeDeadlineSeconds"] == 960
     assert pod["imagePullSecrets"] == [{"name": "regcred"}]
     (container,) = pod["containers"]
@@ -194,10 +195,11 @@ def test_start_batch_job_missing_only_nothing_to_do(batch, mocker):
     batch.batch_api.create_namespaced_job.assert_not_called()
 
 
-def test_failed_job_raises(batch):
+@pytest.mark.parametrize("name, retry", [("bsb-test", "--missingonly"), ("bsb-test-pp", "--postprocessonly")])
+def test_failed_job_raises(batch, name, retry):
     batch.batch_api.read_namespaced_job_status.return_value = job_status(failed=3, condition="Failed")
-    with pytest.raises(RuntimeError, match="--missingonly"):
-        batch._wait_for_job("bsb-test", 4, "Running Simulations")
+    with pytest.raises(RuntimeError, match=retry):
+        batch._wait_for_job(name, 4, "Running Simulations")
 
 
 @pytest.mark.parametrize(
@@ -222,9 +224,20 @@ def test_existing_job_gives_clear_error(batch):
 
 def test_clean_ignores_missing_jobs(batch):
     batch.batch_api.delete_namespaced_job.side_effect = [None, ApiException(status=404)]
+    # The Job is still there on the first read (pods stopping), then gone.
+    batch.batch_api.read_namespaced_job.side_effect = [job(), ApiException(status=404)]
     batch.clean()
-    names = [c.args[0] for c in batch.batch_api.delete_namespaced_job.call_args_list]
-    assert names == ["bsb-test", "bsb-test-pp"]
+    calls = batch.batch_api.delete_namespaced_job.call_args_list
+    assert [c.args[0] for c in calls] == ["bsb-test", "bsb-test-pp"]
+    assert all(c.kwargs["propagation_policy"] == "Foreground" for c in calls)
+    assert [c.args[0] for c in batch.batch_api.read_namespaced_job.call_args_list] == ["bsb-test", "bsb-test"]
+
+
+def test_clean_times_out_when_job_stays(batch, mocker):
+    mocker.patch.object(K8sBatch, "CLEAN_TIMEOUT_SECONDS", -1)
+    batch.batch_api.read_namespaced_job.return_value = job()
+    with pytest.raises(RuntimeError, match="still exists"):
+        batch.clean()
 
 
 def test_process_results_runs_postprocessing_job(batch, mocker):
@@ -372,11 +385,44 @@ def test_check_jobs(batch, sim, pp, postprocess_only, error):
         return jobs[name]
 
     batch.batch_api.read_namespaced_job.side_effect = read
+    batch.batch_api.list_namespaced_job.return_value = SimpleNamespace(items=[])
     if error:
         with pytest.raises(ValidationError, match=error):
             batch.check_jobs(postprocess_only)
     else:
         batch.check_jobs(postprocess_only)
+
+
+def other_job(name, prefix, condition=None):
+    env = [SimpleNamespace(name="S3_BUCKET", value="bsb-bucket"), SimpleNamespace(name="S3_PREFIX", value=prefix)]
+    container = SimpleNamespace(env=env)
+    return SimpleNamespace(
+        metadata=SimpleNamespace(name=name),
+        status=job(condition).status,
+        spec=SimpleNamespace(template=SimpleNamespace(spec=SimpleNamespace(containers=[container]))),
+    )
+
+
+@pytest.mark.parametrize(
+    "other, error",
+    [
+        (other_job("other-run", "runs/test"), True),
+        (other_job("other-run", "runs/test", "Complete"), False),
+        (other_job("other-run", "runs/other"), False),
+    ],
+)
+def test_check_jobs_refuses_running_job_on_same_prefix(batch, other, error):
+    """Another job_identifier writing to the same bucket/prefix would overwrite its inputs."""
+    batch.batch_api.read_namespaced_job.side_effect = ApiException(status=404)
+    batch.batch_api.list_namespaced_job.return_value = SimpleNamespace(items=[other])
+    if error:
+        with pytest.raises(ValidationError, match="same storage location"):
+            batch.check_jobs()
+    else:
+        batch.check_jobs()
+    assert batch.batch_api.list_namespaced_job.call_args.kwargs == {
+        "label_selector": "app.kubernetes.io/name=buildstockbatch"
+    }
 
 
 def test_main_checks_jobs_before_building(k8s_project, mocker):
