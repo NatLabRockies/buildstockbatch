@@ -93,3 +93,14 @@ Development Changelog
         both scenarios that use hourly schedules and scenarios that use constant
         values. The previous
         ``2025.12.03`` generator remains available for existing projects.
+
+    .. change::
+        :tags: aws, gcp, bugfix
+
+        Cloud backends now build the image with ``docker buildx build`` instead of the Docker SDK's
+        legacy builder, so builds work with Docker Desktop's containerd image store (for example on
+        Apple Silicon). The build fails with a clear error if the docker CLI and the Docker SDK use
+        different daemons. Containers started through the Docker SDK now use the ``json-file`` log
+        driver, so their output can be read on hosts that default to the ``local`` driver. A new
+        ``.dockerignore`` keeps ``.git``, virtual environments, ``.env`` and build leftovers out of
+        the image.
