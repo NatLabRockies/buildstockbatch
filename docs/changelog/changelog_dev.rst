@@ -102,9 +102,7 @@ Development Changelog
         postprocessing as a second Job, with inputs and results on any S3-compatible object store
         (for example Ceph RGW on OpenStack). Configure it with the new ``k8s`` section of schema
         version 0.6. The Docker image now puts its Python virtual environment on ``PATH``. Cloud
-        backends now build the image with ``docker buildx build`` (instead of the Docker SDK's
-        legacy builder), so builds work with Docker Desktop's containerd image store. Cloud simulations now read measure XML from the
-        container's copy of the measures instead of the submitting machine's ``buildstock_directory``. The cloud assets now also include ``resources/`` and
-        ``<project_directory>/housing_characteristics`` next to ``measures/``, which current ResStock
-        measures require, and postprocessing no longer fails with
-        ``ArrowInvalid: Invalid null value`` on pandas 3.
+        simulations now read measure XML from the container's copy of the measures instead of the
+        submitting machine's ``buildstock_directory``, and the cloud assets now include
+        ``resources/`` and ``<project_directory>/housing_characteristics`` next to ``measures/``,
+        which current ResStock measures require.

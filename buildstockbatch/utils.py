@@ -141,11 +141,6 @@ def calc_hash_for_file(filename):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-# docker-py only returns a container's output for the json-file and journald log drivers, so ask for
-# json-file explicitly (Docker Desktop can default to "local").
-DOCKER_LOG_CONFIG = {"type": "json-file"}
-
-
 def get_bool_env_var(varname):
     return os.environ.get(varname, "0").lower() in ("true", "t", "1", "y", "yes")
 

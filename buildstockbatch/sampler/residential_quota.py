@@ -20,7 +20,6 @@ import time
 from .base import BuildStockSampler
 from .downselect import DownselectSamplerBase
 from buildstockbatch.exc import ValidationError
-from buildstockbatch.utils import DOCKER_LOG_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +74,6 @@ class ResidentialQuotaSampler(BuildStockSampler):
             remove=True,
             volumes={self.buildstock_dir: {"bind": "/var/simdata/openstudio", "mode": "rw"}},
             name="buildstock_sampling",
-            log_config=DOCKER_LOG_CONFIG,
             **extra_kws,
         )
         tick = time.time() - tick

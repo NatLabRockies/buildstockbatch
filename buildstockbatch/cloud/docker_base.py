@@ -33,14 +33,7 @@ import time
 
 from buildstockbatch import postprocessing
 from buildstockbatch.base import BuildStockBatchBase, ValidationError
-from buildstockbatch.utils import (
-    DOCKER_LOG_CONFIG,
-    ContainerRuntime,
-    calc_hash_for_file,
-    compress_file,
-    read_csv,
-    get_bool_env_var,
-)
+from buildstockbatch.utils import ContainerRuntime, calc_hash_for_file, compress_file, read_csv, get_bool_env_var
 
 logger = logging.getLogger(__name__)
 
@@ -207,61 +200,38 @@ class DockerBatchBase(BuildStockBatchBase):
             stage = "buildstockbatch"
 
         logger.info(f"Building docker image stage: {stage} from OpenStudio {self.os_version}")
-        # Use the buildx CLI: docker-py's legacy build API can't build linux/amd64 images on
-        # Docker Desktop's containerd image store (e.g. on Apple Silicon).
-        build_cmd = [
-            "docker",
-            "buildx",
-            "build",
-            "--platform",
-            "linux/amd64",
-            "--target",
-            stage,
-            "--build-arg",
-            f"OS_VER={self.os_version}",
-            "--build-arg",
-            f"CLOUD_PLATFORM={platform}",
-            "--progress",
-            "plain",
-            "--load",
-            "--tag",
-            self.docker_image,
-            str(root_path),
-        ]
+        try:
+            img, build_logs = self.docker_client.images.build(
+                path=str(root_path),
+                tag=self.docker_image,
+                rm=True,
+                target=stage,
+                platform="linux/amd64",
+                buildargs={"OS_VER": self.os_version, "CLOUD_PLATFORM": platform},
+            )
+        except docker.errors.BuildError as e:
+            for line in e.build_log:
+                if "stream" in line:
+                    logger.error(line["stream"].strip())
+                elif "errorDetail" in line:
+                    logger.error(f"Error: {line['errorDetail']['message'].strip()}")
+            raise
         build_image_log = os.path.join(local_log_dir, "build_image.log")
         with open(build_image_log, "w") as f_out:
-            proc = subprocess.run(build_cmd, stdout=f_out, stderr=subprocess.STDOUT, text=True)
-        if proc.returncode != 0:
-            with open(build_image_log) as f_in:
-                for line in f_in.readlines()[-50:]:
-                    logger.error(line.rstrip())
-            raise RuntimeError(f"docker image build failed (exit {proc.returncode}), see {build_image_log}")
+            f_out.write("Built image")
+            for line in build_logs:
+                for itm_type, item_msg in line.items():
+                    if itm_type in ["stream", "status"]:
+                        try:
+                            f_out.write(f"{item_msg}")
+                        except UnicodeEncodeError:
+                            pass
         logger.debug(f"Review docker image build log: {build_image_log}")
-
-        # The CLI follows the current docker context; docker-py only reads DOCKER_HOST or the default
-        # socket. Make sure docker-py sees the image just built, not a stale one on another daemon.
-        cli_image_id = subprocess.run(
-            ["docker", "image", "inspect", "--format", "{{.Id}}", self.docker_image],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
-        try:
-            py_image_id = self.docker_client.images.get(self.docker_image).id
-        except docker.errors.ImageNotFound:
-            py_image_id = None
-        if py_image_id != cli_image_id:
-            raise RuntimeError(
-                f"The docker CLI built {self.docker_image} ({cli_image_id}) on a different daemon than the "
-                f"Docker Python client uses ({py_image_id or 'image not found'}). Set DOCKER_HOST to the "
-                "endpoint of your current docker context (`docker context inspect`), or switch to the "
-                "default context."
-            )
 
         # Report and confirm the openstudio version from the image
         os_ver_cmd = "openstudio openstudio_version"
         container_output = self.docker_client.containers.run(
-            self.docker_image, os_ver_cmd, remove=True, name="list_openstudio_version", log_config=DOCKER_LOG_CONFIG
+            self.docker_image, os_ver_cmd, remove=True, name="list_openstudio_version"
         )
         assert self.os_version in container_output.decode()
 
@@ -275,7 +245,7 @@ class DockerBatchBase(BuildStockBatchBase):
         )
         try:
             container_output = self.docker_client.containers.run(
-                self.docker_image, list_gems_cmd, remove=True, name="list_gems", log_config=DOCKER_LOG_CONFIG
+                self.docker_image, list_gems_cmd, remove=True, name="list_gems"
             )
         except docker.errors.ContainerError as e:
             logger.error(e.stderr.decode("utf-8"))
