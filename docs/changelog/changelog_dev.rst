@@ -96,6 +96,7 @@ Development Changelog
 
     .. change::
         :tags: postprocessing, bugfix
+        :pullreq: 533
 
         Postprocessing no longer fails with ``ArrowInvalid: Invalid null value`` when setting
         ``apply_upgrade.reference_scenario`` on pandas 3.
