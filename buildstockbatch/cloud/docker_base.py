@@ -513,14 +513,12 @@ class DockerBatchBase(BuildStockBatchBase):
             project_path = pathlib.Path(self.project_dir)
             buildstock_path = pathlib.Path(self.buildstock_dir)
             tar_f.add(buildstock_path / "measures", "measures")
-            # Current ResStock measures require ../../resources/buildstock.rb next to measures/;
-            # older ones use lib/resources. Ship both.
+            # Current ResStock measures look for resources/ and <project_directory>/housing_characteristics
+            # next to measures/; older ones use lib/. Ship both layouts.
             tar_f.add(buildstock_path / "resources", "resources")
             tar_f.add(buildstock_path / "resources", "lib/resources")
-            tar_f.add(
-                project_path / "housing_characteristics",
-                "lib/housing_characteristics",
-            )
+            for arcname in (self.cfg["project_directory"], "lib"):
+                tar_f.add(project_path / "housing_characteristics", f"{arcname}/housing_characteristics")
 
         return batch_info, files_needed
 

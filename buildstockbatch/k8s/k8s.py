@@ -161,6 +161,8 @@ class K8sBatch(DockerBatchBase):
         container = {
             "name": "buildstockbatch",
             "image": self.image_uri,
+            # Every run with the same job_identifier pushes the same tag; never run a node's stale copy.
+            "imagePullPolicy": "Always",
             "command": ["python3", "-m", "buildstockbatch.k8s.k8s"],
             "env": [{"name": k, "value": str(v)} for k, v in env.items()],
             "envFrom": [{"secretRef": {"name": self.k8s_cfg["s3"]["credentials_secret"]}}],

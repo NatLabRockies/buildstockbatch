@@ -165,6 +165,7 @@ def test_start_batch_job_creates_and_waits(batch):
     assert ns == "bsb"
     assert manifest["spec"]["completions"] == 4
     assert manifest["spec"]["parallelism"] == 2
+    assert manifest["spec"]["template"]["spec"]["containers"][0]["imagePullPolicy"] == "Always"
     # 10 minutes overhead + 3 sims * 2 minutes per sim
     assert manifest["spec"]["template"]["spec"]["activeDeadlineSeconds"] == 60 * 16
     assert api.read_namespaced_job_status.call_count == 2
