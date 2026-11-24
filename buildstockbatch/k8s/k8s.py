@@ -30,6 +30,7 @@ from kubernetes import client as k8s_client, config as k8s_config
 from kubernetes.client.rest import ApiException
 from s3fs import S3FileSystem
 import tqdm
+import urllib3
 
 from buildstockbatch import postprocessing
 from buildstockbatch.cloud import docker_base
@@ -241,7 +242,15 @@ class K8sBatch(DockerBatchBase):
         done_last = 0
         with tqdm.tqdm(desc=desc, total=total, unit="task") as progress:
             while True:
-                status = self.batch_api.read_namespaced_job_status(name, self.namespace).status
+                try:
+                    status = self.batch_api.read_namespaced_job_status(name, self.namespace).status
+                except (ApiException, urllib3.exceptions.HTTPError) as e:
+                    # The Job keeps running through API server blips; only give up on client errors (e.g. 404).
+                    if isinstance(e, ApiException) and (e.status or 0) < 500:
+                        raise
+                    logger.warning(f"Could not read the status of Job {name}, retrying: {e}")
+                    time.sleep(self.POLL_SECONDS)
+                    continue
                 done = status.succeeded or 0
                 progress.update(done - done_last)
                 done_last = done
