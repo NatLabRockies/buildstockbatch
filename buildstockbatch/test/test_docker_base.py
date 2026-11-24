@@ -106,9 +106,10 @@ def test_run_batch_prep(basic_residential_project_file, mocker):
                 assert [building, 0] in simulations
 
         # Measures find resources and housing characteristics both next to measures/ (current ResStock)
-        # and under lib/ (older ResStock).
+        # and under lib/ (older ResStock), which links to the single copy.
+        extract_dir = tmppath / "extracted"
         with tarfile.open(tmppath / "assets.tar.gz", "r") as tar_f:
-            names = set(tar_f.getnames())
+            tar_f.extractall(extract_dir)
         project_dir = dbb.cfg["project_directory"]
         for path in (
             "measures",
@@ -117,8 +118,9 @@ def test_run_batch_prep(basic_residential_project_file, mocker):
             f"{project_dir}/housing_characteristics",
             "lib/housing_characteristics",
         ):
-            assert path in names
-
+            assert (extract_dir / path).exists(), path
+        assert (extract_dir / "lib/resources").is_symlink()
+        assert (extract_dir / "lib/housing_characteristics").is_symlink()
 
 def test_get_weather_files_to_download():
     resources_dir_path = pathlib.Path(resources_dir)
