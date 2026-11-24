@@ -2,6 +2,7 @@
 
 import gzip
 import json
+import logging
 import pathlib
 import tarfile
 from types import SimpleNamespace
@@ -171,7 +172,8 @@ def test_start_batch_job_creates_and_waits(batch):
     assert api.read_namespaced_job_status.call_count == 2
 
 
-def test_start_batch_job_missing_only_reruns_missing_count(batch, mocker):
+def test_start_batch_job_missing_only_reruns_missing_count(batch, mocker, caplog):
+    caplog.set_level(logging.INFO)
     batch.missing_only = True
     mocker.patch.object(K8sBatch, "find_missing_tasks", return_value=2)
     batch.batch_api.read_namespaced_job_status.return_value = job_status(succeeded=2, condition="Complete")
@@ -180,6 +182,7 @@ def test_start_batch_job_missing_only_reruns_missing_count(batch, mocker):
     assert manifest["spec"]["completions"] == 2
     env = {e["name"]: e["value"] for e in manifest["spec"]["template"]["spec"]["containers"][0]["env"]}
     assert env["MISSING_ONLY"] == "True"
+    assert "Retrying 2 of 4 tasks" in caplog.text
 
 
 def test_start_batch_job_missing_only_nothing_to_do(batch, mocker):

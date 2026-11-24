@@ -252,8 +252,12 @@ class K8sBatch(DockerBatchBase):
         )
         self._create_job(manifest)
         logger.info(
-            f"Simulations: {batch_info.n_sims:,} in {job_count:,} tasks. "
-            f"Results: s3://{self.results_dir}/simulation_output. "
+            (
+                f"Retrying {job_count:,} of {batch_info.job_count:,} tasks. "
+                if self.missing_only
+                else f"Simulations: {batch_info.n_sims:,} in {job_count:,} tasks. "
+            )
+            + f"Results: s3://{self.results_dir}/simulation_output. "
             "You may interrupt this script; the Job keeps running but postprocessing will not start."
         )
         self._wait_for_job(self.job_identifier, job_count, "Running Simulations")
