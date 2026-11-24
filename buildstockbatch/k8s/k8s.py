@@ -246,7 +246,8 @@ class K8sBatch(DockerBatchBase):
                     status = self.batch_api.read_namespaced_job_status(name, self.namespace).status
                 except (ApiException, urllib3.exceptions.HTTPError) as e:
                     # The Job keeps running through API server blips; only give up on client errors (e.g. 404).
-                    if isinstance(e, ApiException) and (e.status or 0) < 500:
+                    # status 0 is how the client reports SSL errors.
+                    if isinstance(e, ApiException) and e.status and e.status < 500:
                         raise
                     logger.warning(f"Could not read the status of Job {name}, retrying: {e}")
                     time.sleep(self.POLL_SECONDS)

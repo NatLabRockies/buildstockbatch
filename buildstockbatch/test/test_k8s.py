@@ -200,7 +200,9 @@ def test_failed_job_raises(batch):
         batch._wait_for_job("bsb-test", 4, "Running Simulations")
 
 
-@pytest.mark.parametrize("error", [ApiException(status=503), urllib3.exceptions.ProtocolError("reset")])
+@pytest.mark.parametrize(
+    "error", [ApiException(status=503), ApiException(status=0), urllib3.exceptions.ProtocolError("reset")]
+)
 def test_wait_for_job_retries_transient_errors(batch, error):
     batch.batch_api.read_namespaced_job_status.side_effect = [error, job_status(succeeded=4, condition="Complete")]
     assert batch._wait_for_job("bsb-test", 4, "Running Simulations").succeeded == 4
