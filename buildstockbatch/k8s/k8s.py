@@ -119,6 +119,39 @@ class K8sBatch(DockerBatchBase):
                 "Use a different k8s.s3.prefix, delete them, or run with --missingonly."
             )
 
+    def _read_job(self, name):
+        """Return the Job, or None if it doesn't exist."""
+        try:
+            return self.batch_api.read_namespaced_job(name, self.namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return None
+            raise
+
+    def check_jobs(self, postprocess_only=False):
+        """Refuse to start before anything is pushed or uploaded that a running Job would pick up.
+
+        A new run needs both Jobs gone. ``--postprocessonly`` only needs the simulation Job finished.
+        """
+        sim_job = self._read_job(self.job_identifier)
+        if sim_job and postprocess_only:
+            conditions = {c.type: c.status for c in (sim_job.status.conditions or [])}
+            if "True" not in (conditions.get("Complete"), conditions.get("Failed")):
+                raise ValidationError(
+                    f"Job {self.job_identifier} is still running in namespace {self.namespace}. "
+                    "Wait for it to finish (or run --clean to cancel it) before --postprocessonly."
+                )
+        elif sim_job:
+            self._raise_job_exists(self.job_identifier)
+        if self._read_job(self.postprocessing_job_name):
+            self._raise_job_exists(self.postprocessing_job_name)
+
+    def _raise_job_exists(self, name):
+        raise ValidationError(
+            f"Job {name} already exists in namespace {self.namespace}. "
+            "Run with --clean first, or use a different job identifier."
+        )
+
     def push_image(self):
         """Tag and push the local image. Uses the credentials from ``docker login <registry>``."""
         repo = self.k8s_cfg["image_repository"]
@@ -199,10 +232,7 @@ class K8sBatch(DockerBatchBase):
             self.batch_api.create_namespaced_job(self.namespace, manifest)
         except ApiException as e:
             if e.status == 409:
-                raise ValidationError(
-                    f"Job {manifest['metadata']['name']} already exists in namespace {self.namespace}. "
-                    "Run with --clean first, or use a different job identifier."
-                ) from e
+                self._raise_job_exists(manifest["metadata"]["name"])
             raise
         logger.info(f"Created Job {manifest['metadata']['name']} in namespace {self.namespace}")
 
@@ -446,6 +476,7 @@ def main():
     if args.clean:
         batch.clean()
         return
+    batch.check_jobs(postprocess_only=args.postprocessonly)
     if not (args.missingonly or args.postprocessonly):
         batch.check_output_dir()
     batch.build_image("k8s")

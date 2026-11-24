@@ -327,3 +327,52 @@ def test_push_image_raises_on_error(batch):
     batch.docker_client.images.get.return_value.tag.assert_called_once_with(
         "registry.example.org/bsb/buildstockbatch", tag="bsb-test"
     )
+
+
+def job(condition=None):
+    return job_status(condition=condition)
+
+
+@pytest.mark.parametrize(
+    "sim, pp, postprocess_only, error",
+    [
+        (None, None, False, None),
+        (job(), None, False, "bsb-test already exists"),
+        (job("Complete"), None, False, "bsb-test already exists"),
+        (None, job(), False, "bsb-test-pp already exists"),
+        (job(), None, True, "still running"),
+        (job("Complete"), None, True, None),
+        (job("Failed"), None, True, None),
+        (None, None, True, None),
+        (job("Complete"), job(), True, "bsb-test-pp already exists"),
+    ],
+)
+def test_check_jobs(batch, sim, pp, postprocess_only, error):
+    """check_jobs stops a run that would overwrite inputs a live Job still reads."""
+    jobs = {"bsb-test": sim, "bsb-test-pp": pp}
+
+    def read(name, namespace):
+        if jobs[name] is None:
+            raise ApiException(status=404)
+        return jobs[name]
+
+    batch.batch_api.read_namespaced_job.side_effect = read
+    if error:
+        with pytest.raises(ValidationError, match=error):
+            batch.check_jobs(postprocess_only)
+    else:
+        batch.check_jobs(postprocess_only)
+
+
+def test_main_checks_jobs_before_building(k8s_project, mocker):
+    """A Job conflict stops main() before the image is built or pushed."""
+    mocker.patch.object(k8s, "run_in_pod", return_value=False)
+    mocker.patch.object(K8sBatch, "validate_project")
+    mocker.patch.object(K8sBatch, "__init__", return_value=None)
+    mocker.patch.object(K8sBatch, "check_jobs", side_effect=ValidationError("exists"))
+    build = mocker.patch.object(K8sBatch, "build_image")
+    mocker.patch("sys.argv", ["buildstock_k8s", k8s_project(), "--postprocessonly"])
+    with pytest.raises(ValidationError):
+        k8s.main()
+    K8sBatch.check_jobs.assert_called_once_with(postprocess_only=True)
+    build.assert_not_called()

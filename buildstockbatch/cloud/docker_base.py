@@ -238,6 +238,26 @@ class DockerBatchBase(BuildStockBatchBase):
             raise RuntimeError(f"docker image build failed (exit {proc.returncode}), see {build_image_log}")
         logger.debug(f"Review docker image build log: {build_image_log}")
 
+        # The CLI follows the current docker context; docker-py only reads DOCKER_HOST or the default
+        # socket. Make sure docker-py sees the image just built, not a stale one on another daemon.
+        cli_image_id = subprocess.run(
+            ["docker", "image", "inspect", "--format", "{{.Id}}", self.docker_image],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        try:
+            py_image_id = self.docker_client.images.get(self.docker_image).id
+        except docker.errors.ImageNotFound:
+            py_image_id = None
+        if py_image_id != cli_image_id:
+            raise RuntimeError(
+                f"The docker CLI built {self.docker_image} ({cli_image_id}) on a different daemon than the "
+                f"Docker Python client uses ({py_image_id or 'image not found'}). Set DOCKER_HOST to the "
+                "endpoint of your current docker context (`docker context inspect`), or switch to the "
+                "default context."
+            )
+
         # Report and confirm the openstudio version from the image
         os_ver_cmd = "openstudio openstudio_version"
         container_output = self.docker_client.containers.run(
