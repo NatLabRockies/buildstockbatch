@@ -93,3 +93,9 @@ Development Changelog
         both scenarios that use hourly schedules and scenarios that use constant
         values. The previous
         ``2025.12.03`` generator remains available for existing projects.
+
+    .. change::
+        :tags: postprocessing, bugfix
+
+        Postprocessing no longer fails with ``ArrowInvalid: Invalid null value`` when setting
+        ``apply_upgrade.reference_scenario`` on pandas 3.

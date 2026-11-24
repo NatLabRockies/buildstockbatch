@@ -191,8 +191,9 @@ def clean_up_results_df(df, cfg, keep_upgrade_id=False):
                 pd.ArrowDtype(pa.timestamp("s"))
             )
     reference_scenarios = dict([(i, x.get("reference_scenario")) for i, x in enumerate(cfg.get("upgrades", []), 1)])
+    # object first: mapping an Arrow int column keeps its dtype, so fillna("") would fail on pandas 3
     results_df["apply_upgrade.reference_scenario"] = (
-        results_df["upgrade"].map(reference_scenarios).fillna("").astype(str)
+        results_df["upgrade"].astype(object).map(reference_scenarios).fillna("").astype(str)
     )
 
     # standardize the column orders
