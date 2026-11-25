@@ -105,6 +105,23 @@ def test_run_batch_prep(basic_residential_project_file, mocker):
                 # Building with upgrade 0
                 assert [building, 0] in simulations
 
+        # Measures find resources and housing characteristics both next to measures/ (current ResStock)
+        # and under lib/ (older ResStock), which links to the single copy.
+        extract_dir = tmppath / "extracted"
+        with tarfile.open(tmppath / "assets.tar.gz", "r") as tar_f:
+            tar_f.extractall(extract_dir)
+        project_dir = dbb.cfg["project_directory"]
+        for path in (
+            "measures",
+            "resources/options_lookup.tsv",
+            "lib/resources/options_lookup.tsv",
+            f"{project_dir}/housing_characteristics",
+            "lib/housing_characteristics",
+        ):
+            assert (extract_dir / path).exists(), path
+        assert (extract_dir / "lib/resources").is_symlink()
+        assert (extract_dir / "lib/housing_characteristics").is_symlink()
+
 
 def test_get_weather_files_to_download():
     resources_dir_path = pathlib.Path(resources_dir)
@@ -164,6 +181,13 @@ def test_run_simulations(basic_residential_project_file):
         temp_path = pathlib.Path(temp_dir_str)
         sim_dir = temp_path / "simdata" / "openstudio"
         os.makedirs(sim_dir)
+        # Lay out the measures as the assets tarball does in the container, and make the configured
+        # buildstock_directory unusable so the test fails if run_simulations reads from it.
+        buildstock_path = pathlib.Path(cfg["buildstock_directory"])
+        for measure_path in ("measures", "resources/hpxml-measures"):
+            if (buildstock_path / measure_path).is_dir():
+                shutil.copytree(buildstock_path / measure_path, sim_dir / measure_path)
+        cfg["buildstock_directory"] = str(temp_path / "not_in_the_container")
         # sim_dir is also the working directory (defined in the nrel/openstudio
         # Dockerfile), which some file operations depend on.
         old_cwd = os.getcwd()

@@ -7,9 +7,11 @@ COPY nrel_root_ca.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
+# Put the venv on PATH so `python3 -m buildstockbatch...` in the cloud jobs finds the installed package.
+ENV VIRTUAL_ENV=/opt/buildstockbatch-venv
+ENV PATH="$VIRTUAL_ENV/bin:/root/.local/bin:/root/.cargo/bin:$PATH"
 RUN uv python install 3.11
-RUN uv venv --python 3.11 && uv pip install "/buildstock-batch[${CLOUD_PLATFORM}]"
+RUN uv venv --python 3.11 "$VIRTUAL_ENV" && uv pip install "/buildstock-batch[${CLOUD_PLATFORM}]"
 
 # Base plus custom gems
 FROM --platform=linux/amd64 buildstockbatch as buildstockbatch-custom-gems

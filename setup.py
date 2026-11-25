@@ -27,6 +27,10 @@ aws_requires = [
     "dask-cloudprovider[aws]>=2024.9.0",
 ]
 
+k8s_requires = [
+    "kubernetes>=29.0.0",
+]
+
 
 setuptools.setup(
     name=metadata["__title__"],
@@ -82,9 +86,11 @@ setuptools.setup(
             "pre-commit",
         ]
         + gcp_requires
-        + aws_requires,
+        + aws_requires
+        + k8s_requires,
         "gcp": gcp_requires,
         "aws": aws_requires,
+        "k8s": k8s_requires,
     },
     entry_points={
         "console_scripts": [
@@ -92,6 +98,7 @@ setuptools.setup(
             "buildstock_kestrel=buildstockbatch.hpc:kestrel_cli",
             "buildstock_gcp=buildstockbatch.gcp.gcp:main",
             "buildstock_aws=buildstockbatch.aws.aws:main",
+            "buildstock_k8s=buildstockbatch.k8s.k8s:main",
         ]
     },
     license="BSD-3",

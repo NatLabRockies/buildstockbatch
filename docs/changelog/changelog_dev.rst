@@ -93,3 +93,16 @@ Development Changelog
         both scenarios that use hourly schedules and scenarios that use constant
         values. The previous
         ``2025.12.03`` generator remains available for existing projects.
+
+    .. change::
+        :tags: general, feature
+        :pullreq: 532
+
+        Adds a Kubernetes backend, ``buildstock_k8s``, that runs simulations as an Indexed Job and
+        postprocessing as a second Job, with inputs and results on any S3-compatible object store
+        (for example Ceph RGW on OpenStack). Configure it with the new ``k8s`` section of schema
+        version 0.6. The Docker image now puts its Python virtual environment on ``PATH``. Cloud
+        simulations now read measure XML from the container's copy of the measures instead of the
+        submitting machine's ``buildstock_directory``, and the cloud assets now include
+        ``resources/`` and ``<project_directory>/housing_characteristics`` next to ``measures/``,
+        which current ResStock measures require.

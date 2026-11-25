@@ -320,6 +320,51 @@ using `GCP Batch <https://cloud.google.com/batch>`_ and `Cloud Run <https://clou
     *  ``memory_mib``: Optional. `Amount of RAM`_ needed in MiB. At least 2048 MiB per CPU is recommended.
        Use up to 32768 MiB for large jobs. Default: 4096 MiB.
 
+.. _k8s-config:
+
+Kubernetes Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~
+The top-level ``k8s`` key is used to run the batch on a Kubernetes cluster, with an
+S3-compatible object store for inputs and results. It requires ``schema_version: '0.6'``.
+
+*  ``job_identifier``: A unique string that starts with a lowercase letter, is up to 50
+   characters long, and only has lowercase letters, numbers and/or hyphens. Names the simulation
+   Job; the postprocessing Job adds ``-pp``. Also used as the image tag.
+*  ``namespace``: Optional. Kubernetes namespace for the Jobs. Default: ``default``.
+*  ``kube_context``: The kubeconfig context (cluster) to run on, as listed by
+   ``kubectl config get-contexts -o name``. Required, so a run never goes to whatever cluster the
+   kubeconfig's current context happens to be.
+*  ``image_repository``: Registry repository the image is pushed to and pulled from, without a tag
+   (e.g. ``registry.example.org/myproject/buildstockbatch``).
+*  ``image_pull_secret``: Optional. Name of an image pull secret in the namespace, for private registries.
+*  ``batch_array_size``: Number of tasks (pods) to divide the simulations into. Max: 100,000.
+*  ``parallelism``: Maximum number of simulation pods running at once. Required, so that a run
+   cannot take all free capacity on a cluster shared with other work. Choose a value that leaves
+   room for other workloads (for example, about the number of CPUs you can spare divided by
+   ``job_environment.cpus``). For a hard limit, also give the namespace a `ResourceQuota`_.
+*  ``retries_per_task``: Optional. How many times a failed pod is retried before its task counts as
+   failed. Uses ``backoffLimitPerIndex``, which needs Kubernetes 1.29 or later. Default: 2.
+*  ``s3``: Object store settings.
+
+    *  ``endpoint_url``: URL of the S3 API (e.g. Ceph RGW on OpenStack). Must be reachable from your
+       machine and from the pods.
+    *  ``bucket``: Existing bucket for inputs, simulation output and postprocessed results.
+    *  ``prefix``: Prefix within the bucket for this run.
+    *  ``credentials_secret``: Name of a Secret in the namespace with ``AWS_ACCESS_KEY_ID`` and
+       ``AWS_SECRET_ACCESS_KEY``, which is passed to every pod.
+
+*  ``job_environment``: Optional. Resources for each simulation pod.
+
+    *  ``cpus``: Optional. CPU request. Default: 1.
+    *  ``memory_mib``: Optional. Memory request and limit in MiB. Default: 2048.
+    *  ``minutes_per_sim``: Optional. Expected time per simulation. A pod is stopped after
+       10 minutes plus this times its number of simulations. Increase for ComStock. Default: 3.
+*  ``postprocessing_environment``: Optional. Resources for the postprocessing pod.
+
+    *  ``cpus``: Optional. CPUs, also the number of dask workers. Default: 2.
+    *  ``memory_mib``: Optional. Memory in MiB, shared evenly between the dask workers. Default: 8192.
+
+.. _ResourceQuota: https://kubernetes.io/docs/concepts/policy/resource-quotas/
 .. _GCP's default behavior: https://cloud.google.com/python/docs/reference/batch/latest/google.cloud.batch_v1.types.TaskGroup
 .. _job limits: https://cloud.google.com/batch/quotas
 .. _Batch OS environment docs: https://cloud.google.com/batch/docs/vm-os-environment-overview#default

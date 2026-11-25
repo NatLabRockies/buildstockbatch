@@ -167,9 +167,9 @@ class DockerBatchBase(BuildStockBatchBase):
         """
         Build the docker image to use in the batch simulation
 
-        :param platform: String specifying the platform to build for. Must be "aws" or "gcp".
+        :param platform: String specifying the platform to build for. Must be "aws", "gcp", or "k8s".
         """
-        assert platform in ("aws", "gcp")
+        assert platform in ("aws", "gcp", "k8s")
         root_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent
         if not (root_path / "Dockerfile").exists():
             raise RuntimeError(f"The needs to be run from the root of the repo, found {root_path}")
@@ -503,16 +503,16 @@ class DockerBatchBase(BuildStockBatchBase):
             project_path = pathlib.Path(self.project_dir)
             buildstock_path = pathlib.Path(self.buildstock_dir)
             tar_f.add(buildstock_path / "measures", "measures")
-            if os.path.exists(buildstock_path / "resources/hpxml-measures"):
-                tar_f.add(
-                    buildstock_path / "resources/hpxml-measures",
-                    "resources/hpxml-measures",
-                )
-            tar_f.add(buildstock_path / "resources", "lib/resources")
-            tar_f.add(
-                project_path / "housing_characteristics",
-                "lib/housing_characteristics",
-            )
+            # Current ResStock measures look for resources/ and <project_directory>/housing_characteristics
+            # next to measures/; older ones use lib/. Ship one copy and symlink the lib/ layout to it.
+            hc_arcname = f"{self.cfg['project_directory']}/housing_characteristics"
+            tar_f.add(buildstock_path / "resources", "resources")
+            tar_f.add(project_path / "housing_characteristics", hc_arcname)
+            for target in ("resources", hc_arcname):
+                link = tarfile.TarInfo(f"lib/{pathlib.PurePosixPath(target).name}")
+                link.type = tarfile.SYMTYPE
+                link.linkname = f"../{target}"
+                tar_f.addfile(link)
 
         return batch_info, files_needed
 
@@ -563,6 +563,9 @@ class DockerBatchBase(BuildStockBatchBase):
         :param output_path: File path (typically `bucket/prefix`) to write outputs to.
         """
         local_fs = LocalFileSystem()
+        # The assets tarball unpacks measures/ and resources/hpxml-measures/ into sim_dir; point the workflow
+        # generator there instead of the submitting machine's buildstock_directory.
+        cfg = {**cfg, "buildstock_directory": str(sim_dir)}
         reporting_measures = cls.get_reporting_measures(cfg)
         dpouts = []
         simulation_output_tar_filename = sim_dir.parent / "simulation_outputs.tar.gz"
