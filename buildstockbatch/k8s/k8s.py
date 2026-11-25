@@ -114,7 +114,8 @@ class K8sBatch(DockerBatchBase):
     def check_output_dir(self):
         """Refuse to start a new batch on top of results from an earlier one."""
         fs = self.get_fs()
-        existing = fs.glob(f"{self.results_dir}/simulation_output/results_job*.json.gz")
+        # Any output counts: a pod can upload timeseries and fail before writing its results_job file.
+        existing = fs.glob(f"{self.results_dir}/simulation_output/**")
         if existing:
             raise ValidationError(
                 f"Results already exist at s3://{self.results_dir}/simulation_output (e.g. {existing[0]}). "
@@ -155,7 +156,11 @@ class K8sBatch(DockerBatchBase):
             if other.metadata.name in (self.job_identifier, self.postprocessing_job_name) or self._finished(other):
                 continue
             env = {e.name: e.value for c in other.spec.template.spec.containers for e in (c.env or [])}
-            if (env.get("S3_BUCKET"), env.get("S3_PREFIX")) == (self.s3_bucket, self.s3_prefix):
+            if (env.get("S3_ENDPOINT_URL"), env.get("S3_BUCKET"), env.get("S3_PREFIX")) == (
+                self.s3_endpoint_url,
+                self.s3_bucket,
+                self.s3_prefix,
+            ):
                 raise ValidationError(
                     f"Job {other.metadata.name} in namespace {self.namespace} is still running with the same "
                     f"storage location, s3://{self.output_dir}. Wait for it to finish, or use a different "
@@ -425,6 +430,21 @@ class K8sBatch(DockerBatchBase):
             logger.info(f"Deleted Job {name} and its pods")
 
 
+# Only these reach run_in_pod: log_error_details prints frame locals, and the pod env holds S3 credentials.
+POD_ENV_VARS = (
+    "JOB_TYPE",
+    "JOB_COMPLETION_INDEX",
+    "S3_BUCKET",
+    "S3_PREFIX",
+    "S3_ENDPOINT_URL",
+    "MISSING_ONLY",
+    "RESULTS_DIR",
+    "DO_TIMESERIES",
+    "PP_CPUS",
+    "PP_MEMORY_MIB",
+)
+
+
 def run_in_pod(environ):
     """Dispatch work inside a pod. Returns False when not running inside a buildstockbatch pod."""
     job_type = environ.get("JOB_TYPE")
@@ -477,7 +497,7 @@ def main():
             },
         }
     )
-    if run_in_pod(os.environ):
+    if run_in_pod({k: os.environ[k] for k in POD_ENV_VARS if k in os.environ}):
         return
 
     parser = argparse.ArgumentParser()

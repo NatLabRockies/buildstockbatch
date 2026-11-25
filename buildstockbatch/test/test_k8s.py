@@ -282,9 +282,11 @@ def test_upload_and_copy_files(batch, memfs, tmp_path):
     batch.copy_files_at_cloud([])  # no-op
 
 
-def test_check_output_dir(batch, memfs):
+@pytest.mark.parametrize("leftover", ["results_job0.json.gz", "timeseries/upgrade=0/1.parquet"])
+def test_check_output_dir(batch, memfs, leftover):
+    memfs.pipe("bsb-bucket/runs/test/results/missing_tasks.txt", b"1")  # outside simulation_output
     batch.check_output_dir()  # nothing there yet
-    memfs.pipe("bsb-bucket/runs/test/results/simulation_output/results_job0.json.gz", b"x")
+    memfs.pipe(f"bsb-bucket/runs/test/results/simulation_output/{leftover}", b"x")
     with pytest.raises(ValidationError, match="already exist"):
         batch.check_output_dir()
 
@@ -337,6 +339,17 @@ def test_run_in_pod_dispatch(mocker):
     env = {**common, "JOB_TYPE": "POSTPROCESS", "RESULTS_DIR": "b/p/results", "DO_TIMESERIES": "True"}
     assert k8s.run_in_pod({**env, "PP_CPUS": "4", "PP_MEMORY_MIB": "16384"})
     run_pp.assert_called_once_with("b", "p", "https://e", "b/p/results", True, 4, 16384)
+
+
+def test_main_passes_no_credentials_to_pod_dispatch(mocker, monkeypatch):
+    """log_error_details prints run_in_pod's locals, so its environ must not hold S3 credentials."""
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("JOB_TYPE", "SIMULATE")
+    dispatch = mocker.patch.object(k8s, "run_in_pod", return_value=True)
+    k8s.main()
+    environ = dispatch.call_args.args[0]
+    assert environ["JOB_TYPE"] == "SIMULATE"
+    assert "AWS_SECRET_ACCESS_KEY" not in environ
 
 
 def test_run_combine_results_sizes_dask_to_pod(memfs, mocker):
@@ -393,8 +406,12 @@ def test_check_jobs(batch, sim, pp, postprocess_only, error):
         batch.check_jobs(postprocess_only)
 
 
-def other_job(name, prefix, condition=None):
-    env = [SimpleNamespace(name="S3_BUCKET", value="bsb-bucket"), SimpleNamespace(name="S3_PREFIX", value=prefix)]
+def other_job(name, prefix, condition=None, endpoint="https://s3.example.org:6780"):
+    env = [
+        SimpleNamespace(name="S3_ENDPOINT_URL", value=endpoint),
+        SimpleNamespace(name="S3_BUCKET", value="bsb-bucket"),
+        SimpleNamespace(name="S3_PREFIX", value=prefix),
+    ]
     container = SimpleNamespace(env=env)
     return SimpleNamespace(
         metadata=SimpleNamespace(name=name),
@@ -409,6 +426,7 @@ def other_job(name, prefix, condition=None):
         (other_job("other-run", "runs/test"), True),
         (other_job("other-run", "runs/test", "Complete"), False),
         (other_job("other-run", "runs/other"), False),
+        (other_job("other-run", "runs/test", endpoint="https://other-store.example.org"), False),
     ],
 )
 def test_check_jobs_refuses_running_job_on_same_prefix(batch, other, error):
